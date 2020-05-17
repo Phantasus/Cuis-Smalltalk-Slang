@@ -40,3 +40,5 @@ a more general way useable.
 Codewise Cuis Slang is based on the VMMaker Slang and the SqueakJS version
 of Slang, so there are areas which look similiar, but were adapted to Cuis
 and the original intention of being not just for VMs.
+
+See: [Differences from VMMaker Slang](docs/VMMaker_Differences.md)
