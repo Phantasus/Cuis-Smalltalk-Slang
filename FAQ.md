@@ -26,7 +26,3 @@ of it into files, transpiling/compiling them to the output. This
 is itself a valid direction for this kind of translation, but not of
 how the author wants it: no bells and whizzles, just have the basic
 infrastructure for translating and simulating code.
-
-And as of the time of writing some of the parts of it isn't clearly
-marked as MIT License, whereas the author wants to reduce the possibility
-of being sued.
