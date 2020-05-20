@@ -33,6 +33,25 @@ realities of software development. In the end it's the only
 way to go longterm, to restructure parts of a software system
 so that the authors understand it again.
 
+Got some nice feedback from Juan:
+
+> I also think it is a great idea. I always thought that VMMaker should be 
+> split in several packages, one of them PluginMaker part (Not support for 
+> the whole vm, GUI, simulation, but just slang to c conversion for 
+> plugins). PluginMaker should be easy to port to all Squeak dialects.
+>
+> Cheers,
+> Juan Vuletich
+
+Well, then this gives atleast some input of how, if I find
+the motivation, to proceed this project.
+
+I added further testcases to the codebase. Removed other not
+referenced methods, it's sad to remove stuff which seems to
+have hooks in the VMMaker, while barely understanding the
+inner workings of the whole system. But when it's not referenced
+in this subworld then it's not needed in my world.
+
 
 ## 18th May 2020 (jpb)
 
