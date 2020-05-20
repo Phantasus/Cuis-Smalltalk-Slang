@@ -9,6 +9,31 @@ authors at the end of the file.
 
 # Entries
 
+## 20th May 2020 (jpb)
+
+Yesterday I removed a couple of unreferenced methods, which sometimes
+weren't even referenced in the Squeak VMMaker image I have here to
+check against certain in Cuis unimplemented methods like 
+`#monticelloDescription`. I removed them or rewrote them, I still
+need to do that a couple of times until I covered all the small
+part which I initially extracted from VMMaker. You can easily get
+lost in the codebase. All these conversions from translation methods
+which call arbitrarily methods on the code generator and so on.
+
+The CodeGenerator is a big class, too big actually. It does a lot of
+stuff and has the feeling of a control box of some sort where a lot
+of high-voltage loaded wires stick out and you don't touch them or
+you get electrocuted.
+
+Good that I'm not intending to be compatible with the VMMaker,
+that would make any change hard and I'm doing that in my free time,
+why should I endure pain which I only accept for payment? That's
+also the charme of Cuis Smalltalk, saying a big fat NO! To
+realities of software development. In the end it's the only
+way to go longterm, to restructure parts of a software system
+so that the authors understand it again.
+
+
 ## 18th May 2020 (jpb)
 
 Today I added an FAQ and this journal at the end of the day. I also
