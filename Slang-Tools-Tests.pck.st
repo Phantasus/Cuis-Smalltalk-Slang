@@ -1,8 +1,38 @@
-'From Cuis 5.0 [latest update: #4112] on 17 May 2020 at 12:06:50 am'!
+'From Cuis 5.0 [latest update: #4112] on 21 May 2020 at 11:40:09 am'!
 'Description License: MIT'!
 !provides: 'Slang-Tools-Tests' 1 1!
 SystemOrganization addCategory: #'Slang-Tools-Tests'!
 
+
+!classDefinition: #SlangCCodeGeneratorTest category: #'Slang-Tools-Tests'!
+TestCase subclass: #SlangCCodeGeneratorTest
+	instanceVariableNames: 'usedClass'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-Tools-Tests'!
+!classDefinition: 'SlangCCodeGeneratorTest class' category: #'Slang-Tools-Tests'!
+SlangCCodeGeneratorTest class
+	instanceVariableNames: ''!
+
+!classDefinition: #SlangCLanguageWriterTest category: #'Slang-Tools-Tests'!
+TestCase subclass: #SlangCLanguageWriterTest
+	instanceVariableNames: 'usedClass'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-Tools-Tests'!
+!classDefinition: 'SlangCLanguageWriterTest class' category: #'Slang-Tools-Tests'!
+SlangCLanguageWriterTest class
+	instanceVariableNames: ''!
+
+!classDefinition: #SlangSystemServiceTest category: #'Slang-Tools-Tests'!
+TestCase subclass: #SlangSystemServiceTest
+	instanceVariableNames: 'usedClass'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-Tools-Tests'!
+!classDefinition: 'SlangSystemServiceTest class' category: #'Slang-Tools-Tests'!
+SlangSystemServiceTest class
+	instanceVariableNames: ''!
 
 !classDefinition: #SlangTest category: #'Slang-Tools-Tests'!
 TestCase subclass: #SlangTest
@@ -15,7 +45,7 @@ SlangTest class
 	instanceVariableNames: ''!
 
 !classDefinition: #SlangTestSupportInterpreter category: #'Slang-Tools-Tests'!
-SlangObject subclass: #SlangTestSupportInterpreter
+SlangPlugin subclass: #SlangTestSupportInterpreter
 	instanceVariableNames: 'cg inlineFlag primFailCode aVarWithOneReference aVarWithTwoReferences aVariable breakSelector'
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -35,6 +65,9 @@ SlangTestSupportPlugin class
 	instanceVariableNames: ''!
 
 
+!SlangCCodeGeneratorTest commentStamp: '<historical>' prior: 0!
+I test the generic C code generator!
+
 !SlangTest commentStamp: 'dtl 9/18/2010 17:43' prior: 0!
 The SlangTest tests verify code generation and inlining.
 !
@@ -53,6 +86,52 @@ for base plugins.
 	"VMMaker clearCacheEntriesFor: SlangTestSupportPlugin.
 	SlangTestSupportPlugin asCString"!
 
+!SlangCCodeGeneratorTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/19/2020 16:01:41'!
+setUp
+	usedClass _ SlangCCodeGenerator! !
+
+!SlangCLanguageWriterTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/20/2020 18:03:07'!
+setUp
+	usedClass _ SlangCLanguageWriter ! !
+
+!SlangCLanguageWriterTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/20/2020 18:18:17'!
+testFindIntegerLiteral
+	| helper |
+	helper _ usedClass.
+	
+	self assert: '10' equals: (helper findIntegerLiteral: 10).
+	self assert: '0xFFFFFFFFU' equals: (helper findIntegerLiteral: 16rFFFFFFFF).
+	self assert: '0x100000000ULL' equals: (helper findIntegerLiteral: 16rFFFFFFFF + 1).! !
+
+!SlangCLanguageWriterTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/20/2020 21:35:05'!
+testWritingConstants
+	| writer buffer |
+	buffer _ '' writeStream.
+	writer _ usedClass on: buffer.
+	
+	writer nextPutConstantNamed: 'foo' value: 123.
+	self assert: '#define foo 123' equals: buffer contents.! !
+
+!SlangSystemServiceTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/20/2020 22:28:19'!
+setUp
+	usedClass _ SlangSystemAdapter ! !
+
+!SlangSystemServiceTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/19/2020 17:38:02'!
+testFindClassDescriptionForClass
+	| service expected |
+	service _ usedClass new.
+	expected _ 'I represent a service for dealing with the Smalltalk system on which Slang is currently running on.'.
+	
+	self assert: expected equals: (service findClassDescriptionByClass: usedClass)! !
+
+!SlangSystemServiceTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/20/2020 22:37:08'!
+testFindSlangDescriptionForClass
+	| service |
+	service _ usedClass new.
+	
+	self assert: 'SlangSystemAdapter Slang-Tools'
+		 equals: (service findSlangDescriptionBy: usedClass)! !
+
 !SlangTest methodsFor: 'running' stamp: 'dtl 3/18/2013 18:48'!
 setUp
 
@@ -70,7 +149,7 @@ testExportsForSqueak3D
 	problem stays fixed."
 
 	Smalltalk at: #B3DEnginePlugin ifPresent: [:squeak3D | | src |
-		src := squeak3D asCString.
+		src _ squeak3D asCString.
 		self assert: ( '*"Squeak3D", "setInterpreter", (void*)setInterpreter*' match: src)]
 ! !
 
@@ -81,8 +160,8 @@ testIvarShouldNotBeRedeclaredAsLocal
 	in the function."
 
 	| stssi s |
-	stssi := SlangTestSupportInterpreter inline: false.
-	s := stssi asCString: #setBreakSelector: .
+	stssi _ SlangTestSupportInterpreter inline: false.
+	s _ stssi asCString: #setBreakSelector: .
 	
 	self deny: (s includesSubString: 'sqInt breakSelector;')
 ! !
@@ -92,8 +171,8 @@ testLiteralName
 	"sizeOf: #Foo should translated to C function call sizeof(Foo), where Foo is a literal, not a string"
 
 	| stssi s |
-	stssi := SlangTestSupportInterpreter inline: false.
-	s := stssi asCString: #sizeOfFoo .
+	stssi _ SlangTestSupportInterpreter inline: false.
+	s _ stssi asCString: #sizeOfFoo .
 	self assert: (s includesSubString: 'sizeOf(Foo)').
 	self deny: (s includesSubString: 'sizeOf("Foo")').
 
@@ -116,8 +195,8 @@ testLocalizeGlobalVariables
 	ObjectMemory>>markAndSweep: for an example."
 
 	| stssi s |
-	stssi := SlangTestSupportInterpreter inline: false.
-	s := stssi asCString: #methodWithReferenceToVariables .
+	stssi _ SlangTestSupportInterpreter inline: false.
+	s _ stssi asCString: #methodWithReferenceToVariables .
 	"variable with one method reference is promoted to a local method variable"
 	self assert: (s includesSubString: 'sqInt aVarWithOneReference;').
 	"normal expected behavior, the variable is global in the generated source module."
@@ -130,22 +209,22 @@ testInterpDeclareExport
 	traditional method send declarations"
 
 	| stssi m p |
-	stssi := SlangTestSupportInterpreter inline: false.
-	m := (stssi asCString: #declareExportTrueByMethod)
+	stssi _ SlangTestSupportInterpreter inline: false.
+	m _ (stssi asCString: #declareExportTrueByMethod)
 			copyReplaceAll: 'declareExportTrueByMethod'
 			with: 'methodName'.
 			
-	p := (stssi asCString: #declareExportTrueByPragma)
+	p _ (stssi asCString: #declareExportTrueByPragma)
 			copyReplaceAll: 'declareExportTrueByPragma'
 			with: 'methodName'.
 			
 	self assert: m = p.
 
-	m := (stssi asCString: #declareExportFalseByMethod)
+	m _ (stssi asCString: #declareExportFalseByMethod)
 			copyReplaceAll: 'declareExportFalseByMethod'
 			with: 'methodName'.
 			
-	p := (stssi asCString: #declareExportFalseByPragma)
+	p _ (stssi asCString: #declareExportFalseByPragma)
 			copyReplaceAll: 'declareExportFalseByPragma'
 			with: 'methodName'.
 			
@@ -157,13 +236,13 @@ testInterpDeclareInline
 	traditional method send declarations"
 
 	| stssi m p |
-	stssi := SlangTestSupportInterpreter inline: true.
-	m := ((stssi asCString: #inlineByMethod)
+	stssi _ SlangTestSupportInterpreter inline: true.
+	m _ ((stssi asCString: #inlineByMethod)
 			copyReplaceAll: 'inlineByMethod'
 			with: 'methodName')
 				copyReplaceAll: 'methodThatShouldNotBeInlinedByMethod'
 				with: 'calledMethodName'.
-	p := ((stssi asCString: #inlineByPragma)
+	p _ ((stssi asCString: #inlineByPragma)
 			copyReplaceAll: 'inlineByPragma'
 			with: 'methodName')
 				copyReplaceAll: 'methodThatShouldNotBeInlinedByPragma'
@@ -175,19 +254,19 @@ testInterpDeclareStatic
 	"A static directive should cause the generated function to be declared static."
 
 	| stssi m1 p1 m2 p2 |
-	stssi := SlangTestSupportInterpreter inline: false.
-	m1 := (stssi asCString: #declareStaticTrueByMethod)
+	stssi _ SlangTestSupportInterpreter inline: false.
+	m1 _ (stssi asCString: #declareStaticTrueByMethod)
 			copyReplaceAll: 'declareStaticTrueByMethod'
 			with: 'methodName'.
-	p1 := (stssi asCString: #declareStaticTrueByPragma)
+	p1 _ (stssi asCString: #declareStaticTrueByPragma)
 			copyReplaceAll: 'declareStaticTrueByPragma'
 			with: 'methodName'.
 	self assert: m1 = p1.
 
-	m2 := (stssi asCString: #declareStaticFalseByMethod)
+	m2 _ (stssi asCString: #declareStaticFalseByMethod)
 			copyReplaceAll: 'declareStaticFalseByMethod'
 			with: 'methodName'.
-	p2 := (stssi asCString: #declareStaticFalseByPragma)
+	p2 _ (stssi asCString: #declareStaticFalseByPragma)
 			copyReplaceAll: 'declareStaticFalseByPragma'
 			with: 'methodName'.
 	self assert: m2 = p2.
@@ -206,9 +285,9 @@ testInterpDoNotdoNotGenerateByMethod
 	"(SlangTest selector: #testInterpDoNotdoNotGenerateByMethod) debug"
 
 	| stssi m |
-	stssi := SlangTestSupportInterpreter inline: false.
+	stssi _ SlangTestSupportInterpreter inline: false.
 	self assert: (SlangTestSupportInterpreter canUnderstand: #doNotGenerateByMethod).
-	m := stssi asCString: #doNotGenerateByMethod.
+	m _ stssi asCString: #doNotGenerateByMethod.
 	self assert: (m includesSubString: 'No source has been generated').
 	self deny: (stssi asCString includesSubString: 'doNotGenerateByMethod').
 	self assert: (stssi doNotGenerateByMethod = 4)
@@ -220,9 +299,9 @@ testInterpDoNotdoNotGenerateByPragma
 	"A <doNotdoNotGenerate> declaration should prevent code generation"
 
 	| stssi m |
-	stssi := SlangTestSupportInterpreter inline: false.
+	stssi _ SlangTestSupportInterpreter inline: false.
 	self assert: (SlangTestSupportInterpreter canUnderstand: #doNotGenerateByPragma).
-	m := stssi asCString: #doNotGenerateByPragma.
+	m _ stssi asCString: #doNotGenerateByPragma.
 	
 	self assert: (m includesSubString: 'No source has been generated').
 	self deny: (stssi asCString includesSubString: 'doNotGenerateByPragma').
@@ -234,9 +313,9 @@ testInterpDoNotdoNotGenerateSubclassResponsibility
 	"If a method contains self subclassResponsibility, assume it is not meant for translation."
 
 	| stssi m |
-	stssi := SlangTestSupportInterpreter inline: false.
+	stssi _ SlangTestSupportInterpreter inline: false.
 	self assert: (SlangTestSupportInterpreter canUnderstand: #anAbstractMethod).
-	m := stssi asCString: #anAbstractMethod.
+	m _ stssi asCString: #anAbstractMethod.
 	self assert: (m includesSubString: 'No source has been generated').
 	self deny: (stssi asCString includesSubString: 'anAbstractMethod').
 	self should: [stssi anAbstractMethod]
@@ -249,8 +328,8 @@ testInterpMixedMethodAndPragmaDeclarations
 	"Pragmas and method declarations should coexist"
 
 	| stssi s |
-	stssi := SlangTestSupportInterpreter inline: false.
-	s := (stssi asCString: #varDefByMethodAndPragma)
+	stssi _ SlangTestSupportInterpreter inline: false.
+	s _ (stssi asCString: #varDefByMethodAndPragma)
 			copyReplaceAll: 'varDefByMethod'
 			with: 'methodName'.
 	self assert: (s includesSubString: 'unsigned int * bar').
@@ -265,11 +344,11 @@ testInterpReturnTypeC
 	traditional method send declarations"
 
 	| stssi m p |
-	stssi := SlangTestSupportInterpreter inline: false.
-	m := (stssi asCString: #returnTypeByMethod)
+	stssi _ SlangTestSupportInterpreter inline: false.
+	m _ (stssi asCString: #returnTypeByMethod)
 			copyReplaceAll: 'returnTypeByMethod'
 			with: 'methodName'.
-	p := (stssi asCString: #returnTypeByPragma)
+	p _ (stssi asCString: #returnTypeByPragma)
 			copyReplaceAll: 'returnTypeByPragma'
 			with: 'methodName'.
 	self assert: m = p! !
@@ -280,11 +359,11 @@ testInterpTypeDeclarations
 	traditional method send declarations"
 
 	| stssi m p |
-	stssi := SlangTestSupportInterpreter inline: false.
-	m := (stssi asCString: #varDefByMethod)
+	stssi _ SlangTestSupportInterpreter inline: false.
+	m _ (stssi asCString: #varDefByMethod)
 			copyReplaceAll: 'varDefByMethod'
 			with: 'methodName'.
-	p := (stssi asCString: #varDefByPragma)
+	p _ (stssi asCString: #varDefByPragma)
 			copyReplaceAll: 'varDefByPragma'
 			with: 'methodName'.
 	self assert: m = p! !
@@ -296,14 +375,14 @@ testIfElseEndif
 	"(SlangTest selector: #testIfElseEndif) run"
 
 	| stssi cString stringWithoutWhiteSpace lines |
-	stssi := SlangTestSupportInterpreter inline: false.
+	stssi _ SlangTestSupportInterpreter inline: false.
 
 	"verify that the default Smalltalk block that is evaluated in simulation"
 	self assert: stssi ifDefinedTrueElseEndif = 4.
 
 	"verify generated C string"
-	cString := stssi asCString: #ifDefinedTrueElseEndif.
-	lines := (cString findTokens: Character cr) select: [:e |
+	cString _ stssi asCString: #ifDefinedTrueElseEndif.
+	lines _ (cString findTokens: Character cr) select: [:e |
 		{
 			'# if (SIZE == 8)  // SIZE may be 4 or 8' .
 			'	return 8;' .
@@ -316,8 +395,8 @@ testIfElseEndif
 	self should: ('*return 4*' match: lines fourth).
 
 	"check the rest of the method, ignoring whitespace"
-	cString := stssi asCString: #ifDefinedTrueElseEndif.
-	stringWithoutWhiteSpace := cString reject: [:e | e isSeparator].
+	cString _ stssi asCString: #ifDefinedTrueElseEndif.
+	stringWithoutWhiteSpace _ cString reject: [:e | e isSeparator].
 	self should: stringWithoutWhiteSpace =
 		'sqIntifDefinedTrueElseEndif(void){#if(SIZE==8)//SIZEmaybe4or8return8;#elsereturn4;#endif//SIZE==8returnnull;}'.
 
@@ -343,14 +422,14 @@ testIfdefElseEndif
 	| stssi cString stringWithoutWhiteSpace lines |
 	self flag: #FIXME. "See redundant implementation in oscog #cppIf:ifTrue:ifFalse:"
 
-	stssi := SlangTestSupportInterpreter inline: false.
+	stssi _ SlangTestSupportInterpreter inline: false.
 
 	"verify that the default Smalltalk block that is evaluated in simulation"
 	self assert: stssi ifdefElseEndif = #defaultBlockForSimulation.
 
 	"verify generated C string"
-	cString := stssi asCString: #ifdefElseEndif.
-	lines := (cString findTokens: Character cr) select: [:e |
+	cString _ stssi asCString: #ifdefElseEndif.
+	lines _ (cString findTokens: Character cr) select: [:e |
 		{
 			'# ifdef HAVE_FOO  // some platforms do not support foo properly' .
 			'	return 1;' .
@@ -363,7 +442,7 @@ testIfdefElseEndif
 	self should: ('*return 0*' match: lines fourth).
 
 	"check the rest of the method, ignoring whitespace"
-	stringWithoutWhiteSpace := cString reject: [:e | e isSeparator].
+	stringWithoutWhiteSpace _ cString reject: [:e | e isSeparator].
 	self should: stringWithoutWhiteSpace =
 		'sqIntifdefElseEndif(void){#ifdefHAVE_FOO//someplatformsdonotsupportfooproperlyreturn1;#elsereturn0;#endif//HAVE_FOOreturnnull;}'.
 
@@ -389,14 +468,14 @@ testIfdefEndif
 	| stssi cString stringWithoutWhiteSpace lines |
 	self flag: #FIXME. "See redundant implementation in oscog #cppIf:ifTrue:"
 
-	stssi := SlangTestSupportInterpreter inline: false.
+	stssi _ SlangTestSupportInterpreter inline: false.
 
 	"verify that the default Smalltalk block that is evaluated in simulation"
 	self assert: stssi ifdefEndif = #defaultBlockForSimulation.
 
 	"verify generated C string"
-	cString := stssi asCString: #ifdefEndif.
-	lines := (cString findTokens: Character cr) select: [:e |
+	cString _ stssi asCString: #ifdefEndif.
+	lines _ (cString findTokens: Character cr) select: [:e |
 		{
 			'# ifdef HAVE_FOO  // some platforms do not support foo properly' .
 			'	return 1;' .
@@ -405,8 +484,8 @@ testIfdefEndif
 	self should: lines size = 3.
 
 	"check the rest of the method, ignoring whitespace"
-	cString := stssi asCString: #ifdefEndif.
-	stringWithoutWhiteSpace := cString reject: [:e | e isSeparator].
+	cString _ stssi asCString: #ifdefEndif.
+	stringWithoutWhiteSpace _ cString reject: [:e | e isSeparator].
 	self should: stringWithoutWhiteSpace =
 		'sqIntifdefEndif(void){#ifdefHAVE_FOO//someplatformsdonotsupportfooproperlyreturn1;#endif//HAVE_FOOreturn0;}'.
 
@@ -430,8 +509,8 @@ testPreprocessorExpression
 	| stssi cString |
 	self flag: #FIXME. "See redundant implementation in oscog #cPreprocessorDirective: "
 
-	stssi := SlangTestSupportInterpreter inline: false.
-	cString := stssi asCString: #preprocessorExpression.
+	stssi _ SlangTestSupportInterpreter inline: false.
+	cString _ stssi asCString: #preprocessorExpression.
 	
 	self should: ('* define FOO bar*' match: cString).
 	self should: ((cString findTokens: Character cr) select: [:e | e = '# define FOO bar' ]) size = 1.
@@ -444,19 +523,19 @@ testPluginDeclareExport
 	traditional method send declarations"
 
 	| stsp m p |
-	stsp := SlangTestSupportPlugin inline: false.
-	m := (stsp asCString: #declareExportTrueByMethod)
+	stsp _ SlangTestSupportPlugin inline: false.
+	m _ (stsp asCString: #declareExportTrueByMethod)
 			copyReplaceAll: 'declareExportTrueByMethod'
 			with: 'methodName'.
-	p := (stsp asCString: #declareExportTrueByPragma)
+	p _ (stsp asCString: #declareExportTrueByPragma)
 			copyReplaceAll: 'declareExportTrueByPragma'
 			with: 'methodName'.
 	self assert: m = p.
 
-	m := (stsp asCString: #declareExportFalseByMethod)
+	m _ (stsp asCString: #declareExportFalseByMethod)
 			copyReplaceAll: 'declareExportFalseByMethod'
 			with: 'methodName'.
-	p := (stsp asCString: #declareExportFalseByPragma)
+	p _ (stsp asCString: #declareExportFalseByPragma)
 			copyReplaceAll: 'declareExportFalseByPragma'
 			with: 'methodName'.
 	self assert: m = p.! !
@@ -467,13 +546,13 @@ testPluginDeclareInline
 	traditional method send declarations"
 
 	| stsp m p |
-	stsp := SlangTestSupportPlugin inline: true.
-	m := ((stsp asCString: #inlineByMethod)
+	stsp _ SlangTestSupportPlugin inline: true.
+	m _ ((stsp asCString: #inlineByMethod)
 			copyReplaceAll: 'inlineByMethod'
 			with: 'methodName')
 				copyReplaceAll: 'methodThatShouldNotBeInlinedByMethod'
 				with: 'calledMethodName'.
-	p := ((stsp asCString: #inlineByPragma)
+	p _ ((stsp asCString: #inlineByPragma)
 			copyReplaceAll: 'inlineByPragma'
 			with: 'methodName')
 				copyReplaceAll: 'methodThatShouldNotBeInlinedByPragma'
@@ -485,19 +564,19 @@ testPluginDeclareStatic
 	"A static directive should cause the generated function to be declared static."
 
 	| stsp m1 p1 m2 p2 |
-	stsp := SlangTestSupportPlugin inline: false.
-	m1 := (stsp asCString: #declareStaticTrueByMethod)
+	stsp _ SlangTestSupportPlugin inline: false.
+	m1 _ (stsp asCString: #declareStaticTrueByMethod)
 			copyReplaceAll: 'declareStaticTrueByMethod'
 			with: 'methodName'.
-	p1 := (stsp asCString: #declareStaticTrueByPragma)
+	p1 _ (stsp asCString: #declareStaticTrueByPragma)
 			copyReplaceAll: 'declareStaticTrueByPragma'
 			with: 'methodName'.
 	self assert: m1 = p1.
 
-	m2 := (stsp asCString: #declareStaticFalseByMethod)
+	m2 _ (stsp asCString: #declareStaticFalseByMethod)
 			copyReplaceAll: 'declareStaticFalseByMethod'
 			with: 'methodName'.
-	p2 := (stsp asCString: #declareStaticFalseByPragma)
+	p2 _ (stsp asCString: #declareStaticFalseByPragma)
 			copyReplaceAll: 'declareStaticFalseByPragma'
 			with: 'methodName'.
 	self assert: m2 = p2.
@@ -514,9 +593,9 @@ testPluginDoNotGenerateByMethod
 	"A doNotdoNotGenerate statement should prevent code generation"
 
 	| stsp m |
-	stsp := SlangTestSupportPlugin inline: false.
+	stsp _ SlangTestSupportPlugin inline: false.
 	self assert: (SlangTestSupportPlugin canUnderstand: #doNotGenerateByMethod).
-	m := stsp asCString: #doNotGenerateByMethod.
+	m _ stsp asCString: #doNotGenerateByMethod.
 	
 	self assert: (m includesSubString: 'No source has been generated').
 	self deny: (stsp asCString includesSubString: 'doNotGenerateByMethod').
@@ -528,9 +607,9 @@ testPluginDoNotGenerateByPragma
 	"A <doNotdoNotGenerate> declaration should prevent code generation"
 
 	| stsp m |
-	stsp := SlangTestSupportPlugin inline: false.
+	stsp _ SlangTestSupportPlugin inline: false.
 	self assert: (SlangTestSupportPlugin canUnderstand: #doNotGenerateByPragma).
-	m := stsp asCString: #doNotGenerateByPragma.
+	m _ stsp asCString: #doNotGenerateByPragma.
 	
 	self assert: (m includesSubString: 'No source has been generated').
 	self deny: (stsp asCString includesSubString: 'doNotGenerateByPragma').
@@ -542,9 +621,9 @@ testPluginDoNotGenerateSubclassResponsibility
 	"If a method contains self subclassResponsibility, assume it is not meant for translation."
 
 	| stsp m |
-	stsp := SlangTestSupportPlugin inline: false.
+	stsp _ SlangTestSupportPlugin inline: false.
 	self assert: (SlangTestSupportPlugin canUnderstand: #anAbstractMethod).
-	m := stsp asCString: #anAbstractMethod.
+	m _ stsp asCString: #anAbstractMethod.
 	
 	self assert: (m includesSubString: 'No source has been generated').
 	self deny: (stsp asCString includesSubString: 'anAbstractMethod').
@@ -557,8 +636,8 @@ testPluginMixedMethodAndPragmaDeclarations
 	"Pragmas and method declarations should coexist"
 
 	| stsp s |
-	stsp := SlangTestSupportPlugin inline: false.
-	s := (stsp asCString: #varDefByMethodAndPragma)
+	stsp _ SlangTestSupportPlugin inline: false.
+	s _ (stsp asCString: #varDefByMethodAndPragma)
 			copyReplaceAll: 'varDefByMethod'
 			with: 'methodName'.
 	self assert: (s includesSubString: 'unsigned int * bar').
@@ -573,11 +652,11 @@ testPluginReturnTypeC
 	traditional method send declarations"
 
 	| stsp m p |
-	stsp := SlangTestSupportPlugin inline: false.
-	m := (stsp asCString: #returnTypeByMethod)
+	stsp _ SlangTestSupportPlugin inline: false.
+	m _ (stsp asCString: #returnTypeByMethod)
 			copyReplaceAll: 'returnTypeByMethod'
 			with: 'methodName'.
-	p := (stsp asCString: #returnTypeByPragma)
+	p _ (stsp asCString: #returnTypeByPragma)
 			copyReplaceAll: 'returnTypeByPragma'
 			with: 'methodName'.
 	self assert: m = p! !
@@ -588,50 +667,14 @@ testPluginTypeDeclarations
 	traditional method send declarations"
 
 	| stsp m p |
-	stsp := SlangTestSupportPlugin inline: false.
-	m := (stsp asCString: #varDefByMethod)
+	stsp _ SlangTestSupportPlugin inline: false.
+	m _ (stsp asCString: #varDefByMethod)
 			copyReplaceAll: 'varDefByMethod'
 			with: 'methodName'.
-	p := (stsp asCString: #varDefByPragma)
+	p _ (stsp asCString: #varDefByPragma)
 			copyReplaceAll: 'varDefByPragma'
 			with: 'methodName'.
 	self assert: m = p! !
-
-!SlangTest methodsFor: 'testing var decl requires memoryaccess' stamp: 'jpb 5/13/2020 22:42:19'!
-testRemoveTypeDeclarationForRemovedIntermediate
-	"Document a bug in variable declaration. This is hard to reproduce, so the test uses
-	the actual failure. Necessary conditions are to use MemoryAccess (requires deep
-	inlining), then generate the entire interpreter. The error condition appears in the
-	reverseDisplayFrom:to: method. Generating that method alone is not sufficient to
-	reproduce the bug, the entire interpreter must first be generated, after which the
-	method may be individually generated to inspect for the error condition. Symptoms
-	are that #ptr, which is used as a sqInt, is incorrectly declared as (char *) due to a
-	left over unreferenced declaration in one of the inlined methods.
-	The bug exists as of VMMaker-dtl.342 and is corrected in VMMaker-dtl.343."
-
-	| ma maState |
-	ma := Smalltalk classNamed: #MemoryAccess.
-	ma ifNil: [^ self
-		"requires these accessors in combination with object memory / interpreter refactoring in order to reproduce bug"].
-	maState := ma isEnabled.
-	[ | s cg strm meth |
-		ma enable.
-		cg := SlangCCodeGenerator new initialize.
-		cg declareMethodsStatic: false.
-		Interpreter initializeCodeGenerator: cg.
-		cg vmClass: Interpreter.
-		strm := ReadWriteStream on: ''.
-		cg emitCCodeOn: strm doInlining: true doAssertions: false.
-		meth := cg methodNamed: 'reverseDisplayFrom:to:' .
-		strm := ReadWriteStream on: ''.
-		meth emitCCodeOn: strm generator: cg.
-		s := strm contents.
-		self shouldnt: ('*char #ptr;*' match: s).
-		self should: ('*sqInt ptr;*' match: s)
-	] ensure: [maState
-		ifTrue: [ma enable]
-		ifFalse: [ma disable]]
-	! !
 
 !SlangTestSupportInterpreter methodsFor: 'other declarations' stamp: 'dtl 8/25/2011 22:21'!
 anAbstractMethod
@@ -660,7 +703,7 @@ doNotGenerateByPragma
 asCString
 
 	| stream |
-	stream := ReadWriteStream on: String new.
+	stream _ ReadWriteStream on: String new.
 	self cg emitCCodeOn: stream doAssertions: true.
 	^ stream contents
 ! !
@@ -669,9 +712,9 @@ asCString
 asCString: selector
 
 	| method stream |
-	method := self cg methodNamed: selector.
+	method _ self cg methodNamed: selector.
 	method ifNil: [^ 'No source has been generated'].
-	stream := ReadWriteStream on: String new.
+	stream _ ReadWriteStream on: String new.
 	method emitCCodeOn: stream generator: cg.
 	^ stream contents
 ! !
@@ -681,7 +724,7 @@ cg
 	"Lazy initialize, once per test"
 
 	cg ifNil: [
-		cg := self class buildCodeGeneratorInlined: inlineFlag = true.
+		cg _ self class buildCodeGeneratorInlined: inlineFlag = true.
 		cg prepareMethodsInlined: inlineFlag = true doAssertions: true].
 	^ cg! !
 
@@ -701,25 +744,10 @@ callMethodTwiceWithSendInLoopLimit
 	1 to: self methodWithIntegerResult do: [:i | ].
 ! !
 
-!SlangTestSupportInterpreter methodsFor: 'loop limits' stamp: 'dtl 4/4/2013 20:51'!
-callMethodWithLoopLimitThatIsNotModified
-
-	<export: true>
-	| aVar |
-	aVar := 'foo'.
-	self methodWithLoopLimitThatIsNotModified: aVar.
-! !
-
 !SlangTestSupportInterpreter methodsFor: 'loop limits' stamp: 'dtl 4/4/2013 21:37'!
 methodWithIntegerResult
 	"Translates to nonsense, but use this to illustrate the point"
 	^(Random new next * 100) asInteger! !
-
-!SlangTestSupportInterpreter methodsFor: 'loop limits' stamp: 'dtl 4/4/2013 20:48'!
-methodWithLoopLimitThatIsNotModified: arrayObj
-
-	0 to: 10 do: [:i | self storePointerUnchecked: i ofObject: arrayObj withValue: nilObj]
-! !
 
 !SlangTestSupportInterpreter methodsFor: 'export declaration' stamp: 'dtl 4/25/2011 23:00'!
 declareExportFalseByMethod
@@ -817,7 +845,7 @@ preprocessorExpression
 
 !SlangTestSupportInterpreter methodsFor: 'initialize' stamp: 'dtl 3/18/2013 09:47'!
 inline: flag
-	inlineFlag := flag! !
+	inlineFlag _ flag! !
 
 !SlangTestSupportInterpreter methodsFor: 'inlining' stamp: 'dtl 4/25/2011 23:01'!
 inlineByMethod
@@ -825,8 +853,8 @@ inlineByMethod
 	"SlangTestSupportInterpreter asInlinedCString: #inlineByMethod"
 
 	| bar foo |
-	foo := self methodThatShouldBeInlinedByMethod.
-	bar := self methodThatShouldNotBeInlinedByMethod! !
+	foo _ self methodThatShouldBeInlinedByMethod.
+	bar _ self methodThatShouldNotBeInlinedByMethod! !
 
 !SlangTestSupportInterpreter methodsFor: 'inlining' stamp: 'dtl 4/26/2011 18:40'!
 inlineByPragma
@@ -834,8 +862,8 @@ inlineByPragma
 	"SlangTestSupportInterpreter asInlinedCString: #inlineByPragma"
 
 	| bar foo |
-	foo := self methodThatShouldBeInlinedByPragma.
-	bar := self methodThatShouldNotBeInlinedByPragma! !
+	foo _ self methodThatShouldBeInlinedByPragma.
+	bar _ self methodThatShouldNotBeInlinedByPragma! !
 
 !SlangTestSupportInterpreter methodsFor: 'inlining' stamp: 'dtl 9/18/2010 17:59'!
 methodThatShouldBeInlinedByMethod
@@ -864,25 +892,25 @@ methodThatShouldNotBeInlinedByPragma
 !SlangTestSupportInterpreter methodsFor: 'local and instance vars' stamp: 'dtl 4/26/2011 07:38'!
 methodWithReferenceToAVarWithTwoReferences
 
-	aVarWithTwoReferences := 'use the variable here also'.
+	aVarWithTwoReferences _ 'use the variable here also'.
 ! !
 
 !SlangTestSupportInterpreter methodsFor: 'local and instance vars' stamp: 'dtl 4/26/2011 07:38'!
 methodWithReferenceToVariables
 
-	aVarWithOneReference := 'use the variable in this method only'.
-	aVarWithTwoReferences := 'use the variable in this method and in one other method'.
+	aVarWithOneReference _ 'use the variable in this method only'.
+	aVarWithTwoReferences _ 'use the variable in this method and in one other method'.
 ! !
 
 !SlangTestSupportInterpreter methodsFor: 'local and instance vars' stamp: 'dtl 2/11/2012 17:50'!
 setAVariable: oop
-	aVariable := oop! !
+	aVariable _ oop! !
 
 !SlangTestSupportInterpreter methodsFor: 'local and instance vars' stamp: 'dtl 7/9/2012 19:49'!
 setBreakSelector: aString
 	"breakSelector is an instance variable and should not be declared as a local in
 	the generated code"
-	breakSelector := aString! !
+	breakSelector _ aString! !
 
 !SlangTestSupportInterpreter methodsFor: 'local and instance vars' stamp: 'dtl 11/24/2014 22:11'!
 sizeOfFoo
@@ -936,7 +964,7 @@ buildCodeGeneratorInlined: doInlining
 	"Build a CCodeGenerator for this class."
 
 	 | cg |
-	cg := SlangCCodeGeneratorGlobalStructure new initialize.
+	cg _ SlangCCodeGeneratorGlobalStructure new initialize.
 	cg declareMethodsStatic: false.
 	cg permitMethodPruning: true.
 	cg uncheckedAbstractMethods addAll: self abstractSelectors.
@@ -995,7 +1023,7 @@ doNotGenerateByPragma
 asCString
 
 	| stream |
-	stream := ReadWriteStream on: String new.
+	stream _ ReadWriteStream on: String new.
 	self cg emitCCodeOn: stream doAssertions: true.
 	^ stream contents
 ! !
@@ -1004,9 +1032,9 @@ asCString
 asCString: selector
 
 	| method stream |
-	method := self cg methodNamed: selector.
+	method _ self cg methodNamed: selector.
 	method ifNil: [^ 'No source has been generated'].
-	stream := ReadWriteStream on: String new.
+	stream _ ReadWriteStream on: String new.
 	method emitCCodeOn: stream generator: cg.
 	^ stream contents
 ! !
@@ -1016,7 +1044,7 @@ cg
 	"Lazy initialize, once per test"
 
 	cg ifNil: [
-		cg := self class buildCodeGeneratorInlined: inlineFlag = true.
+		cg _ self class buildCodeGeneratorInlined: inlineFlag = true.
 		cg prepareMethodsInlined: inlineFlag = true doAssertions: true].
 	^ cg! !
 
@@ -1034,15 +1062,6 @@ callMethodTwiceWithSendInLoopLimit
 	<export: true>
 	1 to: self methodWithIntegerResult do: [:i | ].
 	1 to: self methodWithIntegerResult do: [:i | ].
-! !
-
-!SlangTestSupportPlugin methodsFor: 'loop limits' stamp: 'dtl 4/4/2013 20:51'!
-callMethodWithLoopLimitThatIsNotModified
-
-	<export: true>
-	| aVar |
-	aVar := 'foo'.
-	self methodWithLoopLimitThatIsNotModified: aVar.
 ! !
 
 !SlangTestSupportPlugin methodsFor: 'loop limits' stamp: 'dtl 4/4/2013 21:37'!
@@ -1121,7 +1140,7 @@ declareStaticTrueByPragma
 
 !SlangTestSupportPlugin methodsFor: 'initialize' stamp: 'dtl 3/18/2013 14:48'!
 inline: flag
-	inlineFlag := flag! !
+	inlineFlag _ flag! !
 
 !SlangTestSupportPlugin methodsFor: 'inlining' stamp: 'dtl 9/19/2010 11:50'!
 inlineByMethod
@@ -1129,8 +1148,8 @@ inlineByMethod
 	"SlangTestSupport asInlinedCString: #inlineByMethod"
 
 	| bar foo |
-	foo := self methodThatShouldBeInlinedByMethod.
-	bar := self methodThatShouldNotBeInlinedByMethod! !
+	foo _ self methodThatShouldBeInlinedByMethod.
+	bar _ self methodThatShouldNotBeInlinedByMethod! !
 
 !SlangTestSupportPlugin methodsFor: 'inlining' stamp: 'dtl 9/19/2010 11:50'!
 inlineByPragma
@@ -1138,8 +1157,8 @@ inlineByPragma
 	"SlangTestSupport asInlinedCString: #inlineByPragma"
 
 	| bar foo |
-	foo := self methodThatShouldBeInlinedByPragma.
-	bar := self methodThatShouldNotBeInlinedByPragma! !
+	foo _ self methodThatShouldBeInlinedByPragma.
+	bar _ self methodThatShouldNotBeInlinedByPragma! !
 
 !SlangTestSupportPlugin methodsFor: 'inlining' stamp: 'dtl 9/18/2010 17:59'!
 methodThatShouldBeInlinedByMethod
@@ -1213,7 +1232,7 @@ buildCodeGeneratorInlined: doInlining
 	"Build a CCodeGenerator for this class."
 
 	 | cg |
-	cg := SlangVMPluginCodeGenerator new initialize.
+	cg _ SlangVMPluginCodeGenerator new initialize.
 	cg declareMethodsStatic: false.
 	cg permitMethodPruning: true.
 	cg uncheckedAbstractMethods addAll: self abstractSelectors.

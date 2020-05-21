@@ -32,6 +32,15 @@ class hierarchy and returning `false` on an error if `isTypePointerToStruct:`
 is not implemented. This is according to my always flawless taste about code
 (That is supposed to be ironic) the better choice of handling this.
 
+I renamed `cCoerceSimple:to:` to `coerceSimple:to:` as this fits more
+into my interpretation of Slang. When writing code I don't want to always
+say with my method usages, that it's a C construct. I mean type coercion
+is not in this case a C construct, but a Slang construct. So what is Slang?
+Surely a typed language with really simple types like integers, strings,
+structs, pointers and arrays. Which can be implemented on the translation level
+with some hacks ontop of other languages which implement some superset of C.
+
+
 ## 20th May 2020 (jpb)
 
 Yesterday I removed a couple of unreferenced methods, which sometimes
