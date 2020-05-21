@@ -9,6 +9,29 @@ authors at the end of the file.
 
 # Entries
 
+## 21th May 2020 (jpb)
+
+Today I wrote a small [Design document](docs/Design.md) which has
+only the intention of showing what is the broad structure of the
+Slang package, when I don't lose focuse I'll add to it during the
+progress of this "enterprise".
+
+I found and interesting tutorial about writing interpreters in
+[PyPy](https://morepypy.blogspot.com/2011/04/tutorial-writing-interpreter-with-pypy.html)
+which can contribute a couple of ideas of using it at some time in
+the future, IF the project progresses that far, for how Slang is
+supposed to feel like when writing an interpreter. Usability is a big
+thing.
+
+Renamed `isTypePointerToStruct:` to `isTypedPointerToStruct:`, because
+I think it reads a little bit more nicely. As it's about the the pointer
+is typed and not the type pointer .. whatever. I added a specialized
+repository for looking up types called `SlangCTypeRepository` for handling
+these issues as currently this is implemented by delegating wild into the
+class hierarchy and returning `false` on an error if `isTypePointerToStruct:`
+is not implemented. This is according to my always flawless taste about code
+(That is supposed to be ironic) the better choice of handling this.
+
 ## 20th May 2020 (jpb)
 
 Yesterday I removed a couple of unreferenced methods, which sometimes
