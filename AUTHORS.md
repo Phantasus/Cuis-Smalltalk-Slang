@@ -114,3 +114,43 @@ MIT License are:
 > 62d433668564d31067f2e2fbe4d039253c581c07b86ae19bc9f856ae45ae8e4c  LICENSE-VMMakerJS.md
 
 The only difference of these files are the copyright notices.
+
+
+## Authors of re-imported SmartSyntaxPlugin related classes back in (23th May 2020)
+
+Saved for completeness selected exports from the VMMaker image for re-integrating
+the newest versions of the VMMaker versions of the plugin interfaces. Initially
+these classes were removed, because their exact purpose wasn't clear and they
+caused of their specific implementations that the associated unit tests break.
+
+> Name: VMMaker-dtl.415
+> Author: dtl
+> Time: 19 April 2020, 5:30:30.208 pm
+> UUID: 747f8591-57e6-4950-858a-c7fbc22ad1c2
+> Ancestors: VMMaker-dtl.414
+
+The sha256sum of these different files, they are 1:1 the exact filed out files,
+except that carriage returns were replaced by newlines before running the sha256sum
+over them, so that they can be imported into a running Cuis Image.
+
+> 32da5892ee2a4b462108cbf255ca1666a5ceca24047c8ca75162256dcc7a434b  References/SmartSyntaxInterpreterPlugin.st
+> f9d2362ea73eb15bb39c64083b4df79f465eab04057ce174d13d9cd0410c4c26  References/SmartSyntaxPluginCodeGenerator.st
+> aa1074b163e686b053f4ba94258a8f72ac3e979adf24a5ed0848b6fa5bb6dc1e  References/SmartSyntaxPluginTMethod.st
+> 91e1d8242941af601b4f2fce0fce85e5044092cdeed0b5b9342f46980aaa21d2  References/SlangTestSupportSSIP.st
+> 6a34cdcebe7112bab38b4bb828be4156c545ca1188bcff1cb11d7cea16a7b65d  References/InterpreterPlugin.st
+> 67187e04c3d50e9a2fe9bd7f4f17dec7bc2185071f92107e41d8eafc90ec6eac  References/Oop.st
+
+Contributors of these files are
+    - Andrew C. Greenberg (acg)
+    - Anthony Hannan (ajh)
+    - Andreas Raab (ar)
+    - Bert Freudenberg (bf)
+    - Dave Lewis (dtl)
+    - Eliot Emilio Miranda (eem)
+    - Esteban Lorenzano (EstebanLorenzano)
+    - Ian Piumarta (ikp)
+    - Ronaldo M. Ferraz (RMF)
+    - Stefan Matthias Aust (sma)
+    - Stephan Rudlof (sr)
+    - Tim Rowledge (tpr / TPR)
+    - Yoshiki Ohshima (yo)
