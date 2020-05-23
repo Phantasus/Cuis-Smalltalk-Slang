@@ -27,6 +27,18 @@ code in a different way, but that is the only thing I can deduce
 from skimming over it. It adds again multiple special typecasting
 methods on different object classes, which isn't great.
 
+In theory you would want to generate code which can be fed into
+the VM and which respects its interfaces, but doesn't depend
+on the internal structure of the VMMaker package. But I fear
+this is not going to happen? As for external plugins the
+class to use seems to be the `SmartSyntaxPlugin` and its code
+generator. They in turn are depending on the interpreter proxy
+which depends on other things and so we could have again the
+whole VMMaker here. Not an optimal situation it seems there
+must be an interface defined as "how it is" so maybe one generated
+Plugin Template from the opensmalltalks-vm subdirs and tested against
+that and hoped that this interface won't break in the future.
+
 
 ## 21th May 2020 (jpb)
 
