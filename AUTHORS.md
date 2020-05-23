@@ -133,13 +133,17 @@ The sha256sum of these different files, they are 1:1 the exact filed out files,
 except that carriage returns were replaced by newlines before running the sha256sum
 over them, so that they can be imported into a running Cuis Image.
 
-> 32da5892ee2a4b462108cbf255ca1666a5ceca24047c8ca75162256dcc7a434b  References/SmartSyntaxInterpreterPlugin.st
-> f9d2362ea73eb15bb39c64083b4df79f465eab04057ce174d13d9cd0410c4c26  References/SmartSyntaxPluginCodeGenerator.st
-> aa1074b163e686b053f4ba94258a8f72ac3e979adf24a5ed0848b6fa5bb6dc1e  References/SmartSyntaxPluginTMethod.st
-> 91e1d8242941af601b4f2fce0fce85e5044092cdeed0b5b9342f46980aaa21d2  References/SlangTestSupportSSIP.st
-> 6a34cdcebe7112bab38b4bb828be4156c545ca1188bcff1cb11d7cea16a7b65d  References/InterpreterPlugin.st
-> 67187e04c3d50e9a2fe9bd7f4f17dec7bc2185071f92107e41d8eafc90ec6eac  References/Oop.st
-> 067ad5c266a2fd8c632a9e72b150ee18e11363ba9d9e82ddb548438ea7d6713a  References/Unsigned.st
+> 6c7d77c8e049cf7f9d23f295954a8da85d757bb89dc059e25c5bca344a090a26  References/InterpreterPlugin.st
+> f18d43c4f5ed6e175ff9f2b38120da1cd35837b38ede31d0e988e915c8d4f309  References/Oop.st
+> a9cb2fa666499d9a23c3631dc653976e3164eb7b027efdc8c1530aa2e1cd7eca  References/SlangTestSupportSSIP.st
+> 484931acc74cc8d9ba3aefbdba07dc6e500b4b54c8ae49e635929fc70295ffce  References/SlangTest-testing smart syntax.st
+> 5ebf413bb9b730c025e40def213943867fa8943e676a98c8c48ee3147e5a23cd  References/SlangTest-testing ssip plugins.st
+> 4e23b1f3741d45541cf03bcb0c5991acfae51cc8548b72c765034ef5c52e6821  References/SmartSyntaxInterpreterPlugin.st
+> 2bf0bf533e33c2540723da0729c6fd81952888c503c0994cbb7e09c2bab6a7d1  References/SmartSyntaxPluginCodeGenerator.st
+> 25c54b3643f2f1955754178b08692870831ba967b1457cd1fe5a47ac83f258bb  References/SmartSyntaxPluginTMethod.st
+> cf84c89577c39079364ab93830cfbd14ad0c75389541b8c2ba169c75332a1dba  References/Unsigned.st
+
+
 
 Contributors of these files are:
 
