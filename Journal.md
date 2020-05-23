@@ -9,6 +9,20 @@ authors at the end of the file.
 
 # Entries
 
+## 23th May 2020 (jpb)
+
+Today there was a Jitsi Meeting with Cuis developers and the
+topic of a faster call of external libraries came up. For this
+case the current old Squeak FFI interface which is used by
+Cuis is for rapid callbacks too slow as it seems to do too much
+conversions. So the case for packaging external libraries as
+external VM plugins came up. To my suprise there would be a
+concrete usecase for my current extracting efforts of Slang
+as I would also want to use it for calling a library.
+That's energizing, but sadly also stressful. How do I get
+that done correctly?
+
+
 ## 21th May 2020 (jpb)
 
 Today I wrote a small [Design document](docs/Design.md) which has
@@ -39,6 +53,15 @@ is not in this case a C construct, but a Slang construct. So what is Slang?
 Surely a typed language with really simple types like integers, strings,
 structs, pointers and arrays. Which can be implemented on the translation level
 with some hacks ontop of other languages which implement some superset of C.
+
+What really would be interesting is if you could pass into a code generator
+any object and it will try to translate it to C or any supported programming
+language. So that would mean in that case, that the input object is written
+in a way, which is "almost Slang" as only something supported in Slang
+could be translated. That would be an intriguing property, but how would you
+do that without changing the input object? In the past Slang inlined it's
+methods under the "*VMMAker C translation" category on the `Object` class,
+which made all objects potential inputs, but do I need to do that?
 
 
 ## 20th May 2020 (jpb)
