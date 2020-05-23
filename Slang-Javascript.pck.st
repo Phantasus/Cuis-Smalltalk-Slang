@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4112] on 21 May 2020 at 11:40:05 am'!
+'From Cuis 5.0 [latest update: #4112] on 23 May 2020 at 10:15:10 pm'!
 'Description License: MIT'!
-!provides: 'Slang-Javascript' 1 6!
+!provides: 'Slang-Javascript' 1 7!
 SystemOrganization addCategory: #'Slang-Javascript'!
 
 
@@ -1449,9 +1449,9 @@ isNonArgumentImplicitReceiverVariableName: aString
 			ifNil: [#('interpreterProxy' 'self') includes: aString]
 	 		ifNotNil: [originClass isNonArgumentImplicitReceiverVariableName: aString]]! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'eem 12/15/2008 18:38'!
+!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/21/2020 18:39:05'!
 isPointerToStructVariableName: varName "<String>"
-	^self isTypePointerToStruct: (self typeOfVariable: varName)! !
+	^self isType: (self typeOfVariable: varName) kind: #pointerToStruct! !
 
 !JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/21/2020 09:56:57'!
 isTypedPointerToStruct: type "<String>"

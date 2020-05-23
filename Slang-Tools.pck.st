@@ -1,9 +1,19 @@
-'From Cuis 5.0 [latest update: #4112] on 21 May 2020 at 11:40:07 am'!
+'From Cuis 5.0 [latest update: #4112] on 23 May 2020 at 11:07:17 pm'!
 'Description License: MIT'!
-!provides: 'Slang-Tools' 1 8!
+!provides: 'Slang-Tools' 1 12!
 SystemOrganization addCategory: #'Slang-Tools-Tests'!
 SystemOrganization addCategory: #'Slang-Tools'!
 
+
+!classDefinition: #SlangOop category: #'Slang-Tools'!
+Behavior subclass: #SlangOop
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-Tools'!
+!classDefinition: 'SlangOop class' category: #'Slang-Tools'!
+SlangOop class
+	instanceVariableNames: ''!
 
 !classDefinition: #SlangCCodeGeneratorTest category: #'Slang-Tools-Tests'!
 TestCase subclass: #SlangCCodeGeneratorTest
@@ -23,6 +33,16 @@ TestCase subclass: #SlangCLanguageWriterTest
 	category: 'Slang-Tools-Tests'!
 !classDefinition: 'SlangCLanguageWriterTest class' category: #'Slang-Tools-Tests'!
 SlangCLanguageWriterTest class
+	instanceVariableNames: ''!
+
+!classDefinition: #SlangCTypeRepositoryTest category: #'Slang-Tools-Tests'!
+TestCase subclass: #SlangCTypeRepositoryTest
+	instanceVariableNames: 'usedClass'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-Tools-Tests'!
+!classDefinition: 'SlangCTypeRepositoryTest class' category: #'Slang-Tools-Tests'!
+SlangCTypeRepositoryTest class
 	instanceVariableNames: ''!
 
 !classDefinition: #SlangSystemServiceTest category: #'Slang-Tools-Tests'!
@@ -346,6 +366,12 @@ SlangTVariableNode class
 	instanceVariableNames: ''!
 
 
+!SlangOop commentStamp: '<historical>' prior: 0!
+Cooercion specification for Identity coercions:
+
+	x asOop: Oop == x
+	y asValue: Oop == y!
+
 !SlangCCodeGeneratorTest commentStamp: '<historical>' prior: 0!
 I test the generic C code generator!
 
@@ -481,6 +507,31 @@ isVariable
 
 	^true! !
 
+!SlangOop class methodsFor: 'plugin generation' stamp: 'eem 10/2/2010 14:12'!
+ccg: cg generateCoerceToOopFrom: aNode on: aStream
+	"N.B.  The is used both for generation and simulation so answer the result (for interpretation)"
+	^cg emitCExpression: aNode on: aStream! !
+
+!SlangOop class methodsFor: 'plugin generation' stamp: 'eem 10/3/2010 08:09'!
+ccg: cg generateCoerceToValueFrom: aNode on: aStream
+	"N.B.  The could be used both for generation and simulation so answer the result (for interpretation)"
+	^cg emitCExpression: aNode on: aStream! !
+
+!SlangOop class methodsFor: 'plugin generation' stamp: 'acg 9/18/1999 15:58'!
+ccg: cg prolog: aBlock expr: aString index: anInteger
+
+	^cg ccgLoad: aBlock expr: aString asRawOopFrom: anInteger! !
+
+!SlangOop class methodsFor: 'plugin generation' stamp: 'acg 9/20/1999 11:17'!
+ccgCanConvertFrom: anObject
+
+	^(anObject isKindOf: SmallInteger) not! !
+
+!SlangOop class methodsFor: 'plugin generation' stamp: 'ikp 3/31/2005 14:20'!
+ccgDeclareCForVar: aSymbolOrString
+
+	^'sqInt ', aSymbolOrString! !
+
 !SlangCCodeGeneratorTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/19/2020 16:01:41'!
 setUp
 	usedClass _ SlangCCodeGenerator! !
@@ -506,6 +557,57 @@ testWritingConstants
 	
 	writer nextPutConstantNamed: 'foo' value: 123.
 	self assert: '#define foo 123' equals: buffer contents.! !
+
+!SlangCTypeRepositoryTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 18:43:11'!
+makeRepository.
+	^usedClass new	! !
+
+!SlangCTypeRepositoryTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 18:41:38'!
+setUp
+	usedClass _ SlangCTypeRepository ! !
+
+!SlangCTypeRepositoryTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 18:42:55'!
+testFindBaseTypeForType
+	| repository |
+	repository _ self makeRepository.
+	
+	self assert: (repository findBaseTypeForType: 'int') isNil! !
+
+!SlangCTypeRepositoryTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 18:45:35'!
+testFindStructTargetKindForDeclaration
+	| repository |
+	repository _ self makeRepository.
+	
+	self assert: (repository findStructTargetKindForDeclaration: nil) isNil.
+	self assert: (repository findStructTargetKindForDeclaration: 'int') isNil.! !
+
+!SlangCTypeRepositoryTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 18:48:20'!
+testFindTypeForDeclarationLookup
+	| repository |
+	repository _ self makeRepository.
+	
+	self assert: 'int' equals: (repository findTypeFor: 'foo' fromDeclaration: 'int foo').
+	self assert: 'char*' equals: (repository findTypeFor: 'squeak' fromDeclaration: 'static char* squeak').! !
+
+!SlangCTypeRepositoryTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 18:50:10'!
+testIsTypeStruct
+	| repository |
+	repository _ self makeRepository.
+	
+	self deny: (repository isTypeStruct: 'int').
+	self deny: (repository isTypeStruct: nil).
+	self deny: (repository isTypeStruct: 'char *').
+	! !
+
+!SlangCTypeRepositoryTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 18:50:50'!
+testIsTypedPointerToStruct
+	| repository |
+	repository _ self makeRepository.
+	
+	self deny: (repository isTypedPointerToStruct: 'int').
+	self deny: (repository isTypedPointerToStruct: nil).
+	self deny: (repository isTypedPointerToStruct: 'char *').
+	! !
 
 !SlangSystemServiceTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/20/2020 22:28:19'!
 setUp
@@ -1201,6 +1303,9 @@ isDefinedTrueExpression: condition inSmalltalk: conditionBlock comment: commentS
 		ifTrue: [trueExpressionOrBlock value]
 		ifFalse: [falseExpressionOrBlockOrNil value]
 ! !
+
+!SlangPlugin methodsFor: 'as yet unclassified' stamp: 'jpb 5/23/2020 22:05:58'!
+initialiseModule! !
 
 !SlangPlugin class methodsFor: 'as yet unclassified' stamp: 'jpb 5/18/2020 15:39:40'!
 initializeCodeGenerator: codeGenerator
@@ -3250,12 +3355,12 @@ pushScope: variableToType "<Dictionary>" while: aBlock
 	scopeStack addLast: variableToType.
 	^aBlock ensure: [scopeStack removeLast]! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/15/2020 22:48:58'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/21/2020 18:39:38'!
 selectorReturnsPointerToStruct: selector "<Symbol>"
 	| tMethod |
 	^originClass notNil
 	  and: [(tMethod _ methods at: selector ifAbsent: []) notNil
-	  and: [originClass isTypePointerToStruct: tMethod returnType]]! !
+	  and: [self isType: tMethod returnType kind: #pointerToStruct]]! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/20/2020 23:28:41'!
 selectorReturnsStruct: selector "<Symbol>"

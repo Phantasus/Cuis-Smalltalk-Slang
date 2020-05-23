@@ -1,4 +1,4 @@
-'From Cuis 5.0 [latest update: #4112] on 21 May 2020 at 11:40:09 am'!
+'From Cuis 5.0 [latest update: #4112] on 23 May 2020 at 10:15:08 pm'!
 'Description License: MIT'!
 !provides: 'Slang-Tools-Tests' 1 1!
 SystemOrganization addCategory: #'Slang-Tools-Tests'!
@@ -22,6 +22,16 @@ TestCase subclass: #SlangCLanguageWriterTest
 	category: 'Slang-Tools-Tests'!
 !classDefinition: 'SlangCLanguageWriterTest class' category: #'Slang-Tools-Tests'!
 SlangCLanguageWriterTest class
+	instanceVariableNames: ''!
+
+!classDefinition: #SlangCTypeRepositoryTest category: #'Slang-Tools-Tests'!
+TestCase subclass: #SlangCTypeRepositoryTest
+	instanceVariableNames: 'usedClass'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-Tools-Tests'!
+!classDefinition: 'SlangCTypeRepositoryTest class' category: #'Slang-Tools-Tests'!
+SlangCTypeRepositoryTest class
 	instanceVariableNames: ''!
 
 !classDefinition: #SlangSystemServiceTest category: #'Slang-Tools-Tests'!
@@ -64,6 +74,16 @@ SlangPlugin subclass: #SlangTestSupportPlugin
 SlangTestSupportPlugin class
 	instanceVariableNames: ''!
 
+!classDefinition: #SlangTestSupportSSIP category: #'Slang-Tools-Tests'!
+SlangSmartSyntaxInterpreterPlugin subclass: #SlangTestSupportSSIP
+	instanceVariableNames: 'cg inlineFlag'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-Tools-Tests'!
+!classDefinition: 'SlangTestSupportSSIP class' category: #'Slang-Tools-Tests'!
+SlangTestSupportSSIP class
+	instanceVariableNames: ''!
+
 
 !SlangCCodeGeneratorTest commentStamp: '<historical>' prior: 0!
 I test the generic C code generator!
@@ -85,6 +105,14 @@ for base plugins.
 
 	"VMMaker clearCacheEntriesFor: SlangTestSupportPlugin.
 	SlangTestSupportPlugin asCString"!
+
+!SlangTestSupportSSIP commentStamp: 'dtl 9/19/2010 11:38' prior: 0!
+SlangTestSupportSSIP implements translatable methods for use in SlangTest unit tests.
+It is a subclass of SlangSmartSyntaxInterpreterPlugin, which requires additional
+test coverage.
+
+	"VMMaker clearCacheEntriesFor: SlangTestSupportSSIP.
+	SlangTestSupportSSIP asCString"!
 
 !SlangCCodeGeneratorTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/19/2020 16:01:41'!
 setUp
@@ -111,6 +139,57 @@ testWritingConstants
 	
 	writer nextPutConstantNamed: 'foo' value: 123.
 	self assert: '#define foo 123' equals: buffer contents.! !
+
+!SlangCTypeRepositoryTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 18:43:11'!
+makeRepository.
+	^usedClass new	! !
+
+!SlangCTypeRepositoryTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 18:41:38'!
+setUp
+	usedClass _ SlangCTypeRepository ! !
+
+!SlangCTypeRepositoryTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 18:42:55'!
+testFindBaseTypeForType
+	| repository |
+	repository _ self makeRepository.
+	
+	self assert: (repository findBaseTypeForType: 'int') isNil! !
+
+!SlangCTypeRepositoryTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 18:45:35'!
+testFindStructTargetKindForDeclaration
+	| repository |
+	repository _ self makeRepository.
+	
+	self assert: (repository findStructTargetKindForDeclaration: nil) isNil.
+	self assert: (repository findStructTargetKindForDeclaration: 'int') isNil.! !
+
+!SlangCTypeRepositoryTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 18:48:20'!
+testFindTypeForDeclarationLookup
+	| repository |
+	repository _ self makeRepository.
+	
+	self assert: 'int' equals: (repository findTypeFor: 'foo' fromDeclaration: 'int foo').
+	self assert: 'char*' equals: (repository findTypeFor: 'squeak' fromDeclaration: 'static char* squeak').! !
+
+!SlangCTypeRepositoryTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 18:50:10'!
+testIsTypeStruct
+	| repository |
+	repository _ self makeRepository.
+	
+	self deny: (repository isTypeStruct: 'int').
+	self deny: (repository isTypeStruct: nil).
+	self deny: (repository isTypeStruct: 'char *').
+	! !
+
+!SlangCTypeRepositoryTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 18:50:50'!
+testIsTypedPointerToStruct
+	| repository |
+	repository _ self makeRepository.
+	
+	self deny: (repository isTypedPointerToStruct: 'int').
+	self deny: (repository isTypedPointerToStruct: nil).
+	self deny: (repository isTypedPointerToStruct: 'char *').
+	! !
 
 !SlangSystemServiceTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/20/2020 22:28:19'!
 setUp
@@ -675,6 +754,175 @@ testPluginTypeDeclarations
 			copyReplaceAll: 'varDefByPragma'
 			with: 'methodName'.
 	self assert: m = p! !
+
+!SlangTest methodsFor: 'testing ssip plugins' stamp: 'dtl 3/18/2013 18:42'!
+testSSIPDeclareExport
+	"Pragma declarations should generate the same C source code as the
+	traditional method send declarations"
+
+	| stss m p |
+	stss := SlangTestSupportSSIP inline: false.
+	m := (stss asCString: #declareExportTrueByMethod)
+			copyReplaceAll: 'declareExportTrueByMethod'
+			with: 'methodName'.
+	p := (stss asCString: #declareExportTrueByPragma)
+			copyReplaceAll: 'declareExportTrueByPragma'
+			with: 'methodName'.
+	self assert: m = p.
+
+	m := (stss asCString: #declareExportFalseByMethod)
+			copyReplaceAll: 'declareExportFalseByMethod'
+			with: 'methodName'.
+	p := (stss asCString: #declareExportFalseByPragma)
+			copyReplaceAll: 'declareExportFalseByPragma'
+			with: 'methodName'.
+	self assert: m = p.! !
+
+!SlangTest methodsFor: 'testing ssip plugins' stamp: 'dtl 3/18/2013 18:48'!
+testSSIPDeclareInline
+	"Pragma declarations should generate the same C source code as the
+	traditional method send declarations"
+
+	| stss m p |
+	stss := SlangTestSupportSSIP inline: true.
+	m := ((stss asCString: #inlineByMethod)
+			copyReplaceAll: 'inlineByMethod'
+			with: 'methodName')
+				copyReplaceAll: 'methodThatShouldNotBeInlinedByMethod'
+				with: 'calledMethodName'.
+	p := ((stss asCString: #inlineByPragma)
+			copyReplaceAll: 'inlineByPragma'
+			with: 'methodName')
+				copyReplaceAll: 'methodThatShouldNotBeInlinedByPragma'
+				with: 'calledMethodName'.
+	self assert: m = p! !
+
+!SlangTest methodsFor: 'testing ssip plugins' stamp: 'dtl 3/18/2013 18:43'!
+testSSIPDeclareStatic
+	"A static directive should cause the generated function to be declared static."
+
+	| stss m1 p1 m2 p2 |
+	stss := SlangTestSupportSSIP inline: false.
+	m1 := (stss asCString: #declareStaticTrueByMethod)
+			copyReplaceAll: 'declareStaticTrueByMethod'
+			with: 'methodName'.
+	p1 := (stss asCString: #declareStaticTrueByPragma)
+			copyReplaceAll: 'declareStaticTrueByPragma'
+			with: 'methodName'.
+	self assert: m1 = p1.
+
+	m2 := (stss asCString: #declareStaticFalseByMethod)
+			copyReplaceAll: 'declareStaticFalseByMethod'
+			with: 'methodName'.
+	p2 := (stss asCString: #declareStaticFalseByPragma)
+			copyReplaceAll: 'declareStaticFalseByPragma'
+			with: 'methodName'.
+	self assert: m2 = p2.
+
+	"verify that the keyword 'static appears in the generated C source"
+	self assert: (m1 includesSubString: 'static').
+	self assert: (p1 includesSubString: 'static').
+	self deny: (m2 includesSubString: 'static').
+	self deny: (p2 includesSubString: 'static')
+! !
+
+!SlangTest methodsFor: 'testing ssip plugins' stamp: 'dtl 3/18/2013 18:43'!
+testSSIPDoNotGenerateByMethod
+	"A doNotdoNotGenerate statement should prevent code generation"
+
+	| stss m |
+	stss := SlangTestSupportSSIP inline: false.
+	self assert: (SlangTestSupportSSIP canUnderstand: #doNotGenerateByMethod).
+	m := stss asCString: #doNotGenerateByMethod.
+	self assert: (m includesSubString: 'No source has been generated').
+	self deny: (stss asCString includesSubString: 'doNotGenerateByMethod').
+	self assert: (stss doNotGenerateByMethod = 4)! !
+
+!SlangTest methodsFor: 'testing ssip plugins' stamp: 'dtl 3/18/2013 18:44'!
+testSSIPDoNotGenerateByPragma
+	"A <doNotdoNotGenerate> declaration should prevent code generation"
+
+	| stss m |
+	stss := SlangTestSupportSSIP inline: false.
+	self assert: (SlangTestSupportSSIP canUnderstand: #doNotGenerateByPragma).
+	m := stss asCString: #doNotGenerateByPragma.
+	self assert: (m includesSubString: 'No source has been generated').
+	self deny: (stss asCString includesSubString: 'doNotGenerateByPragma').
+	self assert: (stss doNotGenerateByPragma = 4)
+! !
+
+!SlangTest methodsFor: 'testing ssip plugins' stamp: 'dtl 3/18/2013 18:44'!
+testSSIPDoNotGenerateSubclassResponsibility
+	"If a method contains self subclassResponsibility, assume it is not meant for translation."
+
+	| stss m |
+	stss := SlangTestSupportSSIP inline: false.
+	self assert: (SlangTestSupportSSIP canUnderstand: #anAbstractMethod).
+	m := stss asCString: #anAbstractMethod.
+	self assert: (m includesSubString: 'No source has been generated').
+	self deny: (stss asCString includesSubString: 'anAbstractMethod').
+	self should: [stss anAbstractMethod]
+		raise: Error
+! !
+
+!SlangTest methodsFor: 'testing ssip plugins' stamp: 'dtl 3/18/2013 18:45'!
+testSSIPMixedMethodAndPragmaDeclarations
+	"Pragmas and method declarations should coexist"
+
+	| stss s |
+	stss := SlangTestSupportSSIP inline: false.
+	s := (stss asCString: #varDefByMethodAndPragma)
+			copyReplaceAll: 'varDefByMethod'
+			with: 'methodName'.
+	self assert: (s includesSubString: 'unsigned int * bar').
+	self assert: (s includesSubString: 'char *foo').
+	self assert: (s includesSubString: 'float baz').
+	self assert: (s includesSubString: 'double fum').
+! !
+
+!SlangTest methodsFor: 'testing ssip plugins' stamp: 'dtl 3/18/2013 18:45'!
+testSSIPReturnTypeC
+	"Pragma declarations should generate the same C source code as the
+	traditional method send declarations"
+
+	| stss m p |
+	stss := SlangTestSupportSSIP inline: false.
+	m := (stss asCString: #returnTypeByMethod)
+			copyReplaceAll: 'returnTypeByMethod'
+			with: 'methodName'.
+	p := (stss asCString: #returnTypeByPragma)
+			copyReplaceAll: 'returnTypeByPragma'
+			with: 'methodName'.
+	self assert: m = p! !
+
+!SlangTest methodsFor: 'testing ssip plugins' stamp: 'dtl 3/18/2013 18:45'!
+testSSIPTypeDeclarations
+	"Pragma declarations should generate the same C source code as the
+	traditional method send declarations"
+
+	| stss m p |
+	stss := SlangTestSupportSSIP inline: false.
+	m := (stss asCString: #varDefByMethod)
+			copyReplaceAll: 'varDefByMethod'
+			with: 'methodName'.
+	p := (stss asCString: #varDefByPragma)
+			copyReplaceAll: 'varDefByPragma'
+			with: 'methodName'.
+	self assert: m = p! !
+
+!SlangTest methodsFor: 'testing smart syntax' stamp: 'dtl 3/18/2013 15:08'!
+testSmartSyntaxParameterDeclaration
+	"(SlangTest selector: #testSmartSyntaxParameterDeclaration) run"
+
+	| s |
+	s := (SlangTestSupportSSIP
+			asInlinedCString: #declareInt:wordPointer: ).
+	"parameter taken from the stack should be cast to (unsigned *)"
+	self should: ['*pointerToWords = ((unsigned **) (interpreterProxy->firstIndexableField(interpreterProxy->stackValue(0))));*' match: s].
+	"local variable declaration should match the data type as in the cast"
+	self shouldnt: ['*usqInt **pointerToWords*' match: s]. "the buggy code generator renders it as 'usqInt *pointerToWords' "
+	self should: ['*unsigned **pointerToWords*' match: s]. "it should be rendered as 'unsigned *pointerToWords' "
+! !
 
 !SlangTestSupportInterpreter methodsFor: 'other declarations' stamp: 'dtl 8/25/2011 22:21'!
 anAbstractMethod
@@ -1255,6 +1503,326 @@ shouldBeTranslated
 	^false! !
 
 !SlangTestSupportPlugin class methodsFor: 'instance creation' stamp: 'dtl 3/18/2013 14:49'!
+inline: flag
+
+	"Transcript show: (self inline: true) asCString"
+
+	^self new inline: flag! !
+
+!SlangTestSupportSSIP methodsFor: 'other declarations' stamp: 'dtl 8/25/2011 22:21'!
+anAbstractMethod
+
+	self subclassResponsibility! !
+
+!SlangTestSupportSSIP methodsFor: 'other declarations' stamp: 'dtl 8/25/2011 08:19'!
+doNotGenerateByMethod
+	"SlangTestSupportInterpreter asCString: #doNotGenerateByMethod"
+
+	self returnTypeC: #int.
+	self doNotGenerate.
+	^ 2 + 2
+! !
+
+!SlangTestSupportSSIP methodsFor: 'other declarations' stamp: 'dtl 8/25/2011 08:11'!
+doNotGenerateByPragma
+	"SlangTestSupportInterpreter asCString: #doNotGenerateByPragma"
+
+	<doNotGenerate>
+	<returnTypeC: #int>
+	^ 2 + 2
+! !
+
+!SlangTestSupportSSIP methodsFor: 'translation' stamp: 'dtl 3/18/2013 14:28'!
+asCString
+
+	| stream |
+	stream := ReadWriteStream on: String new.
+	self cg emitCCodeOn: stream doAssertions: true.
+	^ stream contents
+! !
+
+!SlangTestSupportSSIP methodsFor: 'translation' stamp: 'dtl 3/18/2013 14:29'!
+asCString: selector
+
+	| method stream |
+	method := self cg methodNamed: selector.
+	method ifNil: [^ 'No source has been generated'].
+	stream := ReadWriteStream on: String new.
+	method emitCCodeOn: stream generator: cg.
+	^ stream contents
+! !
+
+!SlangTestSupportSSIP methodsFor: 'translation' stamp: 'jpb 5/23/2020 22:00:47'!
+cg
+	"Lazy initialize, once per test"
+
+	cg ifNil: [
+		cg := self class buildCodeGeneratorInlined: inlineFlag = true.
+		cg prepareMethodsInlined: inlineFlag = true doAssertions: true].
+	^ cg! !
+
+!SlangTestSupportSSIP methodsFor: 'loop limits' stamp: 'dtl 4/4/2013 21:38'!
+callMethodEmbeddedWithSendInLoopLimit
+
+	<export: true>
+	1 to: self methodWithIntegerResult do: [:i |
+		1 to: self methodWithIntegerResult do: [:k | ]].
+! !
+
+!SlangTestSupportSSIP methodsFor: 'loop limits' stamp: 'dtl 4/4/2013 20:49'!
+callMethodTwiceWithLoopLimitThatMightBeModified
+
+	<export: true>
+	| aVar |
+	aVar := 'foo'.
+	self methodWithLoopLimitThatMightBeModified: aVar.
+	self methodWithLoopLimitThatMightBeModified: aVar.
+! !
+
+!SlangTestSupportSSIP methodsFor: 'loop limits' stamp: 'dtl 4/4/2013 21:38'!
+callMethodTwiceWithSendInLoopLimit
+
+	<export: true>
+	1 to: self methodWithIntegerResult do: [:i | ].
+	1 to: self methodWithIntegerResult do: [:i | ].
+! !
+
+!SlangTestSupportSSIP methodsFor: 'loop limits' stamp: 'dtl 4/4/2013 20:51'!
+callMethodWithLoopLimitThatIsNotModified
+
+	<export: true>
+	| aVar |
+	aVar := 'foo'.
+	self methodWithLoopLimitThatIsNotModified: aVar.
+! !
+
+!SlangTestSupportSSIP methodsFor: 'loop limits' stamp: 'dtl 4/4/2013 20:49'!
+callMethodWithLoopLimitThatMightBeModified
+
+	<export: true>
+	| aVar |
+	aVar := 'foo'.
+	self methodWithLoopLimitThatMightBeModified: aVar.
+! !
+
+!SlangTestSupportSSIP methodsFor: 'loop limits' stamp: 'dtl 4/5/2013 00:01'!
+methodWithIntegerResult
+	^127 + 5! !
+
+!SlangTestSupportSSIP methodsFor: 'loop limits' stamp: 'dtl 2/18/2014 20:15'!
+methodWithLoopLimitThatIsNotModified: arrayObj
+
+	0 to: 10 do: [:i | self storePointerUnchecked: i ofObject: arrayObj withValue: 0]
+! !
+
+!SlangTestSupportSSIP methodsFor: 'loop limits' stamp: 'dtl 4/4/2013 23:39'!
+methodWithLoopLimitThatMightBeModified: arrayObj
+
+	0 to: (self lengthOf: arrayObj) do:
+	[:i | self storePointerUnchecked: i ofObject: arrayObj withValue: nil]
+! !
+
+!SlangTestSupportSSIP methodsFor: 'export declaration' stamp: 'dtl 9/19/2010 12:29'!
+declareExportFalseByMethod
+	"SlangTestSupportSSIP asCString: #declareExportFalseByMethod"
+
+	self export: false
+! !
+
+!SlangTestSupportSSIP methodsFor: 'export declaration' stamp: 'dtl 9/19/2010 12:29'!
+declareExportFalseByPragma
+	"SlangTestSupportSSIP asCString: #declareExportFalseByPragma"
+
+	<export: false>
+! !
+
+!SlangTestSupportSSIP methodsFor: 'export declaration' stamp: 'dtl 9/19/2010 12:21'!
+declareExportTrueByMethod
+	"SlangTestSupportSSIP asCString: #declareExportTrueByMethod"
+
+	self export: true
+! !
+
+!SlangTestSupportSSIP methodsFor: 'export declaration' stamp: 'dtl 9/19/2010 12:21'!
+declareExportTrueByPragma
+	"SlangTestSupportSSIP asCString: #declareExportTrueByPragma"
+
+	<export: true>
+! !
+
+!SlangTestSupportSSIP methodsFor: 'parameter declarations' stamp: 'dtl 3/8/2013 19:40'!
+declareInt: anInt wordPointer: pointerToWords
+	"The pointerToWords parameter should be (unsigned *) as a result of the WordArray
+	declaration in primitive:parameters: and the local declaration for pointerToWords should
+	match this data type. For buggy code generator this is not the case."
+
+	self var: #pointerToWords type: 'unsigned char * '. "intentional red herring, no effect"
+	self primitive: 'primitiveShowHostWindowRect' parameters: #(SmallInteger WordArray).
+
+	"Incorrect output, demonstrating code generator bug:
+	
+EXPORT(sqInt) primitiveShowHostWindowRect(void) {
+	sqInt anInt;
+	usqInt *pointerToWords;
+
+	anInt = interpreterProxy->stackIntegerValue(1);
+	interpreterProxy->success(interpreterProxy->isWords(interpreterProxy->stackValue(0)));
+	pointerToWords = ((unsigned *) (interpreterProxy->firstIndexableField(interpreterProxy->stackValue(0))));
+	if (interpreterProxy->failed()) {
+		return null;
+	}
+	if (interpreterProxy->failed()) {
+		return null;
+	}
+	interpreterProxy->pop(2);
+	return null;
+}
+"! !
+
+!SlangTestSupportSSIP methodsFor: 'static declaration' stamp: 'dtl 9/19/2010 12:29'!
+declareStaticFalseByMethod
+	"SlangTestSupportSSIP asCString: #declareStaticFalseByMethod"
+
+	self static: false
+! !
+
+!SlangTestSupportSSIP methodsFor: 'static declaration' stamp: 'dtl 9/19/2010 12:30'!
+declareStaticFalseByPragma
+	"SlangTestSupportSSIP asCString: #declareStaticFalseByPragma"
+
+	<static: false>
+! !
+
+!SlangTestSupportSSIP methodsFor: 'static declaration' stamp: 'dtl 9/19/2010 12:29'!
+declareStaticTrueByMethod
+	"SlangTestSupportSSIP asCString: #declareStaticTrueByMethod"
+
+	self static: true
+! !
+
+!SlangTestSupportSSIP methodsFor: 'static declaration' stamp: 'dtl 9/19/2010 12:30'!
+declareStaticTrueByPragma
+	"SlangTestSupportSSIP asCString: #declareStaticTrueByPragma"
+
+	<static: true>
+! !
+
+!SlangTestSupportSSIP methodsFor: 'initialize' stamp: 'dtl 3/18/2013 14:54'!
+inline: flag
+	inlineFlag := flag! !
+
+!SlangTestSupportSSIP methodsFor: 'inlining' stamp: 'dtl 9/19/2010 11:50'!
+inlineByMethod
+	"SlangTestSupportSSIP asCString: #inlineByMethod"
+	"SlangTestSupportSSIP asInlinedCString: #inlineByMethod"
+
+	| bar foo |
+	foo := self methodThatShouldBeInlinedByMethod.
+	bar := self methodThatShouldNotBeInlinedByMethod! !
+
+!SlangTestSupportSSIP methodsFor: 'inlining' stamp: 'dtl 9/19/2010 11:50'!
+inlineByPragma
+	"SlangTestSupportSSIP asCString: #inlineByPragma"
+	"SlangTestSupportSSIP asInlinedCString: #inlineByPragma"
+
+	| bar foo |
+	foo := self methodThatShouldBeInlinedByPragma.
+	bar := self methodThatShouldNotBeInlinedByPragma! !
+
+!SlangTestSupportSSIP methodsFor: 'inlining' stamp: 'dtl 9/18/2010 17:59'!
+methodThatShouldBeInlinedByMethod
+
+	self inline: true.
+	^ #foo! !
+
+!SlangTestSupportSSIP methodsFor: 'inlining' stamp: 'dtl 9/18/2010 18:01'!
+methodThatShouldBeInlinedByPragma
+
+	<inline: true>
+	^ #foo! !
+
+!SlangTestSupportSSIP methodsFor: 'inlining' stamp: 'dtl 9/18/2010 18:01'!
+methodThatShouldNotBeInlinedByMethod
+
+	self inline: false.
+	^ #bar! !
+
+!SlangTestSupportSSIP methodsFor: 'inlining' stamp: 'dtl 9/18/2010 18:01'!
+methodThatShouldNotBeInlinedByPragma
+
+	<inline: false>
+	^ #bar! !
+
+!SlangTestSupportSSIP methodsFor: 'type declaration' stamp: 'dtl 9/19/2010 11:50'!
+returnTypeByMethod
+	"SlangTestSupportSSIP asCString: #returnTypeByMethod"
+
+	self returnTypeC: 'char *'.
+! !
+
+!SlangTestSupportSSIP methodsFor: 'type declaration' stamp: 'dtl 9/19/2010 11:51'!
+returnTypeByPragma
+	"SlangTestSupportSSIP asCString: #returnTypeByPragma"
+
+	<returnTypeC: 'char *'>
+! !
+
+!SlangTestSupportSSIP methodsFor: 'type declaration' stamp: 'dtl 9/19/2010 11:51'!
+varDefByMethod
+	"SlangTestSupportSSIP asCString: #varDefByMethod"
+
+	| foo bar |
+	self var: #foo type: 'char *'.
+	self var: #bar declareC: 'unsigned int * bar'
+! !
+
+!SlangTestSupportSSIP methodsFor: 'type declaration' stamp: 'dtl 9/19/2010 22:25'!
+varDefByMethodAndPragma
+	"SlangTestSupportSSIP asCString: #varDefByMethodAndPragma"
+
+	| foo bar baz fum |
+	<var: #baz type: 'float'>
+	<var: #fum declareC: 'double fum'>
+	self var: #foo type: 'char *'.
+	self var: #bar declareC: 'unsigned int * bar'
+! !
+
+!SlangTestSupportSSIP methodsFor: 'type declaration' stamp: 'dtl 9/19/2010 12:05'!
+varDefByPragma
+	"SlangTestSupportSSIP asCString: #varDefByPragma"
+
+	| foo bar |
+	<var: #foo type: 'char *'>
+	<var: #bar declareC: 'unsigned int * bar'>
+! !
+
+!SlangTestSupportSSIP class methodsFor: 'translation' stamp: 'jpb 5/23/2020 22:08:24'!
+buildCodeGeneratorInlined: doInlining
+	"Build a CCodeGenerator for this class."
+
+	 | cg |
+	cg := SlangSmartSyntaxPluginCodeGenerator new initialize.
+	cg declareMethodsStatic: false.
+	cg permitMethodPruning: true.
+	cg uncheckedAbstractMethods addAll: self abstractSelectors.
+	
+	^self initializeCodeGenerator: cg
+
+! !
+
+!SlangTestSupportSSIP class methodsFor: 'translation' stamp: 'dtl 8/22/2011 21:06'!
+requiredMethodNames
+	"return the list of method names that should be retained for export or other support reasons"
+	^self selectors
+! !
+
+!SlangTestSupportSSIP class methodsFor: 'translation' stamp: 'dtl 3/19/2013 00:44'!
+shouldBeTranslated
+	"Translated only for unit test support. The generated C module is not expected
+	to be compiled."
+	^false! !
+
+!SlangTestSupportSSIP class methodsFor: 'instance creation' stamp: 'dtl 3/18/2013 14:49'!
 inline: flag
 
 	"Transcript show: (self inline: true) asCString"
