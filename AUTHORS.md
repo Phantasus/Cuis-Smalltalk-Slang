@@ -139,8 +139,10 @@ over them, so that they can be imported into a running Cuis Image.
 > 91e1d8242941af601b4f2fce0fce85e5044092cdeed0b5b9342f46980aaa21d2  References/SlangTestSupportSSIP.st
 > 6a34cdcebe7112bab38b4bb828be4156c545ca1188bcff1cb11d7cea16a7b65d  References/InterpreterPlugin.st
 > 67187e04c3d50e9a2fe9bd7f4f17dec7bc2185071f92107e41d8eafc90ec6eac  References/Oop.st
+> 067ad5c266a2fd8c632a9e72b150ee18e11363ba9d9e82ddb548438ea7d6713a  References/Unsigned.st
 
-Contributors of these files are
+Contributors of these files are:
+
     - Andrew C. Greenberg (acg)
     - Anthony Hannan (ajh)
     - Andreas Raab (ar)
