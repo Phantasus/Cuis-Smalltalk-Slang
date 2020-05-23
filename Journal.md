@@ -22,6 +22,11 @@ as I would also want to use it for calling a library.
 That's energizing, but sadly also stressful. How do I get
 that done correctly?
 
+What makes a `SmartSyntaxPlugin` "smart"? It seems to generate
+code in a different way, but that is the only thing I can deduce
+from skimming over it. It adds again multiple special typecasting
+methods on different object classes, which isn't great.
+
 
 ## 21th May 2020 (jpb)
 
