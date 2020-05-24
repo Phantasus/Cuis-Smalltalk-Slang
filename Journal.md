@@ -45,6 +45,25 @@ The plugin search path can be configured with the env variable
 `SQUEAK_PLUGINS` and the `-plugins` vm option. Per default
 the vm searches in the vm directory.
 
+How do I get the `InterpreterProxy` which is defined in
+`platforms/Cross/vm/sqVirtualMachine.c` to interact with
+outside Cuis Slang code without re-implementing the VM?
+When it comes to later simulations of plugins, they can't
+be simulated over the interpreter proxy as this would mean,
+to simulate the VM. And how to transport the C interface
+of plugins safely, without caring around the
+VMMaker + the Opensmalltalk VM repository which are 300 MB.
+Call me old fashioned, but this is a little bit too much for
+building plugins for my taste. And I say that in a time
+where it's normal to download Gigabytes of libraries only
+to build an Android or IOS App.
+
+`storeVirtualMachineProxyImplementation: categoryList on: fileName`
+of the `VMPluginCodeGenerator` is a very old method. Goes back
+to 1998, maybe it's even older than that, but that was the first
+commit in the VMMaker repository.
+
+
 ## 23th May 2020 (jpb)
 
 Today there was a Jitsi Meeting with Cuis developers and the
