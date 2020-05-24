@@ -9,6 +9,42 @@ authors at the end of the file.
 
 # Entries
 
+## 24th May 2020 (jpb)
+
+I looked into `sqNamedPrims.c`in the current opensmalltalks-vm
+master branch and it seems that there are a couple of methods
+which are called for named modules:
+
+- `EXPORT(const char*) getModuleName(void)` for retrieving the module name
+- `EXPORT(sqInt) setInterpreter(struct VirtualMachine *anInterpreter)`
+  for associating the module with an interpreter proxy.
+- `EXPORT(sqInt) initialiseModule(void)` for module setup
+- `EXPORT(sqInt) shutdownModule(void)` for module cleanup
+
+These only the `setInterpreter` callback is mandatory, the
+`getModuleName` is optional, but the VM will complain. The
+`initialiseModule` callback is optional, but when it's present
+the function needs to return a positive integer value for
+showing to the VM that the initialisation was a success or
+else it will notify about an error. `shutdownModule` needs
+to return a number higher than 0 to signal to the VM that
+it correctly shut down.
+
+`EXPORT(x)` seems to a macro which returns depending on the
+compilation module `x` or `static x`. This depends in some
+plugins on the macro `SQUEAK_BUILTIN_PLUGIN` or in other
+words `EXPORT(x)` is used in the VMMaker to distinguish
+when it comes to plugins if they should be generated
+intern to the VM or extern as a dynamic loaded library.
+For the usecase I would want to have this around are the
+internal options totally not interesting. Any external plugin
+generation should be focused on having a robust hopefully
+external code generation.
+
+The plugin search path can be configured with the env variable
+`SQUEAK_PLUGINS` and the `-plugins` vm option. Per default
+the vm searches in the vm directory.
+
 ## 23th May 2020 (jpb)
 
 Today there was a Jitsi Meeting with Cuis developers and the
