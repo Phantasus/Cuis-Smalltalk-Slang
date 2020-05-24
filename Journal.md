@@ -61,7 +61,13 @@ to build an Android or IOS App.
 `storeVirtualMachineProxyImplementation: categoryList on: fileName`
 of the `VMPluginCodeGenerator` is a very old method. Goes back
 to 1998, maybe it's even older than that, but that was the first
-commit in the VMMaker repository.
+commit in the VMMaker repository. The remarkable about this method
+is that it's called nowhere from the codebase, but it seems to have
+been used to generate the `sqVirtualmachine.c` file which contains
+the `sqGetInterpreterProxy` C function which is generated during
+the execution of this legacy method. VM developers maybe sometimes
+generate that file from this generator method. Fascinating what
+gems you sometimes find.
 
 
 ## 23th May 2020 (jpb)
