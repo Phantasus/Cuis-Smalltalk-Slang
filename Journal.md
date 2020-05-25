@@ -9,6 +9,26 @@ authors at the end of the file.
 
 # Entries
 
+## 25th May 2020 (jpb)
+
+I peeked into the original back to the future paper, there
+Slang was defined as using these methods:
+
+```smalltalk
+& | and: or: not+ - * // \\ min: max:bitAnd: bitOr: bitXor:
+bitShift:< <= = > >= ~= ==isNil notNilwhileTrue: whileFalse:
+to:do: to:by:do:ifTrue: ifFalse: ifTrue:ifFalse: ifFalse:ifTrue:at:
+at:put:<< >> bitInvert32 preIncrement integerValueOf:integerObjectOf:
+isIntegerObject:
+```
+
+There are a couple of things which are not in the current spec,
+no `cCode:` or `cCoerce:`, etc. I think because of that, that the
+`c*` methods should be ideally kicked out of Slang, these things
+weren't in the original specification and also feel bolted on
+currently.
+
+
 ## 24th May 2020 (jpb)
 
 I looked into `sqNamedPrims.c`in the current opensmalltalks-vm
