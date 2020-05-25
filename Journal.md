@@ -28,6 +28,24 @@ no `cCode:` or `cCoerce:`, etc. I think because of that, that the
 weren't in the original specification and also feel bolted on
 currently.
 
+I asked on the [vm-beginners squeak mailinglist]http://forum.world.st/Stability-of-the-external-plugin-interface-td5117112.html) about of how stable the external plugin interface is. And
+the advice was to stay away from it and use FFI, because it's
+more like a bad solution. It's insecure, expensive to maintain,
+painful to use and hard to package, I think that could summarize
+it. There are multiple proposed solutions to this problem of talking
+to the outside non-Smalltalk-world, which yet aren't production ready.
+How do I deal with this? Waiting is not an option, any solution of
+this needs to be flexible enough to deal with the current and
+future situation. Oh boy, more design requirements. Good that I'm
+still in the early toying around stage.
+
+So maybe just building a `SlangFFIPluginGenerator` which takes a
+Slang plugin and translates it into the code for the FFI use? Maybe
+a `SlangExternalPluginGenerator` which takes the same code and builds
+a safe version of a plugin? For this design to work, you MUST NOT code
+up a situation where the input Slang module has internal dependencies
+sticked on it, like it's currently the case in VMMaker Slang.
+
 
 ## 24th May 2020 (jpb)
 
