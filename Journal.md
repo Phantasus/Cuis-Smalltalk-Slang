@@ -46,6 +46,60 @@ a safe version of a plugin? For this design to work, you MUST NOT code
 up a situation where the input Slang module has internal dependencies
 sticked on it, like it's currently the case in VMMaker Slang.
 
+Hmm, the post on the mailinglist wasn't just put on the vm-beginners
+mailinglist but also on the [vm-dev mailinglist](http://forum.world.st/Re-Vm-beginners-Stability-of-the-external-plugin-interface-td5117148.html), I just noticed. I'm not at the time of writing
+a member of the vm-dev mailinglist. Anyway in that thread there are
+couple of noteworthy quotes:
+
+> The VM plugins were an attempt to get away from a few problems that
+> plagued VM development at the end of the last millennium (and I
+> don't mean March this year) with things like a limited number of
+> prim table entires, the lack of flexibility a static table
+> engendered, the time it took to compile an entire VM for a tiny
+> change/test cycle etc (IIRC of the order of half an hour back then).
+
+Which answers why the VM isn't generated each time from Slang, it
+just was too slow to build the whole thing for each platform from
+source (1/2 hour).
+
+> We were also starting the beginnings of the ffi stuff around
+> then. Andy Greenberg came up with the SmartSyntaxPlugin stuff, for
+> example, at the end of '99
+
+So `SmartSyntaxPlugin` is from 1998, as the first Squeak VMMaker
+version stamps.
+
+> Moving to ffi-only would allow removing a fair bit of cruft from the
+> VM, though there's our old friend 'backward compatibility' to argue
+> with.
+
+Oh.. now I get the feeling that the discussion hit a nerve, which was
+stressed over years of repeated damage.
+
+Hmm also an interesting contribution from Tobias Pape:
+
+> When I tried to get the Self VM running again some years ago, one of
+> the agonizing parts was its extensive use of FFI. Why so? Well, the
+> FFI was coded against a mid-1990 X11. Which, in that form did not
+> exist on either Mac nor Linux. Some parts worked, but a lot of things
+> needed attention in _both_ the VM _and_ the Image. In some respect,
+> the "libraries interfaced via FFI" had moved faster than the VM.
+> 
+> Had Self had a Display Plugin just like Squeak, changes would have
+> been much more simple, since the assumptions in the Self world had nod
+> changed at all.
+> 
+> So, if things move slowly in VM/Image land and more quickly in library
+> land, the answer is Plugins.  If things move quickly in VM/Image land
+> and are stable in library land, the answer is FFI.
+
+So.. sometimes plugins have their place?
+
+In any way FFI or plugins are just a way to link to some library support
+code. From my point of view you can't currently directly link any library
+with either FFI or plugins into an image and it will work, some conversion
+layers will be present as no library fits snuggly.
+
 
 ## 24th May 2020 (jpb)
 
