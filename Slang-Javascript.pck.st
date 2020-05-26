@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4112] on 23 May 2020 at 10:15:10 pm'!
+'From Cuis 5.0 [latest update: #4112] on 26 May 2020 at 7:10:14 pm'!
 'Description License: MIT'!
-!provides: 'Slang-Javascript' 1 7!
+!provides: 'Slang-Javascript' 1 8!
 SystemOrganization addCategory: #'Slang-Javascript'!
 
 
@@ -251,7 +251,7 @@ globalsAsSet
 ignoredMethods
 	^#()! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/21/2020 11:32:31'!
+!JSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/24/2020 11:32:01'!
 initialize
 	translationDict _ Dictionary new.
 	inlineList _ Array new.
@@ -261,13 +261,14 @@ initialize
 	methods _ Dictionary new: 500.
 	macros _ Dictionary new.
 	typeRepository _ SlangCTypeRepository new.
+	
 	self initializeTranslationDictionary.
+	
 	receiverDict _ Dictionary new.
 	headerFiles _ OrderedCollection new.
 	globalVariableUsage _ Dictionary new.
 	useSymbolicConstants _ true.
 	scopeStack _ OrderedCollection new.
-	logger _ Transcript.
 	pools _ IdentitySet new.
 	abstractDeclarations _ IdentitySet new.
 	uncheckedAbstractMethods _ OrderedCollection new.
@@ -534,10 +535,6 @@ isBuiltinSelector: sel
 
 	^(self isKernelSelector: sel) or: [translationDict includesKey: sel]! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'ar 10/7/1998 17:53'!
-isGeneratingPluginCode
-	^false! !
-
 !JSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/21/2020 11:19:55'!
 isKernelSelector: sel
 	"Answer true if the given selector is one of the kernel selectors that are implemented as macros."
@@ -575,14 +572,6 @@ localizeGlobalVariables
 			variableDeclarations at: key ifPresent: [:v | 
 				procedure declarations at: key put: v.
 				variableDeclarations removeKey: key]]].! !
-
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'eem 7/28/2008 11:51'!
-logger
-	^logger! !
-
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'eem 7/28/2008 11:51'!
-logger: aTranscriptStream
-	logger _ aTranscriptStream! !
 
 !JSCodeGenerator methodsFor: 'utilities' stamp: 'dtl 7/3/2008 12:16'!
 memoryAccessSelectors
@@ -679,7 +668,7 @@ removeMethodForSelector: aSelector
 	"Remove the given method from the code base"
 	methods removeKey:  aSelector ifAbsent: []! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/19/2020 15:59:56'!
+!JSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/24/2020 11:31:47'!
 removeVariable: aName
 	"Remove the given (instance) variable from the code base."
 	self checkDeleteVariable: aName.
@@ -688,12 +677,11 @@ removeVariable: aName
 		ifAbsent:
 			[(originClass notNil
 			  and: [originClass isNonArgumentImplicitReceiverVariableName: aName]) ifFalse:
-				[logger
-					ensureCr;
-					show: 'warning, variable '
+				[systemAdapter
+					logWarning: 'warning, variable '
 						, aName
-						, ' doesn''t exist or has already been removed';
-						cr]].
+						, ' doesn''t exist or has already been removed'
+					]].
 	variableDeclarations removeKey: aName ifAbsent: []! !
 
 !JSCodeGenerator methodsFor: 'utilities'!
@@ -957,32 +945,14 @@ not]) ifTrue: [
 		].
 	].! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'dtl 6/23/2012 13:52'!
+!JSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/24/2020 10:35:16'!
 doBasicInlining: inlineFlag
 	"Inline the bodies of all methods that are suitable for inlining.
 	This method does only the basic inlining suitable for both the core VM and plugins - no bytecode inlining etc"
 
-	| pass progress max |
 	inlineFlag ifFalse: [^self].
 	self collectInlineList.
-	pass _ 0.
-	max _ 12. "More than this is probably due to infinite recursion" 
-	progress _ true.
-	[progress] whileTrue: [
-		"repeatedly attempt to inline methods until no further progress is made"
-		progress _ false.
-		pass > max
-			ifTrue: [self notify: 'too many inlining steps, inlining terminated']
-			ifFalse: [('Inlining pass ', (pass _ pass + 1) printString, '...')
-						displayProgressAt: Sensor cursorPoint
-						from: 0 to: methods size
-						during: [:bar |
-							(self sortMethods: methods) doWithIndex: [:m :i |
-								bar value: i.
-								currentMethod _ m.
-								(m tryToInlineMethodsIn: self)
-									ifTrue: [progress _ true]]]]].
-
+	self tryMethodInliningWithProgressNotification.
 ! !
 
 !JSCodeGenerator methodsFor: 'inlining' stamp: 'dtl 8/21/2011 21:12'!
@@ -1125,7 +1095,7 @@ pruneUnreachableMethods
 		methods at: sel ifPresent:[:meth| newMethods at: sel put: meth]].
 	methods _ newMethods! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'ikp 9/26/97 14:50'!
+!JSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/24/2020 10:01:34'!
 removeAssertions
 	"Remove all assertions in method bodies.  This is for the benefit of inlining, which
 	fails to recognise and disregard empty method bodies when checking the inlinability
@@ -1133,15 +1103,15 @@ removeAssertions
 
 	| newMethods |
 	newMethods _ Dictionary new.
-	'Removing assertions...'
-		displayProgressAt: Sensor cursorPoint
-		from: 0 to: methods size
-		during: [ :bar |
-			methods doWithIndex: [ :m :i |
-				bar value: i.
-				m isAssertion ifFalse: [
-					newMethods at: m selector put: m.
-					m removeAssertions]]].
+	systemAdapter
+		showProgressIn: methods
+		label: 'Removing assertions ...'
+		do: [ :bar :m :i |
+			bar value: i.
+			m isAssertion ifFalse: [
+				newMethods at: m selector put: m.
+				m removeAssertions]].
+		
 	methods _ newMethods.! !
 
 !JSCodeGenerator methodsFor: 'inlining' stamp: 'dtl 6/21/2008 09:21'!
@@ -1162,6 +1132,29 @@ retainMethods: aListOfMethodsToKeep
 	doNotRemoveMethodList ifNil:[doNotRemoveMethodList _ Set new:100].
 	doNotRemoveMethodList addAll: aListOfMethodsToKeep.
 	^aListOfMethodsToKeep! !
+
+!JSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/24/2020 10:34:44'!
+tryMethodInliningWithProgressNotification
+	| pass max progress |
+	pass _ 0.
+	max _ 12. "More than this is probably due to infinite recursion" 
+	progress _ true.
+	
+	[progress] whileTrue: [
+		"repeatedly attempt to inline methods until no further progress is made"
+		progress _ false.
+		pass > max
+			ifTrue: [self notify: 'too many inlining steps, inlining terminated']
+			ifFalse: [
+				systemAdapter
+					showProgressIn: (self sortMethods: methods)
+					label:  ('Inlining pass ', (pass _ pass + 1) printString, '...')
+					do: [:bar :m :i |
+						bar value: i.
+						currentMethod _ m.
+						(m tryToInlineMethodsIn: self)
+							ifTrue: [progress _ true]]]].
+! !
 
 !JSCodeGenerator methodsFor: 'accessing' stamp: 'eem 7/2/2008 16:01'!
 currentMethod
@@ -1304,7 +1297,7 @@ emitGlobalStructFlagOn: aStream
 	"Default: do nothing.  Overridden in CCGenGlobalStruct."
 ! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/1/2014 13:21'!
+!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/24/2020 10:23:55'!
 emitJSCodeOn: aStream doAssertions: assertionFlag
 	"Emit C code for all methods in the code base onto the given stream. All inlined method calls should already have been expanded."
 
@@ -1312,13 +1305,13 @@ emitJSCodeOn: aStream doAssertions: assertionFlag
 	self emitJSTypesOn: aStream.
 	self emitJSConstantsOn: aStream.
 	self emitJSVariablesOn: aStream.
-"'Writing Translated Code...'
-displayProgressAt: Sensor cursorPoint
-from: 0 to: methods size
-during: [:bar |"
-	preparedMethodList doWithIndex: [ :m :i | "bar value: i."
-		m emitJSCodeOn: aStream generator: self].
-"]."
+
+	systemAdapter
+		showProgressIn: preparedMethodList 
+		label: 'Emitting Javascript Code'
+		do:  [ :progress :m :i | "bar value: i."
+			m emitJSCodeOn: aStream generator: self].
+		
 	self emitExportsOn: aStream.
 ! !
 
@@ -3239,10 +3232,6 @@ translatedMethodsB2DPlugin
 		#loadPointShortAt:from: -> #generateLoadPointShort:on:indent:.
 	}! !
 
-!JSPluginCodeGenerator methodsFor: 'testing' stamp: 'ar 10/7/1998 17:54'!
-isGeneratingPluginCode
-	^true! !
-
 !JSMethod methodsFor: 'accessing'!
 args
 	"The arguments of this method."
@@ -4593,11 +4582,11 @@ prepareMethodIn: aCodeGen
 							 (#(caseOf: #caseOf:otherwise:) includes: node selector) ifTrue:
 								[parent replaceNodesIn: (Dictionary newFromPairs: { node. self buildSwitchStmt: node parent: parent })]]]]]! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'jpb 5/16/2020 23:19:45'!
+!JSMethod methodsFor: 'transformations' stamp: 'jpb 5/24/2020 08:45:30'!
 recordDeclarations
 	"Record C type declarations of the forms
 
-		self returnTypeC: 'float'.
+		self returnType: 'float'.
 		self var: #foo declareC: 'float foo'
 		self var: #foo type:'float'.
 
@@ -4754,7 +4743,7 @@ emitJSFunctionHeader: aStream generator: aCodeGen
 			^self]].
 	self emitJSFunctionHeader: aStream generator: aCodeGen newlineBeforeName: false! !
 
-!JSMethod methodsFor: 'JS code generation' stamp: 'bf 10/6/2014 15:41'!
+!JSMethod methodsFor: 'JS code generation' stamp: 'jpb 5/24/2020 08:45:39'!
 emitJSFunctionHeader: aStream generator: aCodeGen newlineBeforeName: newlineBeforeName "<Boolean>"
 	"Emit a JS function header for this method onto the given stream."
 
@@ -4762,7 +4751,7 @@ emitJSFunctionHeader: aStream generator: aCodeGen newlineBeforeName: newlineBefo
 	newlineBeforeName ifTrue: [aStream cr] ifFalse: [aStream space].
 	(returnType last = $)
 	and: [returnType includesSubString: (aCodeGen jsFunctionNameFor: self selectorForCodeGeneration)]) ifTrue:
-		["Hack fix for e.g. <returnTypeC: 'void (*setInterruptCheckChain(void (*aFunction)(void)))()'>"
+		["Hack fix for e.g. <returnType: 'void (*setInterruptCheckChain(void (*aFunction)(void)))()'>"
 		 ^self].
 	aStream
 		nextPutAll: (aCodeGen jsFunctionNameFor: self selectorForCodeGeneration);

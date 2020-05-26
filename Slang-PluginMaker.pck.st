@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4112] on 23 May 2020 at 11:07:15 pm'!
+'From Cuis 5.0 [latest update: #4112] on 26 May 2020 at 7:10:16 pm'!
 'Description Temporary package for storing plugin related classes, which don''t quiet fit into the Slang-Tools package, it''s supposed to be merged into the main one as it seems that the SmartSyntaxPlugins are trying to implement an extension which should be standard. 
 
 License: MIT'!
-!provides: 'Slang-PluginMaker' 1 0!
+!provides: 'Slang-PluginMaker' 1 1!
 SystemOrganization addCategory: #'Slang-PluginMaker'!
 
 
@@ -260,24 +260,24 @@ testSSIPTypeDeclarations
 			with: 'methodName'.
 	self assert: m = p! !
 
-!SlangInterpreterPlugin methodsFor: 'initialize' stamp: 'ikp (auto pragmas 12/08) 8/3/2004 19:18'!
+!SlangInterpreterPlugin methodsFor: 'initialize' stamp: 'jpb 5/24/2020 08:45:25'!
 getInterpreter
 	"Note: This is coded so that plugins can be run from Squeak."
 
-	<returnTypeC: 'VirtualMachine *'>
+	<returnType: 'VirtualMachine *'>
 	^interpreterProxy! !
 
-!SlangInterpreterPlugin methodsFor: 'initialize' stamp: 'ar (auto pragmas dtl 2010-09-28) 5/13/2000 02:00'!
+!SlangInterpreterPlugin methodsFor: 'initialize' stamp: 'jpb 5/24/2020 08:45:14'!
 getModuleName
 	"Note: This is hardcoded so it can be run from Squeak.
 	The module name is used for validating a module *after*
 	it is loaded to check if it does really contain the module
 	we're thinking it contains. This is important!!"
-	<returnTypeC: 'const char*'>
+	<returnType: 'const char*'>
 	<export: true>
 	^moduleName! !
 
-!SlangInterpreterPlugin methodsFor: 'initialize' stamp: 'ar (auto pragmas 12/08) 4/4/2006 20:53'!
+!SlangInterpreterPlugin methodsFor: 'initialize' stamp: 'jpb 5/24/2020 17:14:14'!
 setInterpreter: anInterpreter 
 	"Note: This is coded so that is can be run from Squeak."
 
@@ -285,9 +285,9 @@ setInterpreter: anInterpreter
 	<export: true>
 	<var: #anInterpreter type: #'struct VirtualMachine*'>
 	interpreterProxy := anInterpreter.
-	ok := self cCode: 'interpreterProxy->majorVersion() == VM_PROXY_MAJOR'.
+	ok := self code: 'interpreterProxy->majorVersion() == VM_PROXY_MAJOR'.
 	ok == false ifTrue: [^ false].
-	ok := self cCode: 'interpreterProxy->minorVersion() >= VM_PROXY_MINOR'.
+	ok := self code: 'interpreterProxy->minorVersion() >= VM_PROXY_MINOR'.
 	^ ok! !
 
 !SlangInterpreterPlugin methodsFor: 'debugging' stamp: 'yo 1/1/2004 11:09'!
@@ -503,21 +503,21 @@ anAbstractMethod
 
 	self subclassResponsibility! !
 
-!SlangTestSupportSSIP methodsFor: 'other declarations' stamp: 'dtl 8/25/2011 08:19'!
+!SlangTestSupportSSIP methodsFor: 'other declarations' stamp: 'jpb 5/24/2020 08:45:00'!
 doNotGenerateByMethod
 	"SlangTestSupportInterpreter asCString: #doNotGenerateByMethod"
 
-	self returnTypeC: #int.
+	self returnType: #int.
 	self doNotGenerate.
 	^ 2 + 2
 ! !
 
-!SlangTestSupportSSIP methodsFor: 'other declarations' stamp: 'dtl 8/25/2011 08:11'!
+!SlangTestSupportSSIP methodsFor: 'other declarations' stamp: 'jpb 5/24/2020 08:44:56'!
 doNotGenerateByPragma
 	"SlangTestSupportInterpreter asCString: #doNotGenerateByPragma"
 
 	<doNotGenerate>
-	<returnTypeC: #int>
+	<returnType: #int>
 	^ 2 + 2
 ! !
 
@@ -742,18 +742,18 @@ methodThatShouldNotBeInlinedByPragma
 	<inline: false>
 	^ #bar! !
 
-!SlangTestSupportSSIP methodsFor: 'type declaration' stamp: 'dtl 9/19/2010 11:50'!
+!SlangTestSupportSSIP methodsFor: 'type declaration' stamp: 'jpb 5/24/2020 08:44:52'!
 returnTypeByMethod
 	"SlangTestSupportSSIP asCString: #returnTypeByMethod"
 
-	self returnTypeC: 'char *'.
+	self returnType: 'char *'.
 ! !
 
-!SlangTestSupportSSIP methodsFor: 'type declaration' stamp: 'dtl 9/19/2010 11:51'!
+!SlangTestSupportSSIP methodsFor: 'type declaration' stamp: 'jpb 5/24/2020 08:44:47'!
 returnTypeByPragma
 	"SlangTestSupportSSIP asCString: #returnTypeByPragma"
 
-	<returnTypeC: 'char *'>
+	<returnType: 'char *'>
 ! !
 
 !SlangTestSupportSSIP methodsFor: 'type declaration' stamp: 'dtl 9/19/2010 11:51'!
@@ -2068,7 +2068,7 @@ fixUpReturns
 				 node statements do: 
 					[:stmt | self fixUpReturnOneStmt: stmt on: sStream]])]]! !
 
-!SlangSmartSyntaxPluginTMethod methodsFor: 'transforming' stamp: 'dtl 9/19/2010 22:56'!
+!SlangSmartSyntaxPluginTMethod methodsFor: 'transforming' stamp: 'jpb 5/24/2020 08:45:58'!
 recordDeclarations
 	"Record C type declarations of the forms
 
@@ -2126,7 +2126,7 @@ recordDeclarations
 					[^self error: 'declarator must be a Behavior'].
 				 self declarationAt: stmt args first value asString 
 					put: (theClass ccgDeclareCForVar: stmt args first value asString)].
-			 stmt selector = #returnTypeC: ifTrue: 
+			 stmt selector = #returnType: ifTrue: 
 				[isDeclaration := true.
 				 returnType := stmt args last value]].
 		 isDeclaration ifFalse: [newStatements add: stmt]].

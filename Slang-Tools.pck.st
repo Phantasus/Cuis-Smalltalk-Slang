@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4112] on 23 May 2020 at 11:07:17 pm'!
+'From Cuis 5.0 [latest update: #4112] on 26 May 2020 at 7:10:18 pm'!
 'Description License: MIT'!
-!provides: 'Slang-Tools' 1 12!
+!provides: 'Slang-Tools' 1 13!
 SystemOrganization addCategory: #'Slang-Tools-Tests'!
 SystemOrganization addCategory: #'Slang-Tools'!
 
@@ -197,7 +197,7 @@ SlangPragmatizer class
 
 !classDefinition: #SlangSystemAdapter category: #'Slang-Tools'!
 SlangObject subclass: #SlangSystemAdapter
-	instanceVariableNames: ''
+	instanceVariableNames: 'logger'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Slang-Tools'!
@@ -558,6 +558,24 @@ testWritingConstants
 	writer nextPutConstantNamed: 'foo' value: 123.
 	self assert: '#define foo 123' equals: buffer contents.! !
 
+!SlangCLanguageWriterTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/24/2020 16:17:36'!
+testWritingIncludes
+	| writer buffer |
+	buffer _ '' writeStream.
+	writer _ usedClass on: buffer.
+	
+	writer nextPutInclude: 'foo'.
+	self assert: '#include <foo.h>' equals: buffer contents.! !
+
+!SlangCLanguageWriterTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/24/2020 16:18:06'!
+testWritingLocalIncludes
+	| writer buffer |
+	buffer _ '' writeStream.
+	writer _ usedClass on: buffer.
+	
+	writer nextPutLocalInclude: 'foo'.
+	self assert: '#include "foo.h"' equals: buffer contents.! !
+
 !SlangCTypeRepositoryTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 18:43:11'!
 makeRepository.
 	^usedClass new	! !
@@ -636,18 +654,6 @@ setUp
 	of ObjectMemory."
 	(self respondsTo: #timeout: ) "Recent Squeak images with test case timeout"
 		ifTrue: [self perform: #timeout: with: 30].
-! !
-
-!SlangTest methodsFor: 'testing variable declaration' stamp: 'dtl 9/22/2012 14:30'!
-testExportsForSqueak3D
-	"If the code generator is not properly initialized in the special case of
-	B3DEnginePlugin, the exports table will be incorrect in the generated code.
-	Some versions of VMMaker had this problem, this test is to ensure that the
-	problem stays fixed."
-
-	Smalltalk at: #B3DEnginePlugin ifPresent: [:squeak3D | | src |
-		src _ squeak3D asCString.
-		self assert: ( '*"Squeak3D", "setInterpreter", (void*)setInterpreter*' match: src)]
 ! !
 
 !SlangTest methodsFor: 'testing variable declaration' stamp: 'jpb 5/16/2020 11:12:32'!
@@ -1184,6 +1190,10 @@ export: aBoolean
 !SlangModule methodsFor: '*Slang-Tools' stamp: 'jpb 5/16/2020 11:09:31'!
 returnType: aSymbol 
 	"Do nothing when running in Smalltalk. Annotates this method with the type of the method which returns"! !
+
+!SlangModule methodsFor: 'as yet unclassified' stamp: 'jpb 5/24/2020 17:13:45'!
+code: expression
+	"Pass in the given code to the target language"! !
 
 !SlangModule class methodsFor: 'as yet unclassified' stamp: 'jpb 5/15/2020 23:26:12'!
 abstractSelectors
@@ -1991,6 +2001,16 @@ initialize
 	stream _ nil.
 ! !
 
+!SlangCLanguageWriter methodsFor: '*Slang-Tools' stamp: 'jpb 5/24/2020 16:20:01'!
+nextPutInclude: aString 
+	"Puts a standard include into the stream. So a include directive which searches only in standard locations for headers"
+	self nextPutAll: '#include ' , '<' , aString , '.h>'! !
+
+!SlangCLanguageWriter methodsFor: 'as yet unclassified' stamp: 'jpb 5/24/2020 16:21:40'!
+nextPutLocalInclude: aString 
+	"Puts a local #include into the stream. So a include directive which searches first in the current directory and then tries to find other places"
+	self nextPutAll: '#include ' , '"' , aString , '.h"'! !
+
 !SlangCLanguageWriter class methodsFor: 'instance creation' stamp: 'jpb 5/19/2020 17:50:07'!
 on: aStream
 	^ self new setStream: aStream.! !
@@ -2557,10 +2577,6 @@ isBuiltinSelector: sel
 
 	^(self isKernelSelector: sel) or: [translationDict includesKey: sel]! !
 
-!SlangCCodeGenerator methodsFor: 'utilities' stamp: 'ar 10/7/1998 17:53'!
-isGeneratingPluginCode
-	^false! !
-
 !SlangCCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/21/2020 11:18:09'!
 isKernelSelector: sel
 	"Answer true if the given selector is one of the kernel selectors that are implemented as macros."
@@ -2835,7 +2851,7 @@ uncheckedAbstractMethods
 
 ! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/16/2020 09:47:46'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/24/2020 20:19:28'!
 emitCCodeOn: aStream doAssertions: assertionFlag
 	"Emit C code for all methods in the code base onto the given stream. All inlined method calls should already have been expanded."
 
@@ -2845,13 +2861,13 @@ emitCCodeOn: aStream doAssertions: assertionFlag
 	self emitCFunctionPrototypes: preparedMethodList on: aStream.
 	self emitCVariablesOn: aStream.
 	
-'Writing Translated Code...'
-displayProgressAt: Sensor mousePoint
-from: 0 to: methods size
-during: [:bar |
-	preparedMethodList withIndexDo: [ :m :i | bar value: i.
-		m emitCCodeOn: aStream generator: self.
-]].
+	systemAdapter
+		showProgressIn: preparedMethodList 
+		label: 'Writing Translated Code ...'
+		do: [:bar :m :i |
+		bar value: i.
+		m emitCCodeOn: aStream generator: self ].
+	
 	self emitExportsOn: aStream.
 ! !
 
@@ -2970,27 +2986,21 @@ emitCTestBlock: aBlockNode on: aStream
 emitCTypesOn: aStream 
 	"Store local type declarations on the given stream."! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'tpr 4/12/2006 11:40'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/24/2020 20:11:49'!
 emitCVariablesOn: aStream 
 	"Store the global variable declarations on the given stream."
 	| varString |
-	aStream nextPutAll: '/*** Variables ***/';
-		 cr.
+	aStream nextPutAll: '/*** Variables ***/'; newLine.
+	
 	variables asSortedCollection
 		do: [:var | 
 			varString _ var asString.
-			self isGeneratingPluginCode
-				ifTrue: [varString = 'interpreterProxy'
-						ifTrue: ["quite special..."
-							aStream cr; nextPutAll: '#ifdef SQUEAK_BUILTIN_PLUGIN'.
-							aStream cr; nextPutAll: 'extern'.
-							aStream cr; nextPutAll: '#endif'; cr]
-						ifFalse: [aStream nextPutAll: 'static ']].
 			(variableDeclarations includesKey: varString)
-				ifTrue: [aStream nextPutAll: (variableDeclarations at: varString) , ';'; cr]
+				ifTrue: [aStream nextPutAll: (variableDeclarations at: varString) , ';'; newLine]
 				ifFalse: ["default variable declaration"
-					aStream nextPutAll: 'sqInt ' , varString , ';'; cr]].
-	aStream cr! !
+					aStream nextPutAll: 'sqInt ' , varString , ';'; newLine]].
+			
+	aStream newLine! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'dtl 7/4/2012 18:39'!
 emitDefaultMacrosOn: aStream
@@ -3711,7 +3721,7 @@ pruneUnreachableMethods
 		methods at: sel ifPresent:[:meth| newMethods at: sel put: meth]].
 	methods _ newMethods! !
 
-!SlangCCodeGenerator methodsFor: 'inlining' stamp: 'ikp 9/26/97 14:50'!
+!SlangCCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/24/2020 10:02:14'!
 removeAssertions
 	"Remove all assertions in method bodies.  This is for the benefit of inlining, which
 	fails to recognise and disregard empty method bodies when checking the inlinability
@@ -3719,15 +3729,15 @@ removeAssertions
 
 	| newMethods |
 	newMethods _ Dictionary new.
-	'Removing assertions...'
-		displayProgressAt: Sensor cursorPoint
-		from: 0 to: methods size
-		during: [ :bar |
-			methods doWithIndex: [ :m :i |
-				bar value: i.
-				m isAssertion ifFalse: [
-					newMethods at: m selector put: m.
-					m removeAssertions]]].
+	systemAdapter
+		showProgressIn: methods
+		label: 'Removing assertions ...'
+		do: [ :bar :m :i |
+			bar value: i.
+			m isAssertion ifFalse: [
+				newMethods at: m selector put: m.
+				m removeAssertions]].
+	
 	methods _ newMethods.! !
 
 !SlangCCodeGenerator methodsFor: 'inlining' stamp: 'dtl 6/21/2008 09:21'!
@@ -5021,45 +5031,6 @@ emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag
 	"if the machine needs the globals structure defined locally in the interp.c file, don't add the folowing function"
 	localStructDef ifFalse:[self emitStructureInitFunctionOn: aStream]! !
 
-!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator' stamp: 'dtl 12/4/2010 11:51'!
-emitCVariablesOn: aStream
-	"Store the global variable declarations on the given stream.
-	break logic into vars for structure and vars for non-structure"
-	| varString structure nonstruct target |
-
-	structure _ WriteStream on: (String new: 32768).
-	nonstruct _ WriteStream on: (String new: 32768).
-	aStream nextPutAll: '/*** Variables ***/'; cr.
-	structure nextPutAll: 'static struct foo {'; cr.
-	self buildSortedVariablesCollection do: [ :var |
-		varString _ var asString.
-		target _ (self placeInStructure: var) 
-			ifTrue: [structure]
-			ifFalse: [nonstruct].
-		(self isGeneratingPluginCode) ifTrue:[
-			varString = 'interpreterProxy' ifTrue:[
-				"quite special..."
-				aStream cr; nextPutAll: '#ifdef SQUEAK_BUILTIN_PLUGIN'.
-				aStream cr; nextPutAll: 'extern'.
-				aStream cr; nextPutAll: '#endif'; cr.
-			] ifFalse:[aStream nextPutAll:'static '].
-		].
-		(variableDeclarations includesKey: varString) ifTrue: [
-			target nextPutAll: (variableDeclarations at: varString), ';'; cr.
-		] ifFalse: [
-			"default variable declaration"
-			target nextPutAll: 'sqInt ', varString, ';'; cr.
-		].
-	].
-	structure nextPutAll: ' } fum;';cr.
-
-	"if the machine needs the fum structure defining locally, do it now"
-	localStructDef ifTrue:[structure nextPutAll: 'struct foo * foo = &fum;';cr;cr].
-
-	aStream nextPutAll: structure contents.
-	aStream nextPutAll: nonstruct contents.
-	aStream cr.! !
-
 !SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator' stamp: 'eem 12/10/2008 11:25'!
 emitGlobalStructFlagOn: aStream
 	"Define SQ_USE_GLOBAL_STRUCT before including the header."
@@ -5269,19 +5240,22 @@ isTypedPointerToStruct: type "<String>"
 			do: [:ex| ex message selector == #isTypedPointerToStruct: ifTrue: [^false].
 					ex pass]]! !
 
-!SlangVMPluginCodeGenerator methodsFor: 'public' stamp: 'ar 7/8/2003 10:53'!
+!SlangVMPluginCodeGenerator methodsFor: 'public' stamp: 'jpb 5/24/2020 20:17:27'!
 generateCodeStringForPrimitives
 "TPR - moved down from CCodeGenerator"
-	| s methodList |
-	s _ ReadWriteStream on: (String new: 1000).
-	methodList _ methods asSortedCollection: [:m1 :m2 | m1 selector < m2 selector].
-	self emitCHeaderForPrimitivesOn: s.
-	self emitCConstantsOn: s.
-	self emitCVariablesOn: s.
-	self emitCFunctionPrototypes: methodList on: s.
-	methodList do: [:m | m emitCCodeOn: s generator: self].
-	self emitExportsOn: s.
-	^ s contents
+	| stream methodList |
+	stream _ ReadWriteStream on: (String new: 1000).
+	methodList _ methods asSortedCollection: [:m1 :m2 | 
+		m1 selector < m2 selector].
+	
+	self emitCHeaderForPrimitivesOn: stream.
+	self emitCConstantsOn: stream.
+	self emitCVariablesOn: stream.
+	self emitCFunctionPrototypes: methodList on: stream.
+	methodList do: [:m | m emitCCodeOn: stream generator: self].
+	self emitExportsOn: stream.
+
+	^ stream contents
 ! !
 
 !SlangVMPluginCodeGenerator methodsFor: 'public' stamp: 'tpr 1/10/2003 16:20'!
@@ -5293,10 +5267,6 @@ pluginName: aString
 "TPR - moved from CCodeGenerator"
 	"Set the plugin name when generating plugins."
 	pluginName _ aString.! !
-
-!SlangVMPluginCodeGenerator methodsFor: 'testing' stamp: 'ar 10/7/1998 17:54'!
-isGeneratingPluginCode
-	^true! !
 
 !SlangVMPluginCodeGenerator methodsFor: 'private' stamp: 'jpb 5/19/2020 22:45:26'!
 storeVirtualMachineProxyImplementation: categoryList on: fileName
@@ -5594,10 +5564,19 @@ findSourceDescriptionBy: sourceClass
 		on: MessageNotUnderstood
 		do: [:ex| self findSlangDescriptionBy: sourceClass]! !
 
+!SlangSystemAdapter methodsFor: 'as yet unclassified' stamp: 'jpb 5/24/2020 12:34:25'!
+initialize
+	logger _ Transcript! !
+
 !SlangSystemAdapter methodsFor: 'as yet unclassified' stamp: 'jpb 5/20/2020 23:24:17'!
 isStructType: typeName
 	"Returns if the given typeName is a struct"
 	^false! !
+
+!SlangSystemAdapter methodsFor: 'as yet unclassified' stamp: 'jpb 5/24/2020 12:34:32'!
+logWarning: logString
+	"Logs the given logString to the configured logger mechanism as a warning"
+	logger show: logString ; newLine.! !
 
 !SlangSystemAdapter methodsFor: 'as yet unclassified' stamp: 'jpb 5/20/2020 22:34:32'!
 openNewFileNamed: fileName
@@ -5639,6 +5618,25 @@ printUndefinedVariableReferences: undefinedRefs
 			Transcript tab; show: sel; newLine.
 		].
 	].! !
+
+!SlangSystemAdapter methodsFor: 'as yet unclassified' stamp: 'jpb 5/24/2020 09:05:17'!
+showIntervalProgressUsing: aRange label: progressLabel do: aBlock
+	progressLabel
+		displayProgressAt: Sensor mousePoint
+			from: aRange first
+			to: aRange last
+			during: aBlock! !
+
+!SlangSystemAdapter methodsFor: 'as yet unclassified' stamp: 'jpb 5/24/2020 09:20:42'!
+showProgressIn: collection label: progressLabel do: aBlock
+	"Shows a UI progress bar which is updated while the given collection is traversed. The label of the progress bar is set according to the given label"
+	progressLabel
+		displayProgressAt: Sensor mousePoint
+			from: 0
+			to: collection size
+			during: [ :progress |
+				collection withIndexDo: [ :item :itemIndex |
+					aBlock value: progress value: item value: itemIndex ] ]! !
 
 !SlangTMethod methodsFor: 'accessing' stamp: 'asf 9/29/2014 11:45'!
 argTypes
@@ -7275,7 +7273,7 @@ emitCFunctionPrototype: aStream generator: aCodeGen
 			^self]].
 	self emitCFunctionPrototype: aStream generator: aCodeGen newlineBeforeName: false! !
 
-!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 5/19/2020 22:45:26'!
+!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 5/24/2020 08:45:08'!
 emitCFunctionPrototype: aStream generator: aCodeGen newlineBeforeName: newlineBeforeName "<Boolean>"
 	"Emit a C function header for this method onto the given stream."
 
@@ -7286,7 +7284,7 @@ emitCFunctionPrototype: aStream generator: aCodeGen newlineBeforeName: newlineBe
 	newlineBeforeName ifTrue: [aStream cr] ifFalse: [aStream space].
 	(returnType last = $)
 	and: [returnType includesSubString: (aCodeGen findFunctionNameFor: self selectorForCodeGeneration)]) ifTrue:
-		["Hack fix for e.g. <returnTypeC: 'void (*setInterruptCheckChain(void (*aFunction)(void)))()'>"
+		["Hack fix for e.g. <returnType: 'void (*setInterruptCheckChain(void (*aFunction)(void)))()'>"
 		 ^self].
 	aStream
 		nextPutAll: (aCodeGen findFunctionNameFor: self selectorForCodeGeneration);
@@ -8723,18 +8721,13 @@ emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen
 emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen
 	^self emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen! !
 
-!SlangTSendNode methodsFor: 'C code generation' stamp: 'jpb 5/19/2020 22:45:26'!
+!SlangTSendNode methodsFor: 'C code generation' stamp: 'jpb 5/24/2020 20:11:05'!
 emitCCodeAsFunctionCallOn: aStream level: level generator: aCodeGen
 
 	"Translate this message send into a C function call"
 	"Special case for pluggable modules. Replace messages to interpreterProxy
 	 by interpreterProxy->message(..) if the message is not builtin"
 	| fn fnargtypes |
-	(aCodeGen isGeneratingPluginCode
-	 and: [receiver isVariable
-	 and: ['interpreterProxy' = receiver name
-	 and: [self isBuiltinOperator not]]]) ifTrue:
-		[aStream nextPutAll:'interpreterProxy->'].
 	"Translate this message send into a C function call."
 	aStream nextPutAll: (aCodeGen findFunctionNameFor: selector); nextPut: $(.
 	"Only include the receiver as the first argument in certain cases.
@@ -8747,10 +8740,12 @@ emitCCodeAsFunctionCallOn: aStream level: level generator: aCodeGen
 		[receiver emitCCodeOn: aStream level: level generator: aCodeGen.
 		arguments isEmpty ifFalse:
 			[aStream nextPutAll: ', ']].
+		
 	fn _ aCodeGen methodNamed: self selector.
 	fn notNil ifTrue: [ fnargtypes _ fn argTypes ].
 	fnargtypes notNil ifTrue: [ fnargtypes size = arguments size ifFalse: [ fnargtypes _ nil ] ].
 	fnargtypes notNil ifTrue: [ fnargtypes _ fnargtypes collect: [ :a | aCodeGen declToType: a ]].
+	
 	arguments withIndexDo:
 		[ :arg :i | | argtype fnargtype |
 		i = 1 ifFalse: [aStream nextPut: $,; space].
