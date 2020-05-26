@@ -24,7 +24,14 @@ I mean the actual real right way of doing that is not to parse any
 headers, module definitions in source code in any third part programming
 language but to ask an interface "give me the methods with typenames,
 enums and constants you export and support" and it returns to you in
-an uniform way.
+an uniform way. Parsing external source is a rather clunky way of
+doing it, you can do that for each time you want to interact with
+a different programming languange. There are now possible candidate
+programming languages around: Go, Java, Python, Rust, JavaScript,
+C, C++, Ada. So eight parsers to write, really who has the time for
+that? Something like OMeta or PetitParser makes that easier, but it's
+still work and for what gain? Added complexity.
+
 
 ## 25th May 2020 (jpb)
 
