@@ -9,6 +9,23 @@ authors at the end of the file.
 
 # Entries
 
+## 26th May 2020 (jpb)
+
+Another from yesterdays squeak-vm mailinglist thread, it just seems
+to have a little bit of momentum. Interesting quote by Tim Rowledge:
+
+> VW has a parser of C header files that is I suppose the right way to
+> do this sort of thing - you parse the headers (warning - I seem to
+> recall parsing 'windows.h' taking several days in the original VW ddl
+> product) and build proxies of all the types/structs/etc.  Is that a
+> practical way to do it? Hell of a lot of work to do, certainly.
+
+I mean the actual real right way of doing that is not to parse any
+headers, module definitions in source code in any third part programming
+language but to ask an interface "give me the methods with typenames,
+enums and constants you export and support" and it returns to you in
+an uniform way.
+
 ## 25th May 2020 (jpb)
 
 I peeked into the original back to the future paper, there
