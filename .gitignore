@@ -25,3 +25,7 @@ SqueakDebug.log
 # playground cache
 /play-cache
 /play-stash
+
+# emacs buffer files
+*~
+#*#
