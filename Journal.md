@@ -9,6 +9,36 @@ authors at the end of the file.
 
 # Entries
 
+## 27th May 2020 (jpb)
+
+I moved yesterday most of the classes to which could in theory be
+adapted to generate a plugin to the Slang-PluginMaker, which will
+be probably be deleted at some point completly. As plugins aren't
+advised by folks on the Squeak VM mailinglist to begin with and are
+just old tightly coupled balls of rubber band.
+
+Eliot Miranda also pointed out in the [vm-beginners](http://forum.world.st/Stability-of-the-external-plugin-interface-td5117112.html) that I wouldn't need FFI on Cuis as it's supposed to be
+supported here:
+
+> I don’t understand where you get the idea that Cuis has no callbacks.
+> Cuis supports Alien and has access to the ThreadedFFIPlugin and runs on
+> Cog, so it can have callbacks easily.  I suspect they’re there if you
+> load FFI and Alien.  Ask on the Cuis list.
+>
+> In a Squeak image look at Alien’s class side exampleQsort which uses a
+> callback to implement the sort function to qsort.  I bet this works on
+> Cuis too.
+
+Probably from the VM side, but I never have seen
+it in action I only saw the FFI package and that doesn't look like
+Alien or threaded FFI. But on the other hand I don't know Alien
+and found the uFFI of pharo hard to understand and hard to use.
+I had less problems with the FFI of Cuis, which  is as thought the
+old SqueakFFI. On the other hand I haven't wrote any FFI code for
+now almost one year. A timespan where you can forget an API easily.
+Anyway.. the response did hurt, let's move on.
+
+
 ## 26th May 2020 (jpb)
 
 Another from yesterdays squeak-vm mailinglist thread, it just seems
