@@ -38,6 +38,43 @@ old SqueakFFI. On the other hand I haven't wrote any FFI code for
 now almost one year. A timespan where you can forget an API easily.
 Anyway.. the response did hurt, let's move on.
 
+So let's summarize my current desing opinios:
+
+1. Specialize on FFI Plugins first, as this is my current usecase I want
+   to have in Slang.
+2. Allow any object which implements the Slang selectors to be able to
+   be translated using a code generator to a target language.
+3. Remove all the old gunk from Slang. As it hinders
+   development and introduces magical thinking about the codebase
+   as most of the added functionality in there was tailored to the
+   VMMaker.
+4. Extract out the stuff which is more system specific and move it
+   into a replaceable adapter object (`SlangSystemAdapter`).
+5. Remove C specific part as it hinders switching out the translation
+   code generator. For example I have peaked over what Vanessa Freudenberg
+   and others wrote in the SqueakJS VMMaker and it tries to wiggle around
+   the C constructs in Slang, which is not ideal.
+   
+Ok, finally I removed following selectors, as these are very C specific
+and harder to map to other languages:
+
+- `isDefined:inSmalltalk:comment:ifTrue`
+- `cCode:inSmalltalk:`
+- `cppIf:ifTrue:ifFalse:`
+- `isDefined:inSmalltalk:comment:ifTrue:ifFalse:`
+- `isDefined:inSmalltalk:comment:ifTrue: .`
+- `isDefinedTrueExpression:inSmalltalk:comment:ifTrue:ifFalse:`
+- `preprocessorExpression:`
+- `cPreprocessorDirective:`
+
+Let's see if I can find replacements for these valid concepts,
+but in the end they are are an ad-hoc solution to the actual
+problem of working with `#ifdef`, `#define X`, `#pragma` constructs,
+how can we keep these language constructs out of Slang, so that they
+don't leak into the system? If you remove them you have a proper object
+which can do things and not some thing which is only good for being
+translated to C.
+
 
 ## 26th May 2020 (jpb)
 

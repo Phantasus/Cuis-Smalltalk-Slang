@@ -1,19 +1,9 @@
-'From Cuis 5.0 [latest update: #4112] on 26 May 2020 at 7:10:18 pm'!
+'From Cuis 5.0 [latest update: #4112] on 27 May 2020 at 10:04:33 pm'!
 'Description License: MIT'!
-!provides: 'Slang-Tools' 1 13!
+!provides: 'Slang-Tools' 1 16!
 SystemOrganization addCategory: #'Slang-Tools-Tests'!
 SystemOrganization addCategory: #'Slang-Tools'!
 
-
-!classDefinition: #SlangOop category: #'Slang-Tools'!
-Behavior subclass: #SlangOop
-	instanceVariableNames: ''
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Slang-Tools'!
-!classDefinition: 'SlangOop class' category: #'Slang-Tools'!
-SlangOop class
-	instanceVariableNames: ''!
 
 !classDefinition: #SlangCCodeGeneratorTest category: #'Slang-Tools-Tests'!
 TestCase subclass: #SlangCCodeGeneratorTest
@@ -43,6 +33,16 @@ TestCase subclass: #SlangCTypeRepositoryTest
 	category: 'Slang-Tools-Tests'!
 !classDefinition: 'SlangCTypeRepositoryTest class' category: #'Slang-Tools-Tests'!
 SlangCTypeRepositoryTest class
+	instanceVariableNames: ''!
+
+!classDefinition: #SlangParseNodeTest category: #'Slang-Tools-Tests'!
+TestCase subclass: #SlangParseNodeTest
+	instanceVariableNames: 'usedClass'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-Tools-Tests'!
+!classDefinition: 'SlangParseNodeTest class' category: #'Slang-Tools-Tests'!
+SlangParseNodeTest class
 	instanceVariableNames: ''!
 
 !classDefinition: #SlangSystemServiceTest category: #'Slang-Tools-Tests'!
@@ -147,32 +147,12 @@ SlangCodeGenerator class
 
 !classDefinition: #SlangCCodeGenerator category: #'Slang-Tools'!
 SlangCodeGenerator subclass: #SlangCCodeGenerator
-	instanceVariableNames: 'translationDict inlineList constants variables variableDeclarations scopeStack methods macros apiMethods preparedMethodList variablesSetCache headerFiles globalVariableUsage useSymbolicConstants doNotRemoveMethodList asArgumentTranslationDict receiverDict originClass currentMethod logger declareMethodsStatic permitMethodPruning pools abstractDeclarations uncheckedAbstractMethods selectorTranslations breakSrcInlineSelector breakDestInlineSelector inlineReturnTypes headerNotice versionString typeRepository'
+	instanceVariableNames: 'translationDict inlineList constants variables variableDeclarations scopeStack methods macros apiMethods preparedMethodList variablesSetCache headerFiles globalVariableUsage useSymbolicConstants doNotRemoveMethodList asArgumentTranslationDict receiverDict originClass currentMethod logger declareMethodsStatic permitMethodPruning pools abstractDeclarations uncheckedAbstractMethods selectorTranslations inlineReturnTypes headerNotice versionString typeRepository'
 	classVariableNames: 'UseRightShiftForDivide'
 	poolDictionaries: ''
 	category: 'Slang-Tools'!
 !classDefinition: 'SlangCCodeGenerator class' category: #'Slang-Tools'!
 SlangCCodeGenerator class
-	instanceVariableNames: ''!
-
-!classDefinition: #SlangCCodeGeneratorGlobalStructure category: #'Slang-Tools'!
-SlangCCodeGenerator subclass: #SlangCCodeGeneratorGlobalStructure
-	instanceVariableNames: 'localStructDef structDefDefine'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Slang-Tools'!
-!classDefinition: 'SlangCCodeGeneratorGlobalStructure class' category: #'Slang-Tools'!
-SlangCCodeGeneratorGlobalStructure class
-	instanceVariableNames: ''!
-
-!classDefinition: #SlangVMPluginCodeGenerator category: #'Slang-Tools'!
-SlangCCodeGenerator subclass: #SlangVMPluginCodeGenerator
-	instanceVariableNames: 'pluginClass pluginName'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Slang-Tools'!
-!classDefinition: 'SlangVMPluginCodeGenerator class' category: #'Slang-Tools'!
-SlangVMPluginCodeGenerator class
 	instanceVariableNames: ''!
 
 !classDefinition: #SlangLineStream category: #'Slang-Tools'!
@@ -366,12 +346,6 @@ SlangTVariableNode class
 	instanceVariableNames: ''!
 
 
-!SlangOop commentStamp: '<historical>' prior: 0!
-Cooercion specification for Identity coercions:
-
-	x asOop: Oop == x
-	y asValue: Oop == y!
-
 !SlangCCodeGeneratorTest commentStamp: '<historical>' prior: 0!
 I test the generic C code generator!
 
@@ -416,14 +390,6 @@ Represents a superclass of all possible code generators, which take in slang and
 !SlangCCodeGenerator commentStamp: 'tpr 5/2/2003 14:30' prior: 0!
 This class oversees the translation of a subset of Smalltalk to C, allowing the comforts of Smalltalk during development and the efficiency and portability of C for the resulting interpreter.  
 See VMMaker for more useful info!
-
-!SlangCCodeGeneratorGlobalStructure commentStamp: 'tpr 5/23/2003 11:17' prior: 0!
-This subclass of CCodeGenerator adds support for sticking most global variables into a large global array. This in turn means that suitably minded C compilers can do a better job of accessing those variables; in particular the Mac OS use of PPC and Acorn use of ARM benfits by a substantial margin. 
-
-Only simple globals are currently put in the array. Someday we might try adding pointers to the various arrays etc.!
-
-!SlangVMPluginCodeGenerator commentStamp: '<historical>' prior: 0!
-I generate code that can be loaded dynamically from external libraries (e.g., DSOs on Unix or DLLs on Windows)!
 
 !SlangLineStream commentStamp: '<historical>' prior: 0!
 Represents an output stream which puts out every input out as a new line!
@@ -506,31 +472,6 @@ name
 isVariable
 
 	^true! !
-
-!SlangOop class methodsFor: 'plugin generation' stamp: 'eem 10/2/2010 14:12'!
-ccg: cg generateCoerceToOopFrom: aNode on: aStream
-	"N.B.  The is used both for generation and simulation so answer the result (for interpretation)"
-	^cg emitCExpression: aNode on: aStream! !
-
-!SlangOop class methodsFor: 'plugin generation' stamp: 'eem 10/3/2010 08:09'!
-ccg: cg generateCoerceToValueFrom: aNode on: aStream
-	"N.B.  The could be used both for generation and simulation so answer the result (for interpretation)"
-	^cg emitCExpression: aNode on: aStream! !
-
-!SlangOop class methodsFor: 'plugin generation' stamp: 'acg 9/18/1999 15:58'!
-ccg: cg prolog: aBlock expr: aString index: anInteger
-
-	^cg ccgLoad: aBlock expr: aString asRawOopFrom: anInteger! !
-
-!SlangOop class methodsFor: 'plugin generation' stamp: 'acg 9/20/1999 11:17'!
-ccgCanConvertFrom: anObject
-
-	^(anObject isKindOf: SmallInteger) not! !
-
-!SlangOop class methodsFor: 'plugin generation' stamp: 'ikp 3/31/2005 14:20'!
-ccgDeclareCForVar: aSymbolOrString
-
-	^'sqInt ', aSymbolOrString! !
 
 !SlangCCodeGeneratorTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/19/2020 16:01:41'!
 setUp
@@ -626,6 +567,31 @@ testIsTypedPointerToStruct
 	self deny: (repository isTypedPointerToStruct: nil).
 	self deny: (repository isTypedPointerToStruct: 'char *').
 	! !
+
+!SlangParseNodeTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/26/2020 20:26:51'!
+testIsQuery
+	| node |
+	node _ usedClass new.
+	
+	self assert: (node is: #ParseNode).
+	self deny: (node is: #Assertion).
+	self deny: (node is: #Comment).
+	self deny: (node is: #Assignment).
+	self deny: (node is: #Constant).
+	self deny: (node is: #Inline).
+	self deny: (node is: #GoTo).
+	self deny: (node is: #Leaf).
+	self deny: (node is: #PreprocessorDirective).
+	self deny: (node is: #Return).
+	self deny: (node is: #ReturningIf).
+	self deny: (node is: #Send).
+	self deny: (node is: #StatementList).
+	self deny: (node is: #Switch).
+	self deny: (node is: #Variable).! !
+
+!SlangParseNodeTest methodsFor: 'setUp/tearDown' stamp: 'jpb 5/26/2020 20:21:16'!
+setUp
+	usedClass _ SlangTParseNode ! !
 
 !SlangSystemServiceTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/20/2020 22:28:19'!
 setUp
@@ -871,143 +837,54 @@ testInterpTypeDeclarations
 			with: 'methodName'.
 	self assert: m = p! !
 
-!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'dtl 3/18/2013 09:49'!
+!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'jpb 5/27/2020 21:31:12'!
 testIfElseEndif
-	"Test isDefinedTrueExpression:inSmalltalk:comment:ifTrue:ifFalse: "
+	"Test isDefinedTrueExpression:inSmalltalk:comment:ifTrue:ifFalse: is not implemented in Cuis Slang"
 
-	"(SlangTest selector: #testIfElseEndif) run"
-
-	| stssi cString stringWithoutWhiteSpace lines |
+	| stssi |
 	stssi _ SlangTestSupportInterpreter inline: false.
 
-	"verify that the default Smalltalk block that is evaluated in simulation"
-	self assert: stssi ifDefinedTrueElseEndif = 4.
+	self should: [ stssi ifDefinedTrueElseEndif ] raise: MessageNotUnderstood.! !
 
-	"verify generated C string"
-	cString _ stssi asCString: #ifDefinedTrueElseEndif.
-	lines _ (cString findTokens: Character cr) select: [:e |
-		{
-			'# if (SIZE == 8)  // SIZE may be 4 or 8' .
-			'	return 8;' .
-			'# else' .
-			'	return 4;' .
-			'# endif  // SIZE == 8'
-		} includes: e ].
-	self should: lines size = 5.
-	self should: ('*return 8*' match: lines second).
-	self should: ('*return 4*' match: lines fourth).
-
-	"check the rest of the method, ignoring whitespace"
-	cString _ stssi asCString: #ifDefinedTrueElseEndif.
-	stringWithoutWhiteSpace _ cString reject: [:e | e isSeparator].
-	self should: stringWithoutWhiteSpace =
-		'sqIntifDefinedTrueElseEndif(void){#if(SIZE==8)//SIZEmaybe4or8return8;#elsereturn4;#endif//SIZE==8returnnull;}'.
-
-"
-sqInt ifDefinedTrueElseEndif(void) {
-	
-# if (SIZE == 8)  // SIZE may be 4 or 8
-	return 8;
-# else
-	return 4;
-# endif  // SIZE == 8
-	
-	return null;
-}
-"! !
-
-!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'dtl 3/18/2013 09:49'!
+!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'jpb 5/27/2020 21:50:09'!
 testIfdefElseEndif
-	"Test isDefined:inSmalltalk:comment:ifTrue:ifFalse: "
+	"Test that  isDefined:inSmalltalk:comment:ifTrue:ifFalse: is not implemented is Cuis Slang"
 
-	"(SlangTest selector: #testIfdefElseEndif) run"
-
-	| stssi cString stringWithoutWhiteSpace lines |
+	| stssi expected|
 	self flag: #FIXME. "See redundant implementation in oscog #cppIf:ifTrue:ifFalse:"
 
 	stssi _ SlangTestSupportInterpreter inline: false.
 
 	"verify that the default Smalltalk block that is evaluated in simulation"
-	self assert: stssi ifdefElseEndif = #defaultBlockForSimulation.
-
-	"verify generated C string"
-	cString _ stssi asCString: #ifdefElseEndif.
-	lines _ (cString findTokens: Character cr) select: [:e |
-		{
-			'# ifdef HAVE_FOO  // some platforms do not support foo properly' .
-			'	return 1;' .
-			'# else' .
-			'	return 0;' .
-			'# endif  // HAVE_FOO'
-		} includes: e ].
-	self should: lines size = 5.
-	self should: ('*return 1*' match: lines second).
-	self should: ('*return 0*' match: lines fourth).
-
-	"check the rest of the method, ignoring whitespace"
-	stringWithoutWhiteSpace _ cString reject: [:e | e isSeparator].
-	self should: stringWithoutWhiteSpace =
-		'sqIntifdefElseEndif(void){#ifdefHAVE_FOO//someplatformsdonotsupportfooproperlyreturn1;#elsereturn0;#endif//HAVE_FOOreturnnull;}'.
-
-"
-sqInt ifdefElseEndif(void) {
+	self should: [ stssi ifdefElseEndif ] raise: MessageNotUnderstood.
 	
-# ifdef HAVE_FOO  // some platforms do not support foo properly
-	return 1;
-# else
-	return 0;
-# endif  // HAVE_FOO
+	expected _ String crlfString join: {
+		''.
+		'sqInt ifdefElseEndif(void) {'.
+		'isDefinedinSmalltalkcommentifTrueifFalse("HAVE_FOO", return defaultBlockForSimulation, "some platforms do not support'.
+		'foo properly", return 1, return 0);'.
+		'return null;'.
+		'}'.
+	}.
 	
-	return null;
-}
-"! !
+	self assert: expected equals: (stssi asCString: #ifdefElseEndif).! !
 
-!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'dtl 3/18/2013 09:49'!
+!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'jpb 5/27/2020 21:28:07'!
 testIfdefEndif
-	"Test isDefined:inSmalltalk:comment:ifTrue: "
-
-	"(SlangTest selector: #testIfdefEndif) run"
-
-	| stssi cString stringWithoutWhiteSpace lines |
+	"Tests that ifDef is not implemented. This is a difference to VMMaker Slang, which Cuis Slang doesn't implement "
+	| stssi |
 	self flag: #FIXME. "See redundant implementation in oscog #cppIf:ifTrue:"
 
 	stssi _ SlangTestSupportInterpreter inline: false.
 
 	"verify that the default Smalltalk block that is evaluated in simulation"
-	self assert: stssi ifdefEndif = #defaultBlockForSimulation.
+	self should: [ stssi ifdefEndif ]
+		raise: MessageNotUnderstood.
+! !
 
-	"verify generated C string"
-	cString _ stssi asCString: #ifdefEndif.
-	lines _ (cString findTokens: Character cr) select: [:e |
-		{
-			'# ifdef HAVE_FOO  // some platforms do not support foo properly' .
-			'	return 1;' .
-			'# endif  // HAVE_FOO'
-		} includes: e ].
-	self should: lines size = 3.
-
-	"check the rest of the method, ignoring whitespace"
-	cString _ stssi asCString: #ifdefEndif.
-	stringWithoutWhiteSpace _ cString reject: [:e | e isSeparator].
-	self should: stringWithoutWhiteSpace =
-		'sqIntifdefEndif(void){#ifdefHAVE_FOO//someplatformsdonotsupportfooproperlyreturn1;#endif//HAVE_FOOreturn0;}'.
-
-"
-sqInt ifdefEndif(void) {
-	
-# ifdef HAVE_FOO  // some platforms do not support foo properly
-	return 1;
-# endif  // HAVE_FOO
-	
-	return 0;
-}
-"! !
-
-!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'jpb 5/16/2020 00:22:59'!
+!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'jpb 5/27/2020 22:02:50'!
 testPreprocessorExpression
-	"Test preprocessorExpression: "
-
-	"(SlangTest selector: #testPreprocessorExpression) run"
+	"Test that preprocessorExpression: is not supported in Cuis Slang"
 
 	| stssi cString |
 	self flag: #FIXME. "See redundant implementation in oscog #cPreprocessorDirective: "
@@ -1015,10 +892,7 @@ testPreprocessorExpression
 	stssi _ SlangTestSupportInterpreter inline: false.
 	cString _ stssi asCString: #preprocessorExpression.
 	
-	self should: ('* define FOO bar*' match: cString).
-	self should: ((cString findTokens: Character cr) select: [:e | e = '# define FOO bar' ]) size = 1.
-	self should: ((cString findTokens: Character cr) select: [:e | e = '## define FOO bar' ]) size = 0.
-! !
+	self deny: ('* define FOO bar*' match: cString).! !
 
 !SlangTest methodsFor: 'testing base plugins' stamp: 'dtl 3/18/2013 18:32'!
 testPluginDeclareExport
@@ -1232,90 +1106,17 @@ moduleName
 	"Answer the receiver's module name that is used for the plugin's C code."
 	^self name asString! !
 
-!SlangPlugin methodsFor: '*Slang-Tools' stamp: 'jpb 5/18/2020 15:35:50'!
-isDefined: directiveString inSmalltalk: conditionBlock comment: commentStringOrNil ifTrue: trueExpressionOrBlock
-	"When translated, produces #ifdef #endif CPP directives.
-	Example usage:
+!SlangPlugin methodsFor: 'plugin lifecyle' stamp: 'jpb 5/27/2020 20:32:51'!
+getModuleName
+	"Returns the name of the module"! !
 
-	self isDefined: 'HAVE_FOO'
-		inSmalltalk: [self isFoo]
-		comment: 'some platforms do not support foo properly'
-		ifTrue: [self doThingsThatWorkIfFooIsPresent]
+!SlangPlugin methodsFor: 'plugin lifecyle' stamp: 'jpb 5/27/2020 20:31:00'!
+initialiseModule
+	"Common entry point for plugins"! !
 
-	Generated C code:
-	
-	# ifdef HAVE_FOO  // some platforms do not support foo properly
- 		doThingsThatWorkIfFooIsPresent();
-	# endif  // HAVE_FOO
-	"
-
-	^ self isDefined: directiveString
-			inSmalltalk: conditionBlock
-			comment: commentStringOrNil
-			ifTrue: trueExpressionOrBlock
-			ifFalse: []
-! !
-
-!SlangPlugin methodsFor: '*Slang-Tools' stamp: 'jpb 5/18/2020 15:37:50'!
-isDefined: directiveString inSmalltalk: conditionBlock comment: commentStringOrNil ifTrue: trueExpressionOrBlock ifFalse: falseExpressionOrBlockOrNil
-	"When translated, produces #ifdef #else #endif CPP directives.
-	Example usage:
-
-	Smalltalk Slang:
-		self isDefined: 'HAVE_FOO'
-			inSmalltalk: [self isFoo]
-			comment: 'some platforms do not support foo properly'
-			ifTrue: [self doThingsThatWorkIfFooIsPresent]
-			ifFalse: [self doSomethingElseInstead]
-
-	Generated C code:
-		# ifdef HAVE_FOO  // some platforms do not support foo properly
-			doThingsThatWorkIfFooIsPresent();
-		# else
-			doSomethingElseInstead();
-		# endif  // HAVE_FOO
-
-	Smalltalk Slang:
-		hasFoo _ self isDefined: 'HAVE_FOO'
-					inSmalltalk: [self isFoo]
-					comment: 'some platforms do not support foo properly'
-					ifTrue: [true]
-					ifFalse: [false].
-
-	Generated C code:
-		hasFoo =
-	# ifdef HAVE_FOO  // some platforms do not support foo properly
-			1
-	# else
-			0
-	# endif  // HAVE_FOO
- 		;
-
-	"
-
-	^ conditionBlock value
-		ifTrue: [trueExpressionOrBlock value]
-		ifFalse: [falseExpressionOrBlockOrNil value]
-! !
-
-!SlangPlugin methodsFor: '*Slang-Tools' stamp: 'jpb 5/18/2020 15:38:03'!
-isDefinedTrueExpression: condition inSmalltalk: conditionBlock comment: commentStringOrNil ifTrue: trueExpressionOrBlock ifFalse: falseExpressionOrBlockOrNil
-	"When translated, produces #if (condition) #else #endif CPP directives.
-	Example usage:
-
-		self isDefinedTrueExpression: 'BytesPerWord == 8'
-			inSmalltalk: [BytesPerWord = 8]
-			comment: 'conditional on object word size'
-			ifTrue: [self doSomethingFor64BitWord]
-			ifFalse: [self doSomethingFor32BitWord]"
-
-	^ conditionBlock value
-		ifTrue: [trueExpressionOrBlock value]
-		ifFalse: [falseExpressionOrBlockOrNil value]
-! !
-
-!SlangPlugin methodsFor: 'as yet unclassified' stamp: 'jpb 5/23/2020 22:05:58'!
-initialiseModule! !
+!SlangPlugin methodsFor: 'plugin lifecyle' stamp: 'jpb 5/27/2020 20:32:28'!
+shutdownModule
+	"Shutsdown the plugin. Frees internal memory, resets state, etc"! !
 
 !SlangPlugin class methodsFor: 'as yet unclassified' stamp: 'jpb 5/18/2020 15:39:40'!
 initializeCodeGenerator: codeGenerator
@@ -1356,28 +1157,28 @@ doNotGenerateByPragma
 	^ 2 + 2
 ! !
 
-!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'dtl 3/18/2013 14:28'!
+!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'jpb 5/26/2020 21:55:36'!
 asCString
 
 	| stream |
 	stream _ ReadWriteStream on: String new.
-	self cg emitCCodeOn: stream doAssertions: true.
+	self findCodeGenerator emitCCodeOn: stream.
 	^ stream contents
 ! !
 
-!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'dtl 3/18/2013 14:29'!
+!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'jpb 5/26/2020 21:01:22'!
 asCString: selector
 
 	| method stream |
-	method _ self cg methodNamed: selector.
+	method _ self findCodeGenerator methodNamed: selector.
 	method ifNil: [^ 'No source has been generated'].
 	stream _ ReadWriteStream on: String new.
 	method emitCCodeOn: stream generator: cg.
 	^ stream contents
 ! !
 
-!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'jpb 5/15/2020 22:23:03'!
-cg
+!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'jpb 5/26/2020 21:01:22'!
+findCodeGenerator
 	"Lazy initialize, once per test"
 
 	cg ifNil: [
@@ -1676,28 +1477,28 @@ doNotGenerateByPragma
 	^ 2 + 2
 ! !
 
-!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'dtl 3/18/2013 14:28'!
+!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'jpb 5/26/2020 21:55:51'!
 asCString
 
 	| stream |
 	stream _ ReadWriteStream on: String new.
-	self cg emitCCodeOn: stream doAssertions: true.
+	self findCodeGenerator emitCCodeOn: stream.
 	^ stream contents
 ! !
 
-!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'dtl 3/18/2013 14:29'!
+!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'jpb 5/26/2020 21:10:07'!
 asCString: selector
 
 	| method stream |
-	method _ self cg methodNamed: selector.
+	method _ self findCodeGenerator methodNamed: selector.
 	method ifNil: [^ 'No source has been generated'].
 	stream _ ReadWriteStream on: String new.
 	method emitCCodeOn: stream generator: cg.
 	^ stream contents
 ! !
 
-!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'jpb 5/16/2020 09:44:25'!
-cg
+!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'jpb 5/26/2020 21:01:22'!
+findCodeGenerator
 	"Lazy initialize, once per test"
 
 	cg ifNil: [
@@ -1884,16 +1685,15 @@ varDefByPragma
 	<var: #bar declare: 'unsigned int * bar'>
 ! !
 
-!SlangTestSupportPlugin class methodsFor: 'translation' stamp: 'jpb 5/16/2020 22:23:41'!
+!SlangTestSupportPlugin class methodsFor: 'translation' stamp: 'jpb 5/26/2020 20:59:58'!
 buildCodeGeneratorInlined: doInlining
 	"Build a CCodeGenerator for this class."
 
 	 | cg |
-	cg _ SlangVMPluginCodeGenerator new initialize.
+	cg _ SlangCCodeGenerator new initialize.
 	cg declareMethodsStatic: false.
 	cg permitMethodPruning: true.
 	cg uncheckedAbstractMethods addAll: self abstractSelectors.
-	cg pluginName: self moduleName.
 	
 	^self initializeCodeGenerator: cg
 
@@ -2160,59 +1960,6 @@ addHeaderFile: aString
 addMacro: aString for: selector
 	"Add a macro. aString must be the macro arguments and body without the leading #define or name"
 	macros at: selector put: aString! !
-
-!SlangCCodeGenerator methodsFor: 'public' stamp: 'ar 2/1/2011 12:00'!
-addMethodsForPrimitives: classAndSelectorList 
-	| sel aClass source verbose meth |
-	classAndSelectorList do:[:classAndSelector | 
-		aClass _ Smalltalk at: (classAndSelector at: 1) ifAbsent:[nil].
-		aClass ifNotNil:[
-			self addAllClassVarsFor: aClass.
-			"TPR - should pool vars also be added here?"
-
-			"find the method in either the class or the metaclass"
-			sel _ classAndSelector at: 2.
-			(aClass includesSelector: sel)
-				ifTrue: [source _ aClass sourceCodeAt: sel ifAbsent:[nil]]
-				ifFalse: [source _ aClass class sourceCodeAt: sel ifAbsent:[nil]].
-		].
-		source ifNil:[
-			Transcript cr; show: 'WARNING: Compiled primitive ', classAndSelector first, '>>', classAndSelector last, ' not present'.
-		] ifNotNil:[
-			"compile the method source and convert to a suitable translation 
-			method "
-			meth _ (Compiler new
-						parse: source
-						in: aClass
-						notifying: nil)
-						asTranslationMethodOfClass: self translationMethodClass.
-
-			(aClass includesSelector: sel)
-				ifTrue: [meth definingClass: aClass]
-				ifFalse: [meth definingClass: aClass class].
-			meth primitive > 0 ifTrue:[meth preparePrimitiveName].
-			"for old-style array accessing: 
-			meth covertToZeroBasedArrayReferences."
-			meth replaceSizeMessages.
-			self addMethod: meth.
-		].
-	].
-	"method preparation"
-	verbose _ false.
-	self prepareMethods.
-	verbose
-		ifTrue: 
-			[self printUnboundCallWarnings.
-			self printUnboundVariableReferenceWarnings.
-			Transcript cr].
-
-	"code generation"
-	self doInlining: true.
-
-	methods do:[:m|
-		"if this method is supposed to be a primitive (rather than a helper 
-		routine), add assorted prolog and epilog items"
-		m primitive > 0 ifTrue: [m preparePrimitivePrologue]].! !
 
 !SlangCCodeGenerator methodsFor: 'public' stamp: 'jpb 5/20/2020 23:29:46'!
 addPoolVarsFor: aClass 
@@ -2526,7 +2273,7 @@ compileToTMethodSelector: selector in: aClass
 	methodNode _ systemAdapter parseSelector: selector in: aClass. 
 	^methodNode asTranslationMethodOfClass: self translationMethodClass! !
 
-!SlangCCodeGenerator methodsFor: 'utilities' stamp: ' 2/7/08 14:57'!
+!SlangCCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/27/2020 20:27:50'!
 emitBuiltinConstructAsArgumentFor: msgNode on: aStream level: level
 	"If the given selector is in the translation dictionary, translate it into a target code construct and return true. Otherwise, do nothing and return false."
 
@@ -2534,6 +2281,7 @@ emitBuiltinConstructAsArgumentFor: msgNode on: aStream level: level
 	action _ asArgumentTranslationDict
 				at: msgNode selector
 				ifAbsent: [translationDict at: msgNode selector ifAbsent: [ ^false ]].
+				
 	self perform: action with: msgNode with: aStream with: level.
 	^true! !
 
@@ -2735,7 +2483,7 @@ removeVariable: aName
 						cr]].
 	variableDeclarations removeKey: aName ifAbsent: []! !
 
-!SlangCCodeGenerator methodsFor: 'utilities'!
+!SlangCCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/27/2020 20:52:31'!
 reportRecursiveMethods
 	"Report in transcript all methods that can call themselves directly or indirectly or via a chain of N intermediate methods."
 
@@ -2748,7 +2496,7 @@ reportRecursiveMethods
 			[calls isEmpty] whileFalse: [
 				sel _ calls removeFirst.
 				sel = m selector ifTrue: [
-					Transcript show: m selector, ' is recursive'; cr.
+					systemAdapter logWarning: m selector , ' is recursive'.
 				] ifFalse: [
 					(visited includes: sel) ifFalse: [
 						called _ self methodNamed: sel.
@@ -2794,22 +2542,6 @@ unreachableMethods
 	].
 	^ out! !
 
-!SlangCCodeGenerator methodsFor: 'debugging' stamp: 'eem 10/30/2012 15:54'!
-breakDestInlineSelector
-	^breakDestInlineSelector! !
-
-!SlangCCodeGenerator methodsFor: 'debugging' stamp: 'eem 10/30/2012 15:54'!
-breakDestInlineSelector: aSelector
-	breakDestInlineSelector _ aSelector! !
-
-!SlangCCodeGenerator methodsFor: 'debugging' stamp: 'eem 10/30/2012 15:55'!
-breakSrcInlineSelector
-	^breakSrcInlineSelector! !
-
-!SlangCCodeGenerator methodsFor: 'debugging' stamp: 'eem 10/30/2012 15:54'!
-breakSrcInlineSelector: aSelector
-	breakSrcInlineSelector _ aSelector! !
-
 !SlangCCodeGenerator methodsFor: 'accessing' stamp: 'eem 7/2/2008 16:01'!
 currentMethod
 	^currentMethod! !
@@ -2851,8 +2583,8 @@ uncheckedAbstractMethods
 
 ! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/24/2020 20:19:28'!
-emitCCodeOn: aStream doAssertions: assertionFlag
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/26/2020 21:54:53'!
+emitCCodeOn: aStream 
 	"Emit C code for all methods in the code base onto the given stream. All inlined method calls should already have been expanded."
 
 	self emitCHeaderOn: aStream.
@@ -2871,13 +2603,12 @@ emitCCodeOn: aStream doAssertions: assertionFlag
 	self emitExportsOn: aStream.
 ! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'dtl 1/28/2007 14:10'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/26/2020 21:54:53'!
 emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag
 	"Emit C code for all methods in the code base onto the given stream. All inlined method calls should already have been expanded."
 
 	self prepareMethodsInlined: inlineFlag doAssertions: assertionFlag.
-	^ self emitCCodeOn: aStream doAssertions: assertionFlag
-! !
+	^ self emitCCodeOn: aStream ! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/19/2020 22:46:16'!
 emitCConstantsOn: aStream
@@ -2935,7 +2666,7 @@ emitCFunctionPrototypes: methodList on: aStream
 		aStream nextPutAll: ';'; cr].
 	exporting ifTrue: [aStream nextPutAll: '#pragma export off'; cr]! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/15/2020 22:48:58'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/26/2020 21:39:50'!
 emitCHeaderOn: aStream
 	"Write a C file header onto the given stream."
 
@@ -2944,32 +2675,10 @@ emitCHeaderOn: aStream
 	aStream nextPutAll: ' */'; cr;
 		nextPutAll: (self fileHeaderVersionStampForSourceClass: originClass);
 		cr; cr.
-	self emitGlobalStructFlagOn: aStream.
-	aStream nextPutAll: '#include "sq.h"'; cr.
 
 	"Additional header files"
 	self emitHeaderFilesOn: aStream.
 
-	"Default definitions for optional functions, provided for backward compatibility"
-	self emitDefaultMacrosOn: aStream.
-
-	aStream nextPutAll: '
-#include "sqMemoryAccess.h"
-
-sqInt printCallStack(void);
-void defaultErrorProc(char *s) {
-	/* Print an error message and exit. */
-	static sqInt printingStack = false;
-
-	printf("\n%s\n\n", s);
-	if (!!printingStack) {
-		/* flag prevents recursive error when trying to print a broken stack */
-		printingStack = true;
-		printCallStack();
-	}
-	exit(-1);
-}
-'.
 	aStream cr.! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'dtl 11/9/2006 06:42'!
@@ -3001,69 +2710,6 @@ emitCVariablesOn: aStream
 					aStream nextPutAll: 'sqInt ' , varString , ';'; newLine]].
 			
 	aStream newLine! !
-
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'dtl 7/4/2012 18:39'!
-emitDefaultMacrosOn: aStream
-	"Emit macros to provide default implementations of certain functions used by
-	the interpreter. If not previously defined in config.h they will be defined here.
-	The definitions will be available to any module that includes sqMemoryAccess.h.
-	The default macros are chosen for backward compatibility with existing platform
-	support code."
-
-	"Reduce the obscurity of these macros by flagging some selectors to
-	make this method show up as a sender."
-
-	self flag: #assert:.
-	"If assert() has not been defined e.g. by sqAssert.h, then use the standard clib version"
-	aStream cr;
-		nextPutAll: '#ifndef assert'; cr;
-		nextPutAll: ' #include <assert.h>'; cr;
-		nextPutAll: '#endif'; cr.
-
-	self flag: #allocateMemory:minimum:imageFile:headerSize:.
-	aStream cr;
-		nextPutAll: '#ifndef allocateMemoryMinimumImageFileHeaderSize'; cr;
-		nextPutAll: ' /* Called by Interpreter>>allocateMemory:minimum:imageFile:headerSize: */'; cr;
-		nextPutAll: ' /* Default definition if not previously defined in config.h */'; cr;
-		nextPutAll: ' #define allocateMemoryMinimumImageFileHeaderSize(',
-						'heapSize, minimumMemory, fileStream, headerSize) \'; cr;
-		nextPutAll: '    sqAllocateMemory(minimumMemory, heapSize)'; cr;
-		nextPutAll: '#endif'; cr.
-
-	self flag: #sqImage:read:size:length:.
-	aStream cr;
-		nextPutAll: '#ifndef sqImageFileReadEntireImage'; cr;
-		nextPutAll: ' /* Called by Interpreter>>sqImage:read:size:length: */'; cr;
-		nextPutAll: ' /* Default definition if not previously defined in config.h */'; cr;
-		nextPutAll: ' #define sqImageFileReadEntireImage(memoryAddress, ',
-						'elementSize,  length, fileStream) \'; cr;
-		nextPutAll: '    sqImageFileRead(memoryAddress, elementSize,  length, fileStream)'; cr;
-		nextPutAll: '#endif'; cr.
-
-	self flag: #error:.
-	aStream cr;
-		nextPutAll: '#ifndef error'; cr;
-		nextPutAll: ' /* error() function called from Interpreter */'; cr;
-		nextPutAll: ' /* Default definition if not previously defined in config.h */'; cr;
-		nextPutAll: ' #define error(str) defaultErrorProc(str)'; cr;
-		nextPutAll: '#endif'; cr.
-
-	self flag: #primitiveMicrosecondClock; flag: #ioMicroSecondClock.
-	aStream cr;
-		nextPutAll: '#ifndef ioMicroSecondClock'; cr;
-		nextPutAll: ' /* Called by Interpreter>>primitiveMicrosecondClock and GC methods */'; cr;
-		nextPutAll: ' /* Default definition if not previously defined in config.h */'; cr;
-		nextPutAll: ' #define ioMicroSecondClock ioMSecs'; cr;
-		nextPutAll: '#endif'; cr.
-
-	self flag: #primitiveUtcWithOffset; flag: #setMicroSeconds:andOffset:.
-	aStream cr;
-		nextPutAll: '#ifndef ioUtcWithOffset'; cr;
-		nextPutAll: ' /* Called by Interpreter>>primitiveUtcWithOffset */'; cr;
-		nextPutAll: ' /* Default definition if not previously defined in config.h */'; cr;
-		nextPutAll: ' #define ioUtcWithOffset(clock, offset) setMicroSecondsandOffset(clock, offset)'; cr;
-		nextPutAll: '#endif'; cr.
-! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'dtl 4/23/2011 13:21'!
 emitDefineBytesPerWordOn: aStream
@@ -3166,11 +2812,6 @@ void* vm_exports[][3] = {'.
 emitGenerationTimeStampOn: aStream
 	Time dateAndTimeNow do: [:e |
 		 aStream nextPutAll: e asString; nextPut: Character space].
-! !
-
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'ikp 9/10/2003 05:53'!
-emitGlobalStructFlagOn: aStream
-	"Default: do nothing.  Overridden in CCGenGlobalStruct."
 ! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'tpr 5/28/2013 20:02'!
@@ -3333,7 +2974,7 @@ isNonArgumentImplicitReceiverVariableName: aString
 			ifNil: [#('interpreterProxy' 'self') includes: aString]
 	 		ifNotNil: [originClass isNonArgumentImplicitReceiverVariableName: aString]]! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'dtl 5/28/2012 08:29'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/27/2020 21:01:14'!
 prepareMethodsInlined: inlineFlag doAssertions: assertionFlag
 	"Prepare to emit C code for all methods in the code base. All inlined method calls should be expanded. Answer a list of methods to be emitted as C code."
 
@@ -3344,7 +2985,6 @@ prepareMethodsInlined: inlineFlag doAssertions: assertionFlag
 	verbose ifTrue: [
 		self printUnboundCallWarnings.
 		self printUnboundVariableReferenceWarnings.
-		Transcript cr.
 	].
 	self checkAbstractMethods.
 	assertionFlag ifFalse: [ self removeAssertions ].
@@ -3477,7 +3117,7 @@ printUnboundVariableReferenceWarnings
 	systemAdapter printUndefinedVariableReferences: undefinedRefs.
 ! !
 
-!SlangCCodeGenerator methodsFor: 'inlining' stamp: 'asf 9/30/2014 20:18'!
+!SlangCCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/27/2020 20:51:32'!
 collectInlineList
 	"Make a list of methods that should be inlined."
 	"Details: The method must not include any inline C, since the translator cannot
@@ -3512,9 +3152,9 @@ sel returnTypesOf |
 			m parseTree nodesDo: [ :node |
 				node isSend ifTrue: [
 					sel _ node selector.
-					(sel = #cCode: or: [sel = #cCode:inSmalltalk:])
-						ifTrue: [ hasCCode _ true ].
+			
 					senderCount _ callsOf at: sel ifAbsent: [ nil ].
+					
 					nil = senderCount ifFalse: [
 						callsOf at: sel put: senderCount + 1.
 					].
@@ -3546,33 +3186,14 @@ not]) ifTrue: [
 		].
 	].! !
 
-!SlangCCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/16/2020 00:07:35'!
+!SlangCCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/26/2020 21:31:06'!
 doBasicInlining: inlineFlag
 	"Inline the bodies of all methods that are suitable for inlining.
 	This method does only the basic inlining suitable for both the core VM and plugins - no bytecode inlining etc"
 
-	| pass progress max |
 	inlineFlag ifFalse: [^self].
 	self collectInlineList.
-	pass _ 0.
-	max _ 12. "More than this is probably due to infinite recursion" 
-	progress _ true.
-	[progress] whileTrue: [
-		"repeatedly attempt to inline methods until no further progress is made"
-		progress _ false.
-		pass > max
-			ifTrue: [self notify: 'too many inlining steps, inlining terminated']
-			ifFalse: [('Inlining pass ', (pass _ pass + 1) printString, '...')
-						displayProgressAt: Sensor mousePoint
-						from: 0 to: methods size
-						during: [:bar |
-							(self sortMethods: methods) withIndexDo: [:m :i |
-								bar value: i.
-								currentMethod _ m.
-								(m tryToInlineMethodsIn: self)
-									ifTrue: [progress _ true]]]]].
-
-! !
+	self tryMethodInliningWithProgressNotification ! !
 
 !SlangCCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/16/2020 00:13:15'!
 doInlining: inlineFlag
@@ -3647,7 +3268,7 @@ mayInline: sel
 
 	^ inlineList includes: sel! !
 
-!SlangCCodeGenerator methodsFor: 'inlining' stamp: 'ls 10/10/1999 13:55'!
+!SlangCCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/27/2020 21:17:22'!
 methodStatsString
 	"Return a string describing the size, # of locals, and # of senders of
 each method. Note methods that have inline C code or C declarations."
@@ -3673,7 +3294,6 @@ calls registers selr m |
 			m parseTree nodesDo: [ :node |
 				node isSend ifTrue: [
 					selr _ node selector.
-					selr = #cCode: ifTrue: [ hasCCode _ true ].
 					senderCount _ callsOf at: selr ifAbsent: [ 0 ].
 					callsOf at: selr put: senderCount + 1.
 				].
@@ -3758,6 +3378,29 @@ retainMethods: aListOfMethodsToKeep
 	doNotRemoveMethodList ifNil:[doNotRemoveMethodList _ Set new:100].
 	doNotRemoveMethodList addAll: aListOfMethodsToKeep.
 	^aListOfMethodsToKeep! !
+
+!SlangCCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/26/2020 21:31:40'!
+tryMethodInliningWithProgressNotification 
+	| pass max progress |
+	pass _ 0.
+	max _ 12. "More than this is probably due to infinite recursion" 
+	progress _ true.
+	
+	[progress] whileTrue: [
+		"repeatedly attempt to inline methods until no further progress is made"
+		progress _ false.
+		pass > max
+			ifTrue: [self notify: 'too many inlining steps, inlining terminated']
+			ifFalse: [
+				systemAdapter
+					showProgressIn: (self sortMethods: methods)
+					label:  ('Inlining pass ', (pass _ pass + 1) printString, '...')
+					do: [:bar :m :i |
+						bar value: i.
+						currentMethod _ m.
+						(m tryToInlineMethodsIn: self)
+							ifTrue: [progress _ true]]]].
+! !
 
 !SlangCCodeGenerator methodsFor: 'C types lookup' stamp: 'jpb 5/21/2020 10:55:42'!
 extractTypeFor: aVariable fromDeclaration: aVariableDeclaration
@@ -4211,142 +3854,6 @@ generateIfTrueIfFalseAsArgument: msgNode on: aStream indent: level
 			(const ifTrue: [msgNode args first] ifFalse: [msgNode args last])
 				emitCCodeAsArgumentOn: aStream level: level generator: self]! !
 
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'eem 9/16/2009 18:06'!
-generateInlineCCode: msgNode on: aStream indent: level
-	"Generate the C code for this message onto the given stream.
-	 There are two forms, self cCode: aString ... and self cCode: aBlock."
-
-	msgNode args first isConstant
-		ifTrue: [aStream nextPutAll: msgNode args first value]
-		ifFalse: [msgNode args first
-					emitCCodeOn: aStream
-					level: level
-					generator: self]! !
-
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'eem 12/14/2009 21:16'!
-generateInlineCCodeAsArgument: msgNode on: aStream indent: level
-	"Generate the C code for this message onto the given stream.
-	 There are two forms, self cCode: aString ... and self cCode: aBlock."
-
-	msgNode args first isConstant
-		ifTrue: [aStream nextPutAll: msgNode args first value]
-		ifFalse: [msgNode args first
-					emitCCodeAsArgumentOn: aStream
-					level: level
-					generator: self]! !
-
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'eem 2/24/2009 14:54'!
-generateInlineCPreprocessorDirective: msgNode on: aStream indent: level
-	"Generate the C preprocessor directive for this message onto the given stream."
-
-	aStream cr; nextPutAll: msgNode args first value! !
-
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'dtl 11/9/2006 19:47'!
-generateInlineCppDirective: msgNode on: aStream indent: level
-	"Generate the C code for this message onto the given stream."
-
-	aStream cr; nextPutAll: '# ', msgNode args first value.! !
-
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'dtl 11/12/2006 17:30'!
-generateInlineCppIfDef: msgNode on: aStream indent: level
-	"Generate the C code for this message onto the given stream."
-
-	| comment |
-	aStream cr; nextPutAll: '# ifdef ', msgNode args first value.
-	comment _ msgNode args third value.
-	(comment isKindOf: String)
-		ifTrue: [aStream nextPutAll: '  // ', comment]
-		ifFalse: ["nil argument, ignore it"].
-	aStream cr.
-	msgNode isExpression
-		ifTrue:
-			[aStream tab: level + 1; nextPut: $(.
-			msgNode args fourth asExpression
-				emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream nextPut: $); cr]
-		ifFalse:
-			[msgNode args fourth
-				emitCCodeOn: aStream level: level generator: self].
-	aStream nextPutAll: '# endif  // ', msgNode args first value; cr; tab: level! !
-
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'dtl 11/12/2006 17:30'!
-generateInlineCppIfDefElse: msgNode on: aStream indent: level
-	"Generate the C code for this message onto the given stream."
-
-	| comment alternateBlock alternateBlockIsNil |
-	aStream cr; nextPutAll: '# ifdef ', msgNode args first value.
-	comment _ msgNode args third value.
-	(comment isKindOf: String)
-		ifTrue: [aStream nextPutAll: '  // ', comment]
-		ifFalse: ["nil argument, ignore it"].
-	aStream cr.
-	msgNode isExpression
-		ifTrue:
-			[aStream tab: level + 1; nextPut: $(.
-			msgNode args fourth asExpression
-				emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream nextPut: $); cr]
-		ifFalse:
-			[msgNode args fourth
-				emitCCodeOn: aStream level: level generator: self].
-	alternateBlock _ msgNode args fifth.
-	alternateBlockIsNil _ true. "check for nil #else clause"
-	alternateBlock nodesDo: [:n |
-		(n ~= alternateBlock and: [n name ~= 'nil'])
-			ifTrue: [alternateBlockIsNil _ false ]].
-	(alternateBlockIsNil) ifFalse:
-		[aStream nextPutAll: '# else'; cr.
-		msgNode isExpression
-			ifTrue:
-				[aStream tab: level + 1; nextPut: $(.
-				alternateBlock asExpression
-					emitCCodeOn: aStream level: level + 1 generator: self.
-				aStream nextPut: $); cr]
-			ifFalse:
-				[alternateBlock
-					emitCCodeOn: aStream level: level generator: self]].
-	aStream nextPutAll: '# endif  // ', msgNode args first value; cr; tab: level
-! !
-
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'dtl 5/17/2010 15:18'!
-generateInlineCppIfElse: msgNode on: aStream indent: level
-	"Generate the C code for this message onto the given stream."
-
-	| comment alternateBlock alternateBlockIsNil |
-	aStream cr; nextPutAll: '# if (', msgNode args first value, ')'.
-	comment _ msgNode args third value.
-	(comment isKindOf: String)
-		ifTrue: [aStream nextPutAll: '  // ', comment]
-		ifFalse: ["nil argument, ignore it"].
-	aStream cr.
-	msgNode isExpression
-		ifTrue:
-			[aStream tab: level + 1; nextPut: $(.
-			msgNode args fourth asExpression
-				emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream nextPut: $); cr]
-		ifFalse:
-			[msgNode args fourth
-				emitCCodeOn: aStream level: level generator: self].
-	alternateBlock _ msgNode args fifth.
-	alternateBlockIsNil _ true. "check for nil #else clause"
-	alternateBlock nodesDo: [:n |
-		(n ~= alternateBlock and: [n name ~= 'nil'])
-			ifTrue: [alternateBlockIsNil _ false ]].
-	(alternateBlockIsNil) ifFalse:
-		[aStream nextPutAll: '# else'; cr.
-		msgNode isExpression
-			ifTrue:
-				[aStream tab: level + 1; nextPut: $(.
-				alternateBlock asExpression
-					emitCCodeOn: aStream level: level + 1 generator: self.
-				aStream nextPut: $); cr]
-			ifFalse:
-				[alternateBlock
-					emitCCodeOn: aStream level: level generator: self]].
-	aStream nextPutAll: '# endif  // ', msgNode args first value; cr; tab: level
-! !
-
 !SlangCCodeGenerator methodsFor: 'C translation' stamp: 'dtl 9/25/2010 10:13'!
 generateInlineDirective: msgNode on: aStream indent: level
 	"Generate the C code for this message onto the given stream."
@@ -4731,7 +4238,7 @@ generateTouch: msgNode on: aStream indent: level
 	"Generate the C code for this message onto the given stream - which is to say absolutely nothing"
 ! !
 
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'eem 10/14/2013 08:13'!
+!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 5/26/2020 21:11:33'!
 generateValue: aTSendNode on: aStream indent: level
 	"Reduce [:formal ... :formalN| body ] value: actual ... value: actualN
 	 to body with formals substituted for by actuals."
@@ -4749,12 +4256,12 @@ generateValue: aTSendNode on: aStream indent: level
 		emitCCodeOn: aStream level: level generator: self.
 	newLabels _ Set withAll: currentMethod labels.
 	substitution nodesDo:
-		[:node| node isLabel ifTrue: [node label ifNotNil: [:label| newLabels add: label]]].
+		[:node| (node is: #Label) ifTrue: [node label ifNotNil: [:label| newLabels add: label]]].
 	"now add the new labels so that a subsequent inline of
 	 the same block will be renamed with different labels."
 	currentMethod labels: newLabels! !
 
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'eem 10/22/2013 16:01'!
+!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 5/26/2020 21:11:42'!
 generateValueAsArgument: aTSendNode on: aStream indent: level
 	"Reduce [:formal ... :formalN| body ] value: actual ... value: actualN
 	 to body with formals substituted for by actuals."
@@ -4772,7 +4279,7 @@ generateValueAsArgument: aTSendNode on: aStream indent: level
 		emitCCodeAsArgumentOn: aStream level: level generator: self.
 	newLabels _ Set withAll: currentMethod labels.
 	substitution nodesDo:
-		[:node| node isLabel ifTrue: [node label ifNotNil: [:label| newLabels add: label]]].
+		[:node| (node is: #Label) ifTrue: [node label ifNotNil: [:label| newLabels add: label]]].
 	"now add the new labels so that a subsequent inline of
 	 the same block will be renamed with different labels."
 	currentMethod labels: newLabels! !
@@ -4865,7 +4372,7 @@ generateWhileTrueLoop: msgNode on: aStream indent: level
 	level timesRepeat: [ aStream tab ].
 	aStream nextPutAll: '}'.! !
 
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 5/21/2020 11:20:18'!
+!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 5/27/2020 22:00:29'!
 initializeTranslationDictionary 
 	"Initialize the dictionary mapping message names to actions for C code generation."
 
@@ -4931,13 +4438,7 @@ initializeTranslationDictionary
 	#integerValueOf:			#generateIntegerValueOf:on:indent:
 	#integerObjectOf:			#generateIntegerObjectOf:on:indent:
 	#isIntegerObject: 			#generateIsIntegerObject:on:indent:
-	#cCode:					#generateInlineCCode:on:indent:
-	#cCode:inSmalltalk:			#generateInlineCCode:on:indent:
-	#cPreprocessorDirective:	#generateInlineCPreprocessorDirective:on:indent:
-	#preprocessorExpression:	#generateInlineCppDirective:on:indent:
-	#isDefined:inSmalltalk:comment:ifTrue:	#generateInlineCppIfDef:on:indent:
-	#isDefined:inSmalltalk:comment:ifTrue:ifFalse:	#generateInlineCppIfDefElse:on:indent:
-	#isDefinedTrueExpression:inSmalltalk:comment:ifTrue:ifFalse:	#generateInlineCppIfElse:on:indent:
+	
 	#coerce:to:				#generateCCoercion:on:indent:
 	#coerceSimple:to:			#generateCCoercion:on:indent:
 	#addressOf:				#generateAddressOf:on:indent:
@@ -4980,16 +4481,14 @@ initializeTranslationDictionary
 		translationDict at: (pairs at: i) put: (pairs at: i + 1)].
 
 	pairs _ #(
-	#ifTrue:				#generateIfTrueAsArgument:on:indent:	
-	#ifFalse:			#generateIfFalseAsArgument:on:indent:
-	#ifTrue:ifFalse:		#generateIfTrueIfFalseAsArgument:on:indent:
-	#ifFalse:ifTrue:		#generateIfFalseIfTrueAsArgument:on:indent:
-	#cCode:			#generateInlineCCodeAsArgument:on:indent:
-	#cCode:inSmalltalk:	#generateInlineCCodeAsArgument:on:indent:
+		#ifTrue:					#generateIfTrueAsArgument:on:indent:	
+		#ifFalse:				#generateIfFalseAsArgument:on:indent:
+		#ifTrue:ifFalse:		#generateIfTrueIfFalseAsArgument:on:indent:
+		#ifFalse:ifTrue:		#generateIfFalseIfTrueAsArgument:on:indent:
 
-	#value					#generateValueAsArgument:on:indent:
-	#value:					#generateValueAsArgument:on:indent:
-	#value:value:			#generateValueAsArgument:on:indent:
+		#value					#generateValueAsArgument:on:indent:
+		#value:					#generateValueAsArgument:on:indent:
+		#value:value:			#generateValueAsArgument:on:indent:
 	).
 
 	asArgumentTranslationDict _ Dictionary new: 8.
@@ -5005,319 +4504,6 @@ initialize
 		"If UseRightShiftForDivide is true, the translator will generate a right-shift when it encounters a division by a constant that is a small power of two. For example, 'x / 8' will generate '((int) x >> 3)'. The coercion to int is done to make it clear that the C compiler should generate a signed shift."
 		"Note: The Kernighan and Ritchie 2nd Edition C manual, p. 49, leaves the semantics of right-shifting a negative number open to the discretion of the compiler implementor. However, it strongly suggests that most compilers should generate an arithmetic right shift (i.e., shifting in the sign bit), which is the same as dividing by a power of two. If your compiler does not generate or simulate an arithmetic shift, then make this class variable false and re-translate."
 ! !
-
-!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator'!
-buildSortedVariablesCollection
-	"Build sorted vars, end result will be sorted collection based on static usage, 
-	perhaps cache lines will like this!!"
-
-	| globalNames sorted |
-
-	globalNames _ Bag new: globalVariableUsage size.
-	globalVariableUsage keysAndValuesDo: [:k :v | 
-		(variableDeclarations includesKey: k) ifFalse: 
-			[globalNames add: k withOccurrences: v size]].	
-	variableDeclarations keysDo: 
-		[:e | globalNames add: e withOccurrences: 0].
-	sorted _ SortedCollection sortBlock: 
-		[:a :b | (globalNames occurrencesOf: a) > (globalNames occurrencesOf: b)].
-	sorted addAll: variables.
-	^sorted! !
-
-!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator' stamp: 'tpr 10/29/2002 14:00'!
-emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag
-	super emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag.
-
-	"if the machine needs the globals structure defined locally in the interp.c file, don't add the folowing function"
-	localStructDef ifFalse:[self emitStructureInitFunctionOn: aStream]! !
-
-!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator' stamp: 'eem 12/10/2008 11:25'!
-emitGlobalStructFlagOn: aStream
-	"Define SQ_USE_GLOBAL_STRUCT before including the header."
-
-	aStream
-		nextPutAll: '#if ';
-		nextPutAll: structDefDefine; cr;
-		nextPutAll: '# define SQ_USE_GLOBAL_STRUCT 1'; cr;
-		nextPutAll: '#else'; cr;
-		nextPutAll: '# define SQ_USE_GLOBAL_STRUCT 0'; cr;
-		nextPutAll: '#endif'; cr;
-		cr! !
-
-!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator' stamp: 'tpr 10/9/2002 15:40'!
-emitStructureInitFunctionOn: aStream 
-	"For the VM using a global struct for most of the global vars (useful for ARM and PPC so far), append the initGlobalStructure() function"
-	aStream 
-		cr;
-		nextPutAll: 'void initGlobalStructure(void) {foo = &fum;}';
-		cr! !
-
-!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator' stamp: 'tpr 10/29/2002 15:01'!
-globalStructDefined: aBool
-	localStructDef _ aBool! !
-
-!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator' stamp: 'eem 2/25/2009 13:29'!
-initialize
-	super initialize.
-	localStructDef _ false.
-	structDefDefine _ '1'! !
-
-!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator' stamp: 'tpr 12/22/2005 16:03'!
-placeInStructure: var
-	"See if we should put this array into a structure
-	This has hard coded vars, should go somewhere else!!
-	The variables listed are hardcoded as C in the interpreter thus they don't get resolved via TVariableNode logic
-	Also let's ignore variables that have special definitions that require initialization, and the function def which has problems"
-
-	| check |
-	check _ variableDeclarations at: var ifAbsent: [''].
-	(check includes: $=) ifTrue: [^false].
-	(check includes: $() ifTrue: [^false].
-
-	(#( 'showSurfaceFn' 'memory' 'extraVMMemory' 'interpreterProxy') includes: var) ifTrue: [^false].
-	^true.
-	! !
-
-!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator'!
-returnPrefixFromVariable: aName
-	^((self globalsAsSet includes: aName) and: [self placeInStructure: aName])
-		ifTrue: ['foo->',aName]
-		ifFalse: [aName]! !
-
-!SlangCCodeGeneratorGlobalStructure methodsFor: 'utilities'!
-checkForGlobalUsage: vars in: aTMethod 
-	"override to handle global struct needs"
-	super checkForGlobalUsage: vars in: aTMethod.
-	"if localStructDef is false, we  don't ever need to include a reference to it in a function"
-	localStructDef ifFalse:[^self].
-	vars asSet do: [:var |
-		"if any var is global and in the global var struct 
-		tell the TMethod it will be refering to the  struct"
-			  ((self globalsAsSet includes: var )
-					and: [self placeInStructure: var ])
-				ifTrue: [aTMethod referencesGlobalStructIncrementBy: (vars occurrencesOf: var)]]! !
-
-!SlangCCodeGeneratorGlobalStructure methodsFor: 'utilities'!
-localizeGlobalVariables
-"TPR - remove all the global vars destined for the structure that are only used once - not worth the space,
-actually what will happen is the folding code will fold these variables into the method"
-
-	super localizeGlobalVariables.
-	globalVariableUsage _ globalVariableUsage select: [:e | e size > 1].
-! !
-
-!SlangCCodeGeneratorGlobalStructure methodsFor: 'public'!
-isGlobalStructureBuild
-	^true! !
-
-!SlangCCodeGeneratorGlobalStructure methodsFor: 'initialize-release' stamp: 'eem 12/10/2008 11:12'!
-structDefDefine: aString
-	structDefDefine _ aString! !
-
-!SlangVMPluginCodeGenerator methodsFor: 'inlining' stamp: 'dtl 8/21/2011 21:16'!
-doInlining: inlineFlag
-"do inlining for a plugin"
-	self doBasicInlining: inlineFlag.
-	self permitMethodPruning
-		ifTrue: [self pruneUnreachableMethods]
-! !
-
-!SlangVMPluginCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/20/2020 19:38:02'!
-emitCHeaderForPrimitivesOn: aStream
-	"Write a C file header for compiled primitives onto the given stream."
-
-	aStream
-		nextPutAll: '/* Automatically generated from Squeak (';
-		nextPutAll: headerNotice;
-		nextPutAll: ') on '.
-
-	self emitGenerationTimeStampOn: aStream.
-	aStream
-		nextPutAll: '*/';
-		newLine; newLine.
-
-	self fileHeaderVersionStampForSourceClass: originClass.
-	aStream newLine; newLine;
-		nextPutAll: '#include "sq.h"'; newLine; newLine.
-
-	"Additional header files"
-		self emitHeaderFilesOn: aStream.
-
-	aStream nextPutAll: '
-#include "sqMemoryAccess.h"
-
-/*** Imported Functions/Variables ***/
-extern sqInt stackValue(sqInt);
-extern sqInt stackIntegerValue(sqInt);
-extern sqInt successFlag;
-
-/* allows accessing Strings in both C and Smalltalk */
-#define asciiValue(c) c
-'.
-	aStream newLine.! !
-
-!SlangVMPluginCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/15/2020 22:48:58'!
-emitCHeaderOn: aStream
-	"Write a C file header onto the given stream."
-
-	aStream nextPutAll: '/* '.
-	aStream nextPutAll: headerNotice.
-	aStream nextPutAll: ' */';cr.
-	aStream nextPutAll: (self fileHeaderVersionStampForSourceClass: originClass).
-	aStream newLine; newLine.
-
-	aStream nextPutAll:'
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-
-/* Default EXPORT macro that does nothing (see comment in sq.h): */
-#define EXPORT(returnType) returnType
-
-/* Do not include the entire sq.h file but just those parts needed. */
-/*  The virtual machine proxy definition */
-#include "sqVirtualMachine.h"
-/* Configuration options */
-#include "sqConfig.h"
-/* Platform specific definitions */
-#include "sqPlatformSpecific.h"
-
-#define true 1
-#define false 0
-#define null 0  /* using ''null'' because nil is predefined in Think C */
-#ifdef SQUEAK_BUILTIN_PLUGIN
-#undef EXPORT
-// was #undef EXPORT(returnType) but screws NorCroft cc
-#define EXPORT(returnType) static returnType
-#endif
-'.
-
-	"Additional header files"
-	self emitHeaderFilesOn: aStream.
-
-	aStream nextPutAll: '
-#include "sqMemoryAccess.h"
-
-'.
-	aStream cr.! !
-
-!SlangVMPluginCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/16/2020 19:28:42'!
-emitExportsOn: aStream
-	"Store all the exported primitives in a form to be used by internal plugins"
-	| prefix |
-	aStream newLine ; newLine.
-	aStream nextPutAll: '#ifdef SQUEAK_BUILTIN_PLUGIN'; newLine.
-
-	aStream newLine ; newLine.
-	aStream nextPutAll: 'void* ', pluginName,'_exports[][3] = {'.
-	
-	prefix _ '"', pluginName,'"'.
-	self exportedPrimitiveNames do:[:primName|
-		aStream newLine;
-			nextPutAll:'	{'; 
-			nextPutAll: prefix; 
-			nextPutAll:', "'; 
-			nextPutAll: primName; 
-			nextPutAll:'", (void*)'; 
-			nextPutAll: primName;
-			nextPutAll:'},'.
-	].
-
-	aStream newLine.
-	aStream nextPutAll: '{NULL, NULL, NULL}'.
-	aStream newLine; nextPutAll: '};'; newLine.
-	
-	aStream newLine ; newLine.
-	aStream nextPutAll: '#endif /* ifdef SQ_BUILTIN_PLUGIN */' ; newLine.! !
-
-!SlangVMPluginCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/21/2020 09:56:57'!
-isTypedPointerToStruct: type "<String>"
-	^pluginClass notNil
-	  and: [[pluginClass isTypedPointerToStruct: type]
-			on: MessageNotUnderstood
-			do: [:ex| ex message selector == #isTypedPointerToStruct: ifTrue: [^false].
-					ex pass]]! !
-
-!SlangVMPluginCodeGenerator methodsFor: 'public' stamp: 'jpb 5/24/2020 20:17:27'!
-generateCodeStringForPrimitives
-"TPR - moved down from CCodeGenerator"
-	| stream methodList |
-	stream _ ReadWriteStream on: (String new: 1000).
-	methodList _ methods asSortedCollection: [:m1 :m2 | 
-		m1 selector < m2 selector].
-	
-	self emitCHeaderForPrimitivesOn: stream.
-	self emitCConstantsOn: stream.
-	self emitCVariablesOn: stream.
-	self emitCFunctionPrototypes: methodList on: stream.
-	methodList do: [:m | m emitCCodeOn: stream generator: self].
-	self emitExportsOn: stream.
-
-	^ stream contents
-! !
-
-!SlangVMPluginCodeGenerator methodsFor: 'public' stamp: 'tpr 1/10/2003 16:20'!
-localizeGlobalVariables
-"TPR - we don't do this for plugins"! !
-
-!SlangVMPluginCodeGenerator methodsFor: 'public' stamp: 'tpr 1/10/2003 16:18'!
-pluginName: aString
-"TPR - moved from CCodeGenerator"
-	"Set the plugin name when generating plugins."
-	pluginName _ aString.! !
-
-!SlangVMPluginCodeGenerator methodsFor: 'private' stamp: 'jpb 5/19/2020 22:45:26'!
-storeVirtualMachineProxyImplementation: categoryList on: fileName
-	"Store the interpreter definitions on the given file"
-	| stream |
-	stream _ FileStream newFileNamed: fileName.
-	stream nextPutAll:'
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include "sqVirtualMachine.h"'; cr;cr.
-	stream nextPutAll:'/*** Function prototypes ***/'.
-
-	categoryList do:[:assoc|
-		stream cr; cr; nextPutAll:'/* InterpreterProxy methodsFor: ''',assoc key, ''' */'; cr.
-		assoc value asSortedCollection do:[:sel|
-			(methods at: sel) emitCFunctionPrototype: stream generator: self.
-			stream nextPutAll: ';'; cr]].
-
-	stream cr; nextPutAll:'struct VirtualMachine *VM = NULL;'; cr.
-	stream cr; nextPutAll:
-'static int majorVersion(void) {
-	return VM_PROXY_MAJOR;
-}
-
-static int minorVersion(void) {
-	return VM_PROXY_MINOR;
-}
-
-struct VirtualMachine* sqGetInterpreterProxy(void)
-{
-	if(VM) return VM;
-	VM = (struct VirtualMachine *) calloc(1, sizeof(VirtualMachine));
-	/* Initialize Function pointers */
-	VM->majorVersion = majorVersion;
-	VM->minorVersion = minorVersion;
-'.
-	categoryList do:[:assoc|
-		stream cr; crtab; nextPutAll:'/* InterpreterProxy methodsFor: ''',assoc key, ''' */'; crtab.
-		assoc value asSortedCollection do:[:sel|
-		stream nextPutAll:'VM->';
-			nextPutAll: (self findFunctionNameFor: sel);
-			nextPutAll:' = ';
-			nextPutAll: (self findFunctionNameFor: sel);
-			nextPutAll:';';
-			crtab]].
-
-	stream cr; crtab; nextPutAll:'return VM;'; cr; nextPutAll:'}'; cr.
-	stream close.! !
 
 !SlangPragmatizer methodsFor: 'accessing' stamp: 'dtl 9/27/2010 13:41'!
 classes: listOfClasses
@@ -5903,7 +5089,7 @@ renameLabelsForInliningInto: destMethod
 	].
 	self renameLabelsUsing: labelMap.! !
 
-!SlangTMethod methodsFor: 'inlining support'!
+!SlangTMethod methodsFor: 'inlining support' stamp: 'jpb 5/26/2020 21:11:52'!
 renameLabelsUsing: aDictionary
 	"Rename all labels according to the old->new mappings of the given dictionary."
 
@@ -5915,7 +5101,7 @@ renameLabelsUsing: aDictionary
 		(node isGoTo and: [aDictionary includesKey: node label]) ifTrue: [
 			node setLabel: (aDictionary at: node label).
 		].
-		(node isLabel and: [aDictionary includesKey: node label]) ifTrue: [
+		((node is: #Label) and: [aDictionary includesKey: node label]) ifTrue: [
 			node setLabel: (aDictionary at: node label).
 		].
 	].! !
@@ -6048,17 +5234,11 @@ freeVariableReferences
 	#('self' 'nil' 'true' 'false') do: [ :var | refs remove: var ifAbsent: [] ].
 	^ refs asSortedCollection! !
 
-!SlangTMethod methodsFor: 'utilities'!
+!SlangTMethod methodsFor: 'utilities' stamp: 'jpb 5/27/2020 21:17:29'!
 hasNoCCode
 	"Answer true if the receiver does not use inlined C or C declarations, which are not currently renamed properly by the the inliner."
 
 	declarations isEmpty ifFalse: [ ^ false ].
-
-	parseTree nodesDo: [ :node |
-		node isSend ifTrue: [
-			node selector = #cCode: ifTrue: [ ^ false ].
-		].
-	].
 	^ true! !
 
 !SlangTMethod methodsFor: 'utilities'!
@@ -6411,15 +5591,6 @@ isSubstitutableNode: aNode intoMethod: targetMeth in: aCodeGen
 
 	^ true! !
 
-!SlangTMethod methodsFor: 'inlining' stamp: 'eem 10/25/2013 11:10'!
-maybeBreakFor: aNode in: aCodeGen
-	"convenient for debugging..."
-	(aNode isSend
-	and: [(aCodeGen breakSrcInlineSelector notNil or: [aCodeGen breakDestInlineSelector notNil])
-	and: [(aCodeGen breakSrcInlineSelector ifNil: [true] ifNotNil: [:srcSel| srcSel = aNode selector])
-	and: [aCodeGen breakDestInlineSelector ifNil: [true] ifNotNil: [:dstSel| dstSel = selector]]]]) ifTrue:
-		[self halt: selector]! !
-
 !SlangTMethod methodsFor: 'inlining' stamp: 'dtl 3/1/2014 18:22'!
 removeUnreferencedDeclarations
 	"Variables may have been eliminated during inlining. Remove declarations for those variables."
@@ -6427,7 +5598,7 @@ removeUnreferencedDeclarations
 		do: [:key | (args , locals includes: key)
 				ifFalse: [declarations removeKey: key]]! !
 
-!SlangTMethod methodsFor: 'inlining' stamp: 'eem 7/30/2013 16:20'!
+!SlangTMethod methodsFor: 'inlining' stamp: 'jpb 5/27/2020 21:23:02'!
 statementsListsForInliningIn: aCodeGen
 	"Answer a collection of statement list nodes that are candidates for inlining.
 	 Currently, we cannot inline into the argument blocks of and: and or: messages.
@@ -6439,44 +5610,41 @@ statementsListsForInliningIn: aCodeGen
 	stmtLists _ OrderedCollection new: 10.
 	parseTree
 		nodesDo:
-			[:node|
-			node isStmtList ifTrue: [stmtLists add: node]]
+			[:node|  node isStmtList ifTrue: [stmtLists add: node]]
 		unless:
-			[:node|
-			node isSend
-			and: [node selector == #cCode:inSmalltalk:
-				or: [aCodeGen isAssertSelector: node selector]]].
-	parseTree nodesDo:
-		[:node|
-		node isSend ifTrue:
-			[node selector = #cCode:inSmalltalk: ifTrue:
-				[node nodesDo:
-					[:ccisNode| stmtLists remove: ccisNode ifAbsent: []]].
-			 node selector = #cppIf:ifTrue:ifFalse: ifTrue:
-				[node args first nodesDo:
-					[:inCondNode| stmtLists remove: inCondNode ifAbsent: []]].
+			[:node|  node isSend and: [aCodeGen isAssertSelector: node selector] ].
+		
+	parseTree nodesDo: [:node|
+		node isSend ifTrue: [
+			
 			((node selector = #and:) or: [node selector = #or:]) ifTrue:
 				"Note: the PP 2.3 compiler produces two arg nodes for these selectors"
 				[stmtLists remove: node args first ifAbsent: [].
 				stmtLists remove: node args last ifAbsent: []].
+			
 			(#(	#ifTrue: #ifFalse: #ifTrue:ifFalse: #ifFalse:ifTrue:
 				#ifNil: #ifNotNil: #ifNil:ifNotNil: #ifNotNil:ifNil: ) includes: node selector) ifTrue:
 				[stmtLists remove: node receiver ifAbsent: []].
+				
 			(#(whileTrue whileTrue: whilefalse whileFalse:) includes: node selector) ifTrue:
 				"Allow inlining if it is a [...] whileTrue/whileFalse.
 				This is identified by having more than one statement in the 
 				receiver block in which case the C code wouldn't work anyways"
 				[node receiver statements size = 1 ifTrue:
 					[stmtLists remove: node receiver ifAbsent: []]].
+				
 			(node selector = #to:do:) ifTrue:
 				[stmtLists remove: node receiver ifAbsent: [].
 				stmtLists remove: node args first ifAbsent: []].
+			
 			(node selector = #to:by:do:) ifTrue:
 				[stmtLists remove: node receiver ifAbsent: [].
 				stmtLists remove: node args first ifAbsent: [].
 				stmtLists remove: node args second ifAbsent: []]].
+		
 		node isCaseStmt ifTrue: "don't inline cases"
 			[node cases do: [:case| stmtLists remove: case ifAbsent: []]]].
+		
 	^stmtLists! !
 
 !SlangTMethod methodsFor: 'inlining' stamp: 'eem 10/13/2013 17:16'!
@@ -7419,6 +6587,10 @@ hasExplicitReturn
 	].
 	^false! !
 
+!SlangTParseNode methodsFor: 'testing' stamp: 'jpb 5/26/2020 20:20:38'!
+is: query
+	^#ParseNode = query or: [ super is: query ]! !
+
 !SlangTParseNode methodsFor: 'testing' stamp: 'ikp 9/26/97 14:50'!
 isAssertion
 	^false! !
@@ -7434,11 +6606,6 @@ isCaseStmt
 	^false! !
 
 !SlangTParseNode methodsFor: 'testing'!
-isComment
-
-	^false! !
-
-!SlangTParseNode methodsFor: 'testing'!
 isConstant
 
 	^false! !
@@ -7450,11 +6617,6 @@ isGoTo
 
 !SlangTParseNode methodsFor: 'testing' stamp: 'eem 7/8/2008 19:57'!
 isInline
-	^false! !
-
-!SlangTParseNode methodsFor: 'testing'!
-isLabel
-
 	^false! !
 
 !SlangTParseNode methodsFor: 'testing'!
@@ -7493,6 +6655,12 @@ isSwitch
 !SlangTParseNode methodsFor: 'testing' stamp: 'eem 2/11/2009 17:12'!
 isTParseNode
 	^true! !
+
+!SlangTParseNode methodsFor: 'testing' stamp: 'jpb 5/26/2020 21:08:52'!
+requiresCLineTerminator
+
+	^ (self is: #Comment) not
+! !
 
 !SlangTParseNode methodsFor: 'testing' stamp: 'eem 12/11/2010 12:25'!
 structTargetKind: aCodeGen
@@ -7620,23 +6788,6 @@ copyTree
 inlineMethodsUsing: aDictionary
 
 	self! !
-
-!SlangTParseNode methodsFor: 'as yet unclassified' stamp: 'dtl 10/24/2006 21:56'!
-isDirective
-	"Preprocessor directive, e.g. a cpp macro"
-
-	^false! !
-
-!SlangTParseNode methodsFor: 'as yet unclassified' stamp: 'JMM 11/23/2002 23:25'!
-nodesVarCheckDo: aBlock
-
-	aBlock value: self.! !
-
-!SlangTParseNode methodsFor: 'as yet unclassified' stamp: 'dtl 3/20/2005 14:23'!
-requiresCLineTerminator
-
-	^ self isComment not
-! !
 
 !SlangTParseNode methodsFor: 'C code generation' stamp: ' 2/7/08 14:57'!
 emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen
@@ -7935,7 +7086,7 @@ replaceNodesIn: aDictionary
 		cases _ cases collect: [:node| node replaceNodesIn: aDictionary].
 		self]! !
 
-!SlangTCaseStmtNode methodsFor: 'as yet unclassified' stamp: 'dtl 7/3/2008 09:37'!
+!SlangTCaseStmtNode methodsFor: 'as yet unclassified' stamp: 'jpb 5/26/2020 21:08:39'!
 assumesCurrentBytecodeMatchesCaseValue: statementList
 	"Test for the special case of certain methods that rely on the value of
 	the currentBytecode variable to be expanded to a constant. This is a
@@ -7956,7 +7107,7 @@ assumesCurrentBytecodeMatchesCaseValue: statementList
 			#storeAndPopReceiverVariableBytecode
 		}.
 	firstLine _ statementList statements first.
-	firstLine isComment ifTrue: [
+	(firstLine is: #Comment) ifTrue: [
 		commentString _ firstLine asString.
 		trickySelectors detect: [:e | commentString includesSubString: e]
 			ifNone: [^ false].
@@ -8389,16 +7540,16 @@ emitCCodeOn: aStream level: level generator: aCodeGen
 	aStream nextPutAll: comment.
 	aStream nextPutAll: ' */'.! !
 
-!SlangTLabeledCommentNode methodsFor: 'testing'!
-isComment
+!SlangTLabeledCommentNode methodsFor: 'testing' stamp: 'jpb 5/26/2020 21:10:36'!
+is: query
 	"Answer true if the receiver is just a comment (i.e., it has no label)."
-
-	^label = nil! !
-
-!SlangTLabeledCommentNode methodsFor: 'testing'!
-isLabel
-
-	^true! !
+	(query = #Comment and: [label = nil]) ifTrue: [^true].
+	
+	
+	#Leaf = query ifTrue: [^true].
+	#Label = query ifTrue: [^true].
+	
+	^super is: query! !
 
 !SlangTLabeledCommentNode methodsFor: 'testing'!
 isLeaf
@@ -8858,17 +8009,6 @@ isBuiltinOperator: builtinFlag
 
 	isBuiltinOperator _ builtinFlag.! !
 
-!SlangTSendNode methodsFor: 'testing' stamp: 'dtl 7/8/2012 11:48'!
-isDirective
-	"Preprocessor directive, e.g. a cpp macro"
-
-	^ {	#preprocessorExpression: .
-		#isDefined:inSmalltalk:comment:ifTrue:ifFalse: .
-		#isDefined:inSmalltalk:comment:ifTrue: .
-		#isDefinedTrueExpression:inSmalltalk:comment:ifTrue:ifFalse: .
-		#cPreprocessorDirective:
-		} identityIncludes: selector! !
-
 !SlangTSendNode methodsFor: 'testing'!
 isSend
 
@@ -8910,10 +8050,10 @@ isStructSendIn: aCodeGen
 				ifNil: [false]
 				ifNotNil: [:method| method isStructAccessor]]]! !
 
-!SlangTSendNode methodsFor: 'testing' stamp: 'dtl 10/24/2006 22:05'!
+!SlangTSendNode methodsFor: 'testing' stamp: 'jpb 5/27/2020 22:01:04'!
 requiresCLineTerminator
 
-	^ (self isComment or: [self isDirective]) not
+	^ (self is: #Comment) not
 ! !
 
 !SlangTSendNode methodsFor: 'testing' stamp: 'jpb 5/21/2020 11:17:58'!
@@ -9080,7 +8220,7 @@ copyTree
 		setArguments: arguments copy
 		statements: (statements collect: [ :s | s copyTree ])! !
 
-!SlangTStmtListNode methodsFor: 'as yet unclassified' stamp: 'dtl 1/3/2013 23:05'!
+!SlangTStmtListNode methodsFor: 'as yet unclassified' stamp: 'jpb 5/26/2020 21:09:29'!
 emitCCodeOn: aStream level: level generator: aCodeGen
 
 	self emitCCommentOn: aStream level: level.
@@ -9089,7 +8229,7 @@ emitCCodeOn: aStream level: level generator: aCodeGen
 		aStream tab: level.
 		s emitCCodeOn: aStream level: level generator: aCodeGen.
 		(((self endsWithCloseBracket: aStream) not
-			and: [(s isComment) not])
+			and: [(s is: #Comment) not])
 				and: [s requiresCLineTerminator])
 			ifTrue: [aStream nextPut: $;].
 		aStream cr].
@@ -9100,7 +8240,7 @@ inlineMethodsUsing: aDictionary
 
 	statements do: [ :s | s inlineMethodsUsing: aDictionary ].! !
 
-!SlangTStmtListNode methodsFor: 'C code generation' stamp: ' 2/7/08 14:57'!
+!SlangTStmtListNode methodsFor: 'C code generation' stamp: 'jpb 5/26/2020 21:09:15'!
 emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen
 
 	| statementWasComment |
@@ -9110,7 +8250,7 @@ emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen
 			[:s |
 			s emitCCommentOn: aStream level: level.
 			s emitCCodeAsArgumentOn: aStream level: 0 generator: aCodeGen.
-			statementWasComment _ s isComment]
+			statementWasComment _ s is: #Comment]
 		separatedBy:
 			[((self endsWithCloseBracket: aStream)
 			  or: [statementWasComment]) ifFalse: [aStream nextPut: $,]]! !
@@ -9668,39 +8808,35 @@ asTranslatorNodeIn: aSlangTMethod
         name = 'false' ifTrue: [^ SlangTConstantNode new setValue: false].
         ^ SlangTVariableNode new setName: name! !
 
-!MessageNode methodsFor: '*Slang-Tools' stamp: 'jpb 5/15/2020 23:55:58'!
+!MessageNode methodsFor: '*Slang-Tools' stamp: 'jpb 5/27/2020 21:07:36'!
 asTranslatorNodeIn: aSlangTMethod 
-	        "make a CCodeGenerator equivalent of me"
-        "selector is sometimes a Symbol, sometimes a SelectorNode!!!!
+	"make a CCodeGenerator equivalent of me"
+	"selector is sometimes a Symbol, sometimes a SelectorNode!!!!
         On top of this, numArgs is needed due to the (truly grody) use of
         arguments as a place to store the extra expressions needed to generate
         code for in-line to:by:do:, etc.  see below, where it is used."
-        | rcvrOrNil sel args |
-        rcvrOrNil _ receiver ifNotNil: [receiver asTranslatorNodeIn: aSlangTMethod].
-        (rcvrOrNil notNil
+ 	| rcvrOrNil sel args |
+  	rcvrOrNil _ receiver ifNotNil: [receiver asTranslatorNodeIn: aSlangTMethod].
+     (rcvrOrNil notNil
         and: [rcvrOrNil isVariable
         and: [rcvrOrNil name = 'super']]) ifTrue:
                 [^aSlangTMethod superExpansionNodeFor: selector key args: arguments].
-        sel _ selector isSymbol ifTrue: [selector] ifFalse: [selector key].
 
-        ((sel = #cCode:inSmalltalk: "extracting here rather than in translation allows inlining in the block."
-          or: [sel = #cCode:])
-         and: [arguments first isBlockNode]) ifTrue:
-                [| block |
-                 ^(block _ arguments first asTranslatorNodeIn: aSlangTMethod) statements size = 1
-                        ifTrue: [block statements first]
-                        ifFalse: [block]].
-        args _ (1 to: sel numArgs) collect:
-                        [:i | (arguments at: i) asTranslatorNodeIn: aSlangTMethod].
+	sel _ selector isSymbol ifTrue: [selector] ifFalse: [selector key].
+	args _ (1 to: sel numArgs) collect:
+ 		[:i | (arguments at: i) asTranslatorNodeIn: aSlangTMethod].
 
-        (sel = #to:by:do: and: [arguments size = 7 and: [(arguments at: 7) notNil]]) ifTrue:
+	(sel = #to:by:do: and: [arguments size = 7 and: [(arguments at: 7) notNil]]) ifTrue:
                 ["Restore limit expr that got moved by transformToDo:"
-                 args _ {(arguments at: 7) value asTranslatorNodeIn: aSlangTMethod. 
-                                  args second.
-                                  args third. "add the limit var as a hidden extra argument; we may need it later"
-                                  SlangTVariableNode new setName: arguments first key}].
+		args _ {
+			(arguments at: 7) value asTranslatorNodeIn: aSlangTMethod. 
+                args second.
+			args third. "add the limit var as a hidden extra argument; we may need it later"
+			SlangTVariableNode new setName: arguments first key
+		}
+	].
 
-        ((sel = #ifFalse: or: [sel = #or:])
+	((sel = #ifFalse: or: [sel = #or:])
          and: [arguments size = 2 and: [(arguments at: 2) notNil]]) ifTrue:
                 ["Restore argument block that got moved by transformOr: or transformIfFalse:"
                  args at: 1 put: ((arguments at: 2) asTranslatorNodeIn: aSlangTMethod)].

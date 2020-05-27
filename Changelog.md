@@ -4,10 +4,37 @@ This file lists the history of changes made to the repository
 in a more wordy fashion of what this was about as an addition
 to descriptive commit messages.
 
+## Update 0.001b
+
+Affected versions
+  Slang-Tools 1.16, Slang-JavaScript 1.10, Slang-Tools-Tests 1.2, Slang-PluginMaker 1.2
+
+Previous updates had occured in the meantime. This exported
+state changes that some `is*` were moved to `is:` implementations
+in the `SlangTParseNode`. Besides this change:
+
+1. Selectors supported by VMMaker Slang were removed:
+
+- `isDefined:inSmalltalk:comment:ifTrue`
+- `cCode:inSmalltalk:`
+- `cCode:`
+- `cppIf:ifTrue:ifFalse:`
+- `isDefined:inSmalltalk:comment:ifTrue:ifFalse:`
+- `isDefined:inSmalltalk:comment:ifTrue: .`
+- `isDefinedTrueExpression:inSmalltalk:comment:ifTrue:ifFalse:`
+- `preprocessorExpression:`
+- `cPreprocessorDirective:`
+
+2. Adds the "PluginMaker" package, which is at the momemnt
+   more a parking ground for classes which are going to be
+   deleted or used for constructing actual plugins. I
+   actually don't know what I do with them.
+
+
 ## Update 0.001a
 
 Affected versions
-  Slang-Tools 1.8, Slang-JavaScript 1.6,, Slang-Tools-Tests 1.1
+  Slang-Tools 1.8, Slang-JavaScript 1.6, Slang-Tools-Tests 1.1
   
 Previous interim updates also occured. They were partly done
 just to store the current workprogress. This update is only

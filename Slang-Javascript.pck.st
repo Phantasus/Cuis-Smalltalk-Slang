@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4112] on 26 May 2020 at 7:10:14 pm'!
+'From Cuis 5.0 [latest update: #4112] on 27 May 2020 at 10:04:31 pm'!
 'Description License: MIT'!
-!provides: 'Slang-Javascript' 1 8!
+!provides: 'Slang-Javascript' 1 10!
 SystemOrganization addCategory: #'Slang-Javascript'!
 
 
@@ -12,16 +12,6 @@ SlangCodeGenerator subclass: #JSCodeGenerator
 	category: 'Slang-Javascript'!
 !classDefinition: 'JSCodeGenerator class' category: #'Slang-Javascript'!
 JSCodeGenerator class
-	instanceVariableNames: ''!
-
-!classDefinition: #JSPluginCodeGenerator category: #'Slang-Javascript'!
-JSCodeGenerator subclass: #JSPluginCodeGenerator
-	instanceVariableNames: 'pluginClass pluginName headerNotice'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Slang-Javascript'!
-!classDefinition: 'JSPluginCodeGenerator class' category: #'Slang-Javascript'!
-JSPluginCodeGenerator class
 	instanceVariableNames: ''!
 
 !classDefinition: #JSMethod category: #'Slang-Javascript'!
@@ -39,9 +29,6 @@ JSMethod class
 This class is a copy of CCodeGenerator hacked to generate JavaScript instead of C for use with the SqueakJS virtual machine.
 
 C and JS semantics are pretty close except for pointers, types, and divide/modulo/shift operations. !
-
-!JSPluginCodeGenerator commentStamp: 'bf 10/3/2014 04:13' prior: 0!
-I generate code that can be loaded dynamically from external libraries!
 
 !JSMethod commentStamp: 'bf 10/3/2014 04:14' prior: 0!
 A JSMethod is a translation method, representing a MethodNode that is to be translated to JavaScript source. It has a parseTree of translation nodes that mirrors the parse tree of the corresponding Smalltalk method.!
@@ -293,21 +280,6 @@ storeCodeOnFile: fileName doInlining: inlineFlag doAssertions: assertionFlag
 		stream _ systemAdapter openNewFileNamed: fileName.
 		self emitJSCodeOn: stream doInlining: inlineFlag doAssertions: assertionFlag.
 	] ensure: [stream close]! !
-
-!JSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/21/2020 00:07:19'!
-storeHeaderOnFile: fileName contents: contents
-	"Store C header code on the given file. Evaluate
-	 aBlock with the stream to generate its contents."
-
-	| aStream |
-	[
-		aStream _ systemAdapter openNewFileNamed: fileName.
-		
-		(contents beginsWith: '/* Automatic') ifFalse:
-			[aStream nextPutAll: 
-				(self fileHeaderVersionStampForSourceClass: nil); newLine].
-		aStream nextPutAll: contents
-	] ensure: [aStream close]! !
 
 !JSCodeGenerator methodsFor: 'public' stamp: 'eem 7/16/2009 14:07'!
 var: varName declareC: declarationString
@@ -880,7 +852,7 @@ printInt: int on: aStream
 	aStream print: int.
 ! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'dtl 6/7/2008 16:57'!
+!JSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/27/2020 21:02:18'!
 collectInlineList
 	"Make a list of methods that should be inlined."
 	"Details: The method must not include any inline C, since the translator cannot
@@ -912,9 +884,9 @@ sel |
 			m parseTree nodesDo: [ :node |
 				node isSend ifTrue: [
 					sel _ node selector.
-					(sel = #cCode: or: [sel = #cCode:inSmalltalk:])
-						ifTrue: [ hasCCode _ true ].
+					
 					senderCount _ callsOf at: sel ifAbsent: [ nil ].
+					
 					nil = senderCount ifFalse: [
 						callsOf at: sel put: senderCount + 1.
 					].
@@ -1021,7 +993,7 @@ mayInline: sel
 
 	^ inlineList includes: sel! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'ls 10/10/1999 13:55'!
+!JSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/27/2020 21:16:27'!
 methodStatsString
 	"Return a string describing the size, # of locals, and # of senders of
 each method. Note methods that have inline C code or C declarations."
@@ -1047,7 +1019,6 @@ calls registers selr m |
 			m parseTree nodesDo: [ :node |
 				node isSend ifTrue: [
 					selr _ node selector.
-					selr = #cCode: ifTrue: [ hasCCode _ true ].
 					senderCount _ callsOf at: selr ifAbsent: [ 0 ].
 					callsOf at: selr put: senderCount + 1.
 				].
@@ -1292,13 +1263,8 @@ void* vm_exports[][3] = {'.
 };
 '.! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'ikp 9/10/2003 05:53'!
-emitGlobalStructFlagOn: aStream
-	"Default: do nothing.  Overridden in CCGenGlobalStruct."
-! !
-
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/24/2020 10:23:55'!
-emitJSCodeOn: aStream doAssertions: assertionFlag
+!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/26/2020 21:53:46'!
+emitJSCodeOn: aStream 
 	"Emit C code for all methods in the code base onto the given stream. All inlined method calls should already have been expanded."
 
 	self emitJSHeaderOn: aStream.
@@ -1315,13 +1281,12 @@ emitJSCodeOn: aStream doAssertions: assertionFlag
 	self emitExportsOn: aStream.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'dtl 1/28/2007 14:10'!
+!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/26/2020 21:53:46'!
 emitJSCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag
 	"Emit C code for all methods in the code base onto the given stream. All inlined method calls should already have been expanded."
 
 	self prepareMethodsInlined: inlineFlag doAssertions: assertionFlag.
-	^ self emitJSCodeOn: aStream doAssertions: assertionFlag
-! !
+	^ self emitJSCodeOn: aStream ! !
 
 !JSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/6/2014 15:40'!
 emitJSConstantsOn: aStream
@@ -1470,7 +1435,7 @@ jsLiteralFor: anObject
 		'Warning: A Smalltalk literal could not be translated into a JS constant: ', anObject printString.
 	^'"XXX UNTRANSLATABLE CONSTANT XXX"'! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/6/2014 11:23'!
+!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/27/2020 21:01:23'!
 prepareMethodsInlined: inlineFlag doAssertions: assertionFlag
 	"Prepare to emit JS code for all methods in the code base. All inlined method calls should be expanded. Answer a list of methods to be emitted as C code."
 
@@ -1482,7 +1447,6 @@ prepareMethodsInlined: inlineFlag doAssertions: assertionFlag
 	verbose ifTrue: [
 		self printUnboundCallWarnings.
 		self printUnboundVariableReferenceWarnings.
-		Transcript cr.
 	].
 	self checkAbstractMethods.
 	assertionFlag ifFalse: [ self removeAssertions ].
@@ -1998,115 +1962,6 @@ generateIfTrueIfFalseAsArgument: msgNode on: aStream indent: level
 			[:const|
 			(const ifTrue: [msgNode args first] ifFalse: [msgNode args last])
 				emitJSCodeAsArgumentOn: aStream level: level generator: self]! !
-
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 18:35'!
-generateInlineCCode: msgNode on: aStream indent: level
-	"Generate the C code for this message onto the given stream.
-	 There are two forms, self cCode: aString ... and self cCode: aBlock."
-	msgNode args first isConstant
-		ifTrue: [
-			self generateJSCodeForCcode: msgNode args first value on: aStream indent: level]
-		ifFalse: [
-			msgNode args first
-					emitCCodeOn: aStream
-					level: level
-					generator: self]! !
-
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 18:42'!
-generateInlineCCodeAsArgument: msgNode on: aStream indent: level
-	"Generate the C code for this message onto the given stream.
-	 There are two forms, self cCode: aString ... and self cCode: aBlock."
-
-	msgNode args first isConstant
-		ifTrue: [self generateJSCodeForCcode: msgNode args first value
-			on: aStream indent: level]
-		ifFalse: [msgNode args first
-					emitCCodeAsArgumentOn: aStream
-					level: level
-					generator: self]! !
-
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:30'!
-generateInlineCPreprocessorDirective: msgNode on: aStream indent: level
-	"Generate the C preprocessor directive for this message onto the given stream."
-self halt.
-	aStream cr; nextPutAll: msgNode args first value! !
-
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:30'!
-generateInlineCppDirective: msgNode on: aStream indent: level
-	"Generate the C code for this message onto the given stream."
-self halt.
-	aStream cr; nextPutAll: '# ', msgNode args first value.! !
-
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 00:37'!
-generateInlineCppIfDef: msgNode on: aStream indent: level
-	"Generate the C code for this message onto the given stream."
-
-	aStream nextPutAll: '// skipping ifdef ', msgNode args first value! !
-
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 00:37'!
-generateInlineCppIfDefElse: msgNode on: aStream indent: level
-	"Generate the C code for this message onto the given stream."
-
-	| alternateBlock alternateBlockIsNil |
-	aStream nextPutAll: '// skipping ifdef ', msgNode args first value; cr.
-
-	alternateBlock _ msgNode args fifth.
-	alternateBlockIsNil _ true. "check for nil #else clause"
-	alternateBlock nodesDo: [:n |
-		(n ~= alternateBlock and: [n name ~= 'nil'])
-			ifTrue: [alternateBlockIsNil _ false ]].
-	(alternateBlockIsNil) ifFalse:
-		[msgNode isExpression
-			ifTrue:
-				[aStream tab: level + 1; nextPut: $(.
-				alternateBlock asExpression
-					emitJSCodeOn: aStream level: level + 1 generator: self.
-				aStream nextPut: $); cr]
-			ifFalse:
-				[alternateBlock
-					emitJSCodeOn: aStream level: level generator: self]].
-
-! !
-
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:30'!
-generateInlineCppIfElse: msgNode on: aStream indent: level
-	"Generate the C code for this message onto the given stream."
-
-	| comment alternateBlock alternateBlockIsNil |
-self halt.
-	aStream cr; nextPutAll: '# if (', msgNode args first value, ')'.
-	comment _ msgNode args third value.
-	(comment isKindOf: String)
-		ifTrue: [aStream nextPutAll: '  // ', comment]
-		ifFalse: ["nil argument, ignore it"].
-	aStream cr.
-	msgNode isExpression
-		ifTrue:
-			[aStream tab: level + 1; nextPut: $(.
-			msgNode args fourth asExpression
-				emitJSCodeOn: aStream level: level + 1 generator: self.
-			aStream nextPut: $); cr]
-		ifFalse:
-			[msgNode args fourth
-				emitJSCodeOn: aStream level: level generator: self].
-	alternateBlock _ msgNode args fifth.
-	alternateBlockIsNil _ true. "check for nil #else clause"
-	alternateBlock nodesDo: [:n |
-		(n ~= alternateBlock and: [n name ~= 'nil'])
-			ifTrue: [alternateBlockIsNil _ false ]].
-	(alternateBlockIsNil) ifFalse:
-		[aStream nextPutAll: '# else'; cr.
-		msgNode isExpression
-			ifTrue:
-				[aStream tab: level + 1; nextPut: $(.
-				alternateBlock asExpression
-					emitJSCodeOn: aStream level: level + 1 generator: self.
-				aStream nextPut: $); cr]
-			ifFalse:
-				[alternateBlock
-					emitJSCodeOn: aStream level: level generator: self]].
-	aStream nextPutAll: '# endif  // ', msgNode args first value; cr; tab: level
-! !
 
 !JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:31'!
 generateInlineDirective: msgNode on: aStream indent: level
@@ -2667,7 +2522,7 @@ generateWhileTrueLoop: msgNode on: aStream indent: level
 	level timesRepeat: [ aStream tab ].
 	aStream nextPutAll: '}'.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/21/2020 11:19:12'!
+!JSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/27/2020 21:57:28'!
 initializeTranslationDictionary 
 	"Initialize the dictionary mapping message names to actions for JS code generation."
 
@@ -2741,13 +2596,8 @@ initializeTranslationDictionary
 	#integerValueOf:			#generateIntegerValueOf:on:indent:
 	#integerObjectOf:			#generateIntegerObjectOf:on:indent:
 	#isIntegerObject: 			#generateIsIntegerObject:on:indent:
-	#cCode:					#generateInlineCCode:on:indent:
-	#cCode:inSmalltalk:			#generateInlineCCode:on:indent:
 	#cPreprocessorDirective:	#generateInlineCPreprocessorDirective:on:indent:
-	#preprocessorExpression:	#generateInlineCppDirective:on:indent:
-	#isDefined:inSmalltalk:comment:ifTrue:	#generateInlineCppIfDef:on:indent:
-	#isDefined:inSmalltalk:comment:ifTrue:ifFalse:	#generateInlineCppIfDefElse:on:indent:
-	#isDefinedTrueExpression:inSmalltalk:comment:ifTrue:ifFalse:	#generateInlineCppIfElse:on:indent:
+
 	#coerce:to:				#generateCCoercion:on:indent:
 	#coerceSimple:to:			#generateCCoercion:on:indent:
 	#addressOf:				#generateAddressOf:on:indent:
@@ -2812,8 +2662,6 @@ initializeTranslationDictionary
 	#ifFalse:			#generateIfFalseAsArgument:on:indent:
 	#ifTrue:ifFalse:		#generateIfTrueIfFalseAsArgument:on:indent:
 	#ifFalse:ifTrue:		#generateIfFalseIfTrueAsArgument:on:indent:
-	#cCode:			#generateInlineCCodeAsArgument:on:indent:
-	#cCode:inSmalltalk:	#generateInlineCCodeAsArgument:on:indent:
 	).
 
 	asArgumentTranslationDict _ Dictionary new: 8.
@@ -3110,128 +2958,6 @@ initialize
 		"Note: The Kernighan and Ritchie 2nd Edition C manual, p. 49, leaves the semantics of right-shifting a negative number open to the discretion of the compiler implementor. However, it strongly suggests that most compilers should generate an arithmetic right shift (i.e., shifting in the sign bit), which is the same as dividing by a power of two. If your compiler does not generate or simulate an arithmetic shift, then make this class variable false and re-translate."
 ! !
 
-!JSPluginCodeGenerator methodsFor: 'inlining' stamp: 'dtl 8/21/2011 21:16'!
-doInlining: inlineFlag
-"do inlining for a plugin"
-	self doBasicInlining: inlineFlag.
-	self permitMethodPruning
-		ifTrue: [self pruneUnreachableMethods]
-! !
-
-!JSPluginCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/1/2014 13:26'!
-emitExportsOn: aStream
-	"Store all the exported primitives in a form to be used by internal plugins"
-	aStream nextPutAll:'
-
-Squeak.registerExternalModule("', pluginName,'", {'.
-
-	self exportedPrimitiveNames do:[:primName|
-		aStream crtab: 1;
-			nextPutAll: primName; 
-			nextPutAll: ': '; 
-			nextPutAll: primName;
-			nextPutAll:','.
-	].
-
-aStream nextPutAll: '
-});
-
-}); // end of module
-'.
-! !
-
-!JSPluginCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/20/2020 23:48:09'!
-emitJSHeaderOn: aStream
-	"Write a JS file header onto the given stream."
-
-	aStream nextPutAll: '/* '.
-	aStream nextPutAll: headerNotice.
-	aStream nextPutAll: ' */'; newLine.
-	aStream nextPutAll: (self fileHeaderVersionStampForSourceClass: originClass).
-	aStream nextPutAll: '
-module("users.bert.SqueakJS.plugins.', pluginName, '").requires("users.bert.SqueakJS.vm").toRun(function() {
-
-var VM_PROXY_MAJOR = 1;
-var VM_PROXY_MINOR = 0;
-
-/*** Functions ***/
-function CLASSOF(obj) { return typeof obj === "number" ? interpreterProxy.classSmallInteger() : obj.sqClass }
-function SIZEOF(obj) { return obj.pointers ? obj.pointers.length : obj.words ? obj.words.length : obj.bytes ? obj.bytes.length : 0 }
-function BYTESIZEOF(obj) { return obj.bytes ? obj.bytes.length : obj.words ? obj.words.length * 4 : 0 }
-function DIV(a, b) { return Math.floor(a / b) | 0; }   // integer division
-function MOD(a, b) { return a - DIV(a, b) * b | 0; }   // signed modulus
-function SHL(a, b) { return b > 31 ? 0 : a << b; }     // fix JS shift
-function SHR(a, b) { return b > 31 ? 0 : a >>> b; }    // fix JS shift
-function SHIFT(a, b) { return b < 0 ? (b < -31 ? 0 : a >>> (0-b) ) : (b > 31 ? 0 : a << b); }
-function PTR_ADD(p, n) { return new Int32Array(p.buffer, p.byteOffset + n * 4); }
-function FPTR_ADD(p, n) { return new Float32Array(p.buffer, p.byteOffset + n * 4); }
-
-'.! !
-
-!JSPluginCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/21/2020 09:56:57'!
-isTypedPointerToStruct: type "<String>"
-	^pluginClass notNil
-	  and: [[pluginClass isTypedPointerToStruct: type]
-			on: MessageNotUnderstood
-			do: [:ex| ex message selector == #isTypedPointerToStruct: ifTrue: [^false].
-					ex pass]]! !
-
-!JSPluginCodeGenerator methodsFor: 'public' stamp: 'bf 10/6/2014 15:37'!
-generateCodeStringForPrimitives
-"TPR - moved down from JSCodeGenerator"
-	| s methodList |
-	s _ ReadWriteStream on: (String new: 1000).
-	methodList _ methods asSortedCollection: [:m1 :m2 | m1 selector < m2 selector].
-	self emitJSHeaderOn: s.
-	self emitJSConstantsOn: s.
-	self emitJSVariablesOn: s.
-	methodList do: [:m | m emitJSCodeOn: s generator: self].
-	self emitExportsOn: s.
-	^ s contents
-! !
-
-!JSPluginCodeGenerator methodsFor: 'public' stamp: 'jpb 5/20/2020 23:55:51'!
-ignoredMethods
-	pluginName = 'BitBltPlugin' ifTrue: [
-		^#(dstLongAt: dstLongAt:put: srcLongAt:)].
-
-	pluginName = 'B2DPlugin' ifTrue: [
-		^self translatedMethodsB2DPlugin collect: [:ea | ea key]].
-	^super ignoredMethods! !
-
-!JSPluginCodeGenerator methodsFor: 'public' stamp: 'tpr 1/10/2003 16:20'!
-localizeGlobalVariables
-"TPR - we don't do this for plugins"! !
-
-!JSPluginCodeGenerator methodsFor: 'public' stamp: 'bf 11/12/2014 15:26'!
-overrideJSTranslationDictionary
-	| sel |
-	sel _ (#translatedMethods, self pluginName) asSymbol.
-	(self respondsTo: sel) ifFalse: [^self].
-	(self perform: sel) associationsDo: [:assoc |
-		translationDict at: assoc key put: assoc value].
-! !
-
-!JSPluginCodeGenerator methodsFor: 'public' stamp: 'bf 10/7/2014 00:18'!
-pluginName
-	^pluginName! !
-
-!JSPluginCodeGenerator methodsFor: 'public' stamp: 'bf 11/12/2014 15:26'!
-pluginName: aString
-"TPR - moved from JSCodeGenerator"
-	"Set the plugin name when generating plugins."
-	pluginName _ aString.
-	self overrideJSTranslationDictionary.! !
-
-!JSPluginCodeGenerator methodsFor: 'public' stamp: 'bf 11/12/2014 16:11'!
-translatedMethodsB2DPlugin
-	"see senders of translatedMethods"
-	^{
-		#makeUnsignedFrom: -> #generateMakeUnsignedFrom:on:indent:.
-		#loadPointIntAt:from: -> #generateLoadPointInt:on:indent:.
-		#loadPointShortAt:from: -> #generateLoadPointShort:on:indent:.
-	}! !
-
 !JSMethod methodsFor: 'accessing'!
 args
 	"The arguments of this method."
@@ -3492,7 +3218,7 @@ renameLabelsForInliningInto: destMethod
 	].
 	self renameLabelsUsing: labelMap.! !
 
-!JSMethod methodsFor: 'inlining support'!
+!JSMethod methodsFor: 'inlining support' stamp: 'jpb 5/26/2020 21:11:24'!
 renameLabelsUsing: aDictionary
 	"Rename all labels according to the old->new mappings of the given dictionary."
 
@@ -3504,7 +3230,7 @@ renameLabelsUsing: aDictionary
 		(node isGoTo and: [aDictionary includesKey: node label]) ifTrue: [
 			node setLabel: (aDictionary at: node label).
 		].
-		(node isLabel and: [aDictionary includesKey: node label]) ifTrue: [
+		((node is: #Label) and: [aDictionary includesKey: node label]) ifTrue: [
 			node setLabel: (aDictionary at: node label).
 		].
 	].! !
@@ -3637,17 +3363,11 @@ freeVariableReferences
 	#('self' 'nil' 'true' 'false' 'null') do: [ :var | refs remove: var ifAbsent: [] ].
 	^ refs asSortedCollection! !
 
-!JSMethod methodsFor: 'utilities'!
+!JSMethod methodsFor: 'utilities' stamp: 'jpb 5/27/2020 21:16:58'!
 hasNoCCode
 	"Answer true if the receiver does not use inlined C or C declarations, which are not currently renamed properly by the the inliner."
 
 	declarations isEmpty ifFalse: [ ^ false ].
-
-	parseTree nodesDo: [ :node |
-		node isSend ifTrue: [
-			node selector = #cCode: ifTrue: [ ^ false ].
-		].
-	].
 	^ true! !
 
 !JSMethod methodsFor: 'utilities'!

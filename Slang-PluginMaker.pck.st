@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4112] on 26 May 2020 at 7:10:16 pm'!
+'From Cuis 5.0 [latest update: #4112] on 26 May 2020 at 8:40:25 pm'!
 'Description Temporary package for storing plugin related classes, which don''t quiet fit into the Slang-Tools package, it''s supposed to be merged into the main one as it seems that the SmartSyntaxPlugins are trying to implement an extension which should be standard. 
 
 License: MIT'!
-!provides: 'Slang-PluginMaker' 1 1!
+!provides: 'Slang-PluginMaker' 1 2!
 SystemOrganization addCategory: #'Slang-PluginMaker'!
 
 
@@ -44,6 +44,26 @@ SlangSmartSyntaxInterpreterPlugin subclass: #SlangTestSupportSSIP
 	category: 'Slang-PluginMaker'!
 !classDefinition: 'SlangTestSupportSSIP class' category: #'Slang-PluginMaker'!
 SlangTestSupportSSIP class
+	instanceVariableNames: ''!
+
+!classDefinition: #SlangCCodeGeneratorGlobalStructure category: #'Slang-PluginMaker'!
+SlangCCodeGenerator subclass: #SlangCCodeGeneratorGlobalStructure
+	instanceVariableNames: 'localStructDef structDefDefine'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-PluginMaker'!
+!classDefinition: 'SlangCCodeGeneratorGlobalStructure class' category: #'Slang-PluginMaker'!
+SlangCCodeGeneratorGlobalStructure class
+	instanceVariableNames: ''!
+
+!classDefinition: #SlangVMPluginCodeGenerator category: #'Slang-PluginMaker'!
+SlangCCodeGenerator subclass: #SlangVMPluginCodeGenerator
+	instanceVariableNames: 'pluginClass pluginName'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-PluginMaker'!
+!classDefinition: 'SlangVMPluginCodeGenerator class' category: #'Slang-PluginMaker'!
+SlangVMPluginCodeGenerator class
 	instanceVariableNames: ''!
 
 !classDefinition: #SlangSmartSyntaxPluginCodeGenerator category: #'Slang-PluginMaker'!
@@ -90,6 +110,14 @@ test coverage.
 
 	"VMMaker clearCacheEntriesFor: SlangTestSupportSSIP.
 	SlangTestSupportSSIP asCString"!
+
+!SlangCCodeGeneratorGlobalStructure commentStamp: 'tpr 5/23/2003 11:17' prior: 0!
+This subclass of CCodeGenerator adds support for sticking most global variables into a large global array. This in turn means that suitably minded C compilers can do a better job of accessing those variables; in particular the Mac OS use of PPC and Acorn use of ARM benfits by a substantial margin. 
+
+Only simple globals are currently put in the array. Someday we might try adding pointers to the various arrays etc.!
+
+!SlangVMPluginCodeGenerator commentStamp: '<historical>' prior: 0!
+I generate code that can be loaded dynamically from external libraries (e.g., DSOs on Unix or DLLs on Windows)!
 
 !SlangSmartSyntaxPluginCodeGenerator commentStamp: 'tpr 5/5/2003 16:03' prior: 0!
 Subclass of CCodeGenerator, used in connection with TestInterpreterPlugin to generate named primitives with type coercion specifications. See the plugins implemeted as subclasses of TestInterpreterPlugin!
@@ -817,6 +845,319 @@ inline: flag
 	"Transcript show: (self inline: true) asCString"
 
 	^self new inline: flag! !
+
+!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator'!
+buildSortedVariablesCollection
+	"Build sorted vars, end result will be sorted collection based on static usage, 
+	perhaps cache lines will like this!!"
+
+	| globalNames sorted |
+
+	globalNames _ Bag new: globalVariableUsage size.
+	globalVariableUsage keysAndValuesDo: [:k :v | 
+		(variableDeclarations includesKey: k) ifFalse: 
+			[globalNames add: k withOccurrences: v size]].	
+	variableDeclarations keysDo: 
+		[:e | globalNames add: e withOccurrences: 0].
+	sorted _ SortedCollection sortBlock: 
+		[:a :b | (globalNames occurrencesOf: a) > (globalNames occurrencesOf: b)].
+	sorted addAll: variables.
+	^sorted! !
+
+!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator' stamp: 'tpr 10/29/2002 14:00'!
+emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag
+	super emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag.
+
+	"if the machine needs the globals structure defined locally in the interp.c file, don't add the folowing function"
+	localStructDef ifFalse:[self emitStructureInitFunctionOn: aStream]! !
+
+!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator' stamp: 'eem 12/10/2008 11:25'!
+emitGlobalStructFlagOn: aStream
+	"Define SQ_USE_GLOBAL_STRUCT before including the header."
+
+	aStream
+		nextPutAll: '#if ';
+		nextPutAll: structDefDefine; cr;
+		nextPutAll: '# define SQ_USE_GLOBAL_STRUCT 1'; cr;
+		nextPutAll: '#else'; cr;
+		nextPutAll: '# define SQ_USE_GLOBAL_STRUCT 0'; cr;
+		nextPutAll: '#endif'; cr;
+		cr! !
+
+!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator' stamp: 'tpr 10/9/2002 15:40'!
+emitStructureInitFunctionOn: aStream 
+	"For the VM using a global struct for most of the global vars (useful for ARM and PPC so far), append the initGlobalStructure() function"
+	aStream 
+		cr;
+		nextPutAll: 'void initGlobalStructure(void) {foo = &fum;}';
+		cr! !
+
+!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator' stamp: 'tpr 10/29/2002 15:01'!
+globalStructDefined: aBool
+	localStructDef _ aBool! !
+
+!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator' stamp: 'eem 2/25/2009 13:29'!
+initialize
+	super initialize.
+	localStructDef _ false.
+	structDefDefine _ '1'! !
+
+!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator' stamp: 'tpr 12/22/2005 16:03'!
+placeInStructure: var
+	"See if we should put this array into a structure
+	This has hard coded vars, should go somewhere else!!
+	The variables listed are hardcoded as C in the interpreter thus they don't get resolved via TVariableNode logic
+	Also let's ignore variables that have special definitions that require initialization, and the function def which has problems"
+
+	| check |
+	check _ variableDeclarations at: var ifAbsent: [''].
+	(check includes: $=) ifTrue: [^false].
+	(check includes: $() ifTrue: [^false].
+
+	(#( 'showSurfaceFn' 'memory' 'extraVMMemory' 'interpreterProxy') includes: var) ifTrue: [^false].
+	^true.
+	! !
+
+!SlangCCodeGeneratorGlobalStructure methodsFor: 'C code generator'!
+returnPrefixFromVariable: aName
+	^((self globalsAsSet includes: aName) and: [self placeInStructure: aName])
+		ifTrue: ['foo->',aName]
+		ifFalse: [aName]! !
+
+!SlangCCodeGeneratorGlobalStructure methodsFor: 'utilities'!
+checkForGlobalUsage: vars in: aTMethod 
+	"override to handle global struct needs"
+	super checkForGlobalUsage: vars in: aTMethod.
+	"if localStructDef is false, we  don't ever need to include a reference to it in a function"
+	localStructDef ifFalse:[^self].
+	vars asSet do: [:var |
+		"if any var is global and in the global var struct 
+		tell the TMethod it will be refering to the  struct"
+			  ((self globalsAsSet includes: var )
+					and: [self placeInStructure: var ])
+				ifTrue: [aTMethod referencesGlobalStructIncrementBy: (vars occurrencesOf: var)]]! !
+
+!SlangCCodeGeneratorGlobalStructure methodsFor: 'utilities'!
+localizeGlobalVariables
+"TPR - remove all the global vars destined for the structure that are only used once - not worth the space,
+actually what will happen is the folding code will fold these variables into the method"
+
+	super localizeGlobalVariables.
+	globalVariableUsage _ globalVariableUsage select: [:e | e size > 1].
+! !
+
+!SlangCCodeGeneratorGlobalStructure methodsFor: 'public'!
+isGlobalStructureBuild
+	^true! !
+
+!SlangCCodeGeneratorGlobalStructure methodsFor: 'initialize-release' stamp: 'eem 12/10/2008 11:12'!
+structDefDefine: aString
+	structDefDefine _ aString! !
+
+!SlangVMPluginCodeGenerator methodsFor: 'inlining' stamp: 'dtl 8/21/2011 21:16'!
+doInlining: inlineFlag
+"do inlining for a plugin"
+	self doBasicInlining: inlineFlag.
+	self permitMethodPruning
+		ifTrue: [self pruneUnreachableMethods]
+! !
+
+!SlangVMPluginCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/20/2020 19:38:02'!
+emitCHeaderForPrimitivesOn: aStream
+	"Write a C file header for compiled primitives onto the given stream."
+
+	aStream
+		nextPutAll: '/* Automatically generated from Squeak (';
+		nextPutAll: headerNotice;
+		nextPutAll: ') on '.
+
+	self emitGenerationTimeStampOn: aStream.
+	aStream
+		nextPutAll: '*/';
+		newLine; newLine.
+
+	self fileHeaderVersionStampForSourceClass: originClass.
+	aStream newLine; newLine;
+		nextPutAll: '#include "sq.h"'; newLine; newLine.
+
+	"Additional header files"
+		self emitHeaderFilesOn: aStream.
+
+	aStream nextPutAll: '
+#include "sqMemoryAccess.h"
+
+/*** Imported Functions/Variables ***/
+extern sqInt stackValue(sqInt);
+extern sqInt stackIntegerValue(sqInt);
+extern sqInt successFlag;
+
+/* allows accessing Strings in both C and Smalltalk */
+#define asciiValue(c) c
+'.
+	aStream newLine.! !
+
+!SlangVMPluginCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/15/2020 22:48:58'!
+emitCHeaderOn: aStream
+	"Write a C file header onto the given stream."
+
+	aStream nextPutAll: '/* '.
+	aStream nextPutAll: headerNotice.
+	aStream nextPutAll: ' */';cr.
+	aStream nextPutAll: (self fileHeaderVersionStampForSourceClass: originClass).
+	aStream newLine; newLine.
+
+	aStream nextPutAll:'
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+/* Default EXPORT macro that does nothing (see comment in sq.h): */
+#define EXPORT(returnType) returnType
+
+/* Do not include the entire sq.h file but just those parts needed. */
+/*  The virtual machine proxy definition */
+#include "sqVirtualMachine.h"
+/* Configuration options */
+#include "sqConfig.h"
+/* Platform specific definitions */
+#include "sqPlatformSpecific.h"
+
+#define true 1
+#define false 0
+#define null 0  /* using ''null'' because nil is predefined in Think C */
+#ifdef SQUEAK_BUILTIN_PLUGIN
+#undef EXPORT
+// was #undef EXPORT(returnType) but screws NorCroft cc
+#define EXPORT(returnType) static returnType
+#endif
+'.
+
+	"Additional header files"
+	self emitHeaderFilesOn: aStream.
+
+	aStream nextPutAll: '
+#include "sqMemoryAccess.h"
+
+'.
+	aStream cr.! !
+
+!SlangVMPluginCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/16/2020 19:28:42'!
+emitExportsOn: aStream
+	"Store all the exported primitives in a form to be used by internal plugins"
+	| prefix |
+	aStream newLine ; newLine.
+	aStream nextPutAll: '#ifdef SQUEAK_BUILTIN_PLUGIN'; newLine.
+
+	aStream newLine ; newLine.
+	aStream nextPutAll: 'void* ', pluginName,'_exports[][3] = {'.
+	
+	prefix _ '"', pluginName,'"'.
+	self exportedPrimitiveNames do:[:primName|
+		aStream newLine;
+			nextPutAll:'	{'; 
+			nextPutAll: prefix; 
+			nextPutAll:', "'; 
+			nextPutAll: primName; 
+			nextPutAll:'", (void*)'; 
+			nextPutAll: primName;
+			nextPutAll:'},'.
+	].
+
+	aStream newLine.
+	aStream nextPutAll: '{NULL, NULL, NULL}'.
+	aStream newLine; nextPutAll: '};'; newLine.
+	
+	aStream newLine ; newLine.
+	aStream nextPutAll: '#endif /* ifdef SQ_BUILTIN_PLUGIN */' ; newLine.! !
+
+!SlangVMPluginCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/21/2020 09:56:57'!
+isTypedPointerToStruct: type "<String>"
+	^pluginClass notNil
+	  and: [[pluginClass isTypedPointerToStruct: type]
+			on: MessageNotUnderstood
+			do: [:ex| ex message selector == #isTypedPointerToStruct: ifTrue: [^false].
+					ex pass]]! !
+
+!SlangVMPluginCodeGenerator methodsFor: 'public' stamp: 'jpb 5/24/2020 20:17:27'!
+generateCodeStringForPrimitives
+"TPR - moved down from CCodeGenerator"
+	| stream methodList |
+	stream _ ReadWriteStream on: (String new: 1000).
+	methodList _ methods asSortedCollection: [:m1 :m2 | 
+		m1 selector < m2 selector].
+	
+	self emitCHeaderForPrimitivesOn: stream.
+	self emitCConstantsOn: stream.
+	self emitCVariablesOn: stream.
+	self emitCFunctionPrototypes: methodList on: stream.
+	methodList do: [:m | m emitCCodeOn: stream generator: self].
+	self emitExportsOn: stream.
+
+	^ stream contents
+! !
+
+!SlangVMPluginCodeGenerator methodsFor: 'public' stamp: 'tpr 1/10/2003 16:20'!
+localizeGlobalVariables
+"TPR - we don't do this for plugins"! !
+
+!SlangVMPluginCodeGenerator methodsFor: 'public' stamp: 'tpr 1/10/2003 16:18'!
+pluginName: aString
+"TPR - moved from CCodeGenerator"
+	"Set the plugin name when generating plugins."
+	pluginName _ aString.! !
+
+!SlangVMPluginCodeGenerator methodsFor: 'private' stamp: 'jpb 5/19/2020 22:45:26'!
+storeVirtualMachineProxyImplementation: categoryList on: fileName
+	"Store the interpreter definitions on the given file"
+	| stream |
+	stream _ FileStream newFileNamed: fileName.
+	stream nextPutAll:'
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include "sqVirtualMachine.h"'; cr;cr.
+	stream nextPutAll:'/*** Function prototypes ***/'.
+
+	categoryList do:[:assoc|
+		stream cr; cr; nextPutAll:'/* InterpreterProxy methodsFor: ''',assoc key, ''' */'; cr.
+		assoc value asSortedCollection do:[:sel|
+			(methods at: sel) emitCFunctionPrototype: stream generator: self.
+			stream nextPutAll: ';'; cr]].
+
+	stream cr; nextPutAll:'struct VirtualMachine *VM = NULL;'; cr.
+	stream cr; nextPutAll:
+'static int majorVersion(void) {
+	return VM_PROXY_MAJOR;
+}
+
+static int minorVersion(void) {
+	return VM_PROXY_MINOR;
+}
+
+struct VirtualMachine* sqGetInterpreterProxy(void)
+{
+	if(VM) return VM;
+	VM = (struct VirtualMachine *) calloc(1, sizeof(VirtualMachine));
+	/* Initialize Function pointers */
+	VM->majorVersion = majorVersion;
+	VM->minorVersion = minorVersion;
+'.
+	categoryList do:[:assoc|
+		stream cr; crtab; nextPutAll:'/* InterpreterProxy methodsFor: ''',assoc key, ''' */'; crtab.
+		assoc value asSortedCollection do:[:sel|
+		stream nextPutAll:'VM->';
+			nextPutAll: (self findFunctionNameFor: sel);
+			nextPutAll:' = ';
+			nextPutAll: (self findFunctionNameFor: sel);
+			nextPutAll:';';
+			crtab]].
+
+	stream cr; crtab; nextPutAll:'return VM;'; cr; nextPutAll:'}'; cr.
+	stream close.! !
 
 !SlangSmartSyntaxPluginCodeGenerator methodsFor: 'coercing' stamp: 'acg 12/17/1999 07:32'!
 ccgLoad: aBlock expr: aString asBooleanValueFrom: anInteger

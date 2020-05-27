@@ -1,4 +1,4 @@
-'From Cuis 5.0 [latest update: #4112] on 26 May 2020 at 7:10:19 pm'!
+'From Cuis 5.0 [latest update: #4112] on 27 May 2020 at 10:04:36 pm'!
 'Description License: MIT'!
 !provides: 'Slang-Tools-Tests' 1 2!
 SystemOrganization addCategory: #'Slang-Tools-Tests'!
@@ -32,6 +32,16 @@ TestCase subclass: #SlangCTypeRepositoryTest
 	category: 'Slang-Tools-Tests'!
 !classDefinition: 'SlangCTypeRepositoryTest class' category: #'Slang-Tools-Tests'!
 SlangCTypeRepositoryTest class
+	instanceVariableNames: ''!
+
+!classDefinition: #SlangParseNodeTest category: #'Slang-Tools-Tests'!
+TestCase subclass: #SlangParseNodeTest
+	instanceVariableNames: 'usedClass'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-Tools-Tests'!
+!classDefinition: 'SlangParseNodeTest class' category: #'Slang-Tools-Tests'!
+SlangParseNodeTest class
 	instanceVariableNames: ''!
 
 !classDefinition: #SlangSystemServiceTest category: #'Slang-Tools-Tests'!
@@ -190,6 +200,31 @@ testIsTypedPointerToStruct
 	self deny: (repository isTypedPointerToStruct: nil).
 	self deny: (repository isTypedPointerToStruct: 'char *').
 	! !
+
+!SlangParseNodeTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/26/2020 20:26:51'!
+testIsQuery
+	| node |
+	node _ usedClass new.
+	
+	self assert: (node is: #ParseNode).
+	self deny: (node is: #Assertion).
+	self deny: (node is: #Comment).
+	self deny: (node is: #Assignment).
+	self deny: (node is: #Constant).
+	self deny: (node is: #Inline).
+	self deny: (node is: #GoTo).
+	self deny: (node is: #Leaf).
+	self deny: (node is: #PreprocessorDirective).
+	self deny: (node is: #Return).
+	self deny: (node is: #ReturningIf).
+	self deny: (node is: #Send).
+	self deny: (node is: #StatementList).
+	self deny: (node is: #Switch).
+	self deny: (node is: #Variable).! !
+
+!SlangParseNodeTest methodsFor: 'setUp/tearDown' stamp: 'jpb 5/26/2020 20:21:16'!
+setUp
+	usedClass _ SlangTParseNode ! !
 
 !SlangSystemServiceTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/20/2020 22:28:19'!
 setUp
@@ -435,143 +470,54 @@ testInterpTypeDeclarations
 			with: 'methodName'.
 	self assert: m = p! !
 
-!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'dtl 3/18/2013 09:49'!
+!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'jpb 5/27/2020 21:31:12'!
 testIfElseEndif
-	"Test isDefinedTrueExpression:inSmalltalk:comment:ifTrue:ifFalse: "
+	"Test isDefinedTrueExpression:inSmalltalk:comment:ifTrue:ifFalse: is not implemented in Cuis Slang"
 
-	"(SlangTest selector: #testIfElseEndif) run"
-
-	| stssi cString stringWithoutWhiteSpace lines |
+	| stssi |
 	stssi _ SlangTestSupportInterpreter inline: false.
 
-	"verify that the default Smalltalk block that is evaluated in simulation"
-	self assert: stssi ifDefinedTrueElseEndif = 4.
+	self should: [ stssi ifDefinedTrueElseEndif ] raise: MessageNotUnderstood.! !
 
-	"verify generated C string"
-	cString _ stssi asCString: #ifDefinedTrueElseEndif.
-	lines _ (cString findTokens: Character cr) select: [:e |
-		{
-			'# if (SIZE == 8)  // SIZE may be 4 or 8' .
-			'	return 8;' .
-			'# else' .
-			'	return 4;' .
-			'# endif  // SIZE == 8'
-		} includes: e ].
-	self should: lines size = 5.
-	self should: ('*return 8*' match: lines second).
-	self should: ('*return 4*' match: lines fourth).
-
-	"check the rest of the method, ignoring whitespace"
-	cString _ stssi asCString: #ifDefinedTrueElseEndif.
-	stringWithoutWhiteSpace _ cString reject: [:e | e isSeparator].
-	self should: stringWithoutWhiteSpace =
-		'sqIntifDefinedTrueElseEndif(void){#if(SIZE==8)//SIZEmaybe4or8return8;#elsereturn4;#endif//SIZE==8returnnull;}'.
-
-"
-sqInt ifDefinedTrueElseEndif(void) {
-	
-# if (SIZE == 8)  // SIZE may be 4 or 8
-	return 8;
-# else
-	return 4;
-# endif  // SIZE == 8
-	
-	return null;
-}
-"! !
-
-!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'dtl 3/18/2013 09:49'!
+!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'jpb 5/27/2020 21:50:09'!
 testIfdefElseEndif
-	"Test isDefined:inSmalltalk:comment:ifTrue:ifFalse: "
+	"Test that  isDefined:inSmalltalk:comment:ifTrue:ifFalse: is not implemented is Cuis Slang"
 
-	"(SlangTest selector: #testIfdefElseEndif) run"
-
-	| stssi cString stringWithoutWhiteSpace lines |
+	| stssi expected|
 	self flag: #FIXME. "See redundant implementation in oscog #cppIf:ifTrue:ifFalse:"
 
 	stssi _ SlangTestSupportInterpreter inline: false.
 
 	"verify that the default Smalltalk block that is evaluated in simulation"
-	self assert: stssi ifdefElseEndif = #defaultBlockForSimulation.
-
-	"verify generated C string"
-	cString _ stssi asCString: #ifdefElseEndif.
-	lines _ (cString findTokens: Character cr) select: [:e |
-		{
-			'# ifdef HAVE_FOO  // some platforms do not support foo properly' .
-			'	return 1;' .
-			'# else' .
-			'	return 0;' .
-			'# endif  // HAVE_FOO'
-		} includes: e ].
-	self should: lines size = 5.
-	self should: ('*return 1*' match: lines second).
-	self should: ('*return 0*' match: lines fourth).
-
-	"check the rest of the method, ignoring whitespace"
-	stringWithoutWhiteSpace _ cString reject: [:e | e isSeparator].
-	self should: stringWithoutWhiteSpace =
-		'sqIntifdefElseEndif(void){#ifdefHAVE_FOO//someplatformsdonotsupportfooproperlyreturn1;#elsereturn0;#endif//HAVE_FOOreturnnull;}'.
-
-"
-sqInt ifdefElseEndif(void) {
+	self should: [ stssi ifdefElseEndif ] raise: MessageNotUnderstood.
 	
-# ifdef HAVE_FOO  // some platforms do not support foo properly
-	return 1;
-# else
-	return 0;
-# endif  // HAVE_FOO
+	expected _ String crlfString join: {
+		''.
+		'sqInt ifdefElseEndif(void) {'.
+		'isDefinedinSmalltalkcommentifTrueifFalse("HAVE_FOO", return defaultBlockForSimulation, "some platforms do not support'.
+		'foo properly", return 1, return 0);'.
+		'return null;'.
+		'}'.
+	}.
 	
-	return null;
-}
-"! !
+	self assert: expected equals: (stssi asCString: #ifdefElseEndif).! !
 
-!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'dtl 3/18/2013 09:49'!
+!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'jpb 5/27/2020 21:28:07'!
 testIfdefEndif
-	"Test isDefined:inSmalltalk:comment:ifTrue: "
-
-	"(SlangTest selector: #testIfdefEndif) run"
-
-	| stssi cString stringWithoutWhiteSpace lines |
+	"Tests that ifDef is not implemented. This is a difference to VMMaker Slang, which Cuis Slang doesn't implement "
+	| stssi |
 	self flag: #FIXME. "See redundant implementation in oscog #cppIf:ifTrue:"
 
 	stssi _ SlangTestSupportInterpreter inline: false.
 
 	"verify that the default Smalltalk block that is evaluated in simulation"
-	self assert: stssi ifdefEndif = #defaultBlockForSimulation.
+	self should: [ stssi ifdefEndif ]
+		raise: MessageNotUnderstood.
+! !
 
-	"verify generated C string"
-	cString _ stssi asCString: #ifdefEndif.
-	lines _ (cString findTokens: Character cr) select: [:e |
-		{
-			'# ifdef HAVE_FOO  // some platforms do not support foo properly' .
-			'	return 1;' .
-			'# endif  // HAVE_FOO'
-		} includes: e ].
-	self should: lines size = 3.
-
-	"check the rest of the method, ignoring whitespace"
-	cString _ stssi asCString: #ifdefEndif.
-	stringWithoutWhiteSpace _ cString reject: [:e | e isSeparator].
-	self should: stringWithoutWhiteSpace =
-		'sqIntifdefEndif(void){#ifdefHAVE_FOO//someplatformsdonotsupportfooproperlyreturn1;#endif//HAVE_FOOreturn0;}'.
-
-"
-sqInt ifdefEndif(void) {
-	
-# ifdef HAVE_FOO  // some platforms do not support foo properly
-	return 1;
-# endif  // HAVE_FOO
-	
-	return 0;
-}
-"! !
-
-!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'jpb 5/16/2020 00:22:59'!
+!SlangTest methodsFor: 'testing preprocessor directives' stamp: 'jpb 5/27/2020 22:02:50'!
 testPreprocessorExpression
-	"Test preprocessorExpression: "
-
-	"(SlangTest selector: #testPreprocessorExpression) run"
+	"Test that preprocessorExpression: is not supported in Cuis Slang"
 
 	| stssi cString |
 	self flag: #FIXME. "See redundant implementation in oscog #cPreprocessorDirective: "
@@ -579,10 +525,7 @@ testPreprocessorExpression
 	stssi _ SlangTestSupportInterpreter inline: false.
 	cString _ stssi asCString: #preprocessorExpression.
 	
-	self should: ('* define FOO bar*' match: cString).
-	self should: ((cString findTokens: Character cr) select: [:e | e = '# define FOO bar' ]) size = 1.
-	self should: ((cString findTokens: Character cr) select: [:e | e = '## define FOO bar' ]) size = 0.
-! !
+	self deny: ('* define FOO bar*' match: cString).! !
 
 !SlangTest methodsFor: 'testing base plugins' stamp: 'dtl 3/18/2013 18:32'!
 testPluginDeclareExport
@@ -766,28 +709,28 @@ doNotGenerateByPragma
 	^ 2 + 2
 ! !
 
-!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'dtl 3/18/2013 14:28'!
+!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'jpb 5/26/2020 21:55:36'!
 asCString
 
 	| stream |
 	stream _ ReadWriteStream on: String new.
-	self cg emitCCodeOn: stream doAssertions: true.
+	self findCodeGenerator emitCCodeOn: stream.
 	^ stream contents
 ! !
 
-!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'dtl 3/18/2013 14:29'!
+!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'jpb 5/26/2020 21:01:22'!
 asCString: selector
 
 	| method stream |
-	method _ self cg methodNamed: selector.
+	method _ self findCodeGenerator methodNamed: selector.
 	method ifNil: [^ 'No source has been generated'].
 	stream _ ReadWriteStream on: String new.
 	method emitCCodeOn: stream generator: cg.
 	^ stream contents
 ! !
 
-!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'jpb 5/15/2020 22:23:03'!
-cg
+!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'jpb 5/26/2020 21:01:22'!
+findCodeGenerator
 	"Lazy initialize, once per test"
 
 	cg ifNil: [
@@ -1086,28 +1029,28 @@ doNotGenerateByPragma
 	^ 2 + 2
 ! !
 
-!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'dtl 3/18/2013 14:28'!
+!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'jpb 5/26/2020 21:55:51'!
 asCString
 
 	| stream |
 	stream _ ReadWriteStream on: String new.
-	self cg emitCCodeOn: stream doAssertions: true.
+	self findCodeGenerator emitCCodeOn: stream.
 	^ stream contents
 ! !
 
-!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'dtl 3/18/2013 14:29'!
+!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'jpb 5/26/2020 21:10:07'!
 asCString: selector
 
 	| method stream |
-	method _ self cg methodNamed: selector.
+	method _ self findCodeGenerator methodNamed: selector.
 	method ifNil: [^ 'No source has been generated'].
 	stream _ ReadWriteStream on: String new.
 	method emitCCodeOn: stream generator: cg.
 	^ stream contents
 ! !
 
-!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'jpb 5/16/2020 09:44:25'!
-cg
+!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'jpb 5/26/2020 21:01:22'!
+findCodeGenerator
 	"Lazy initialize, once per test"
 
 	cg ifNil: [
@@ -1294,16 +1237,15 @@ varDefByPragma
 	<var: #bar declare: 'unsigned int * bar'>
 ! !
 
-!SlangTestSupportPlugin class methodsFor: 'translation' stamp: 'jpb 5/16/2020 22:23:41'!
+!SlangTestSupportPlugin class methodsFor: 'translation' stamp: 'jpb 5/26/2020 20:59:58'!
 buildCodeGeneratorInlined: doInlining
 	"Build a CCodeGenerator for this class."
 
 	 | cg |
-	cg _ SlangVMPluginCodeGenerator new initialize.
+	cg _ SlangCCodeGenerator new initialize.
 	cg declareMethodsStatic: false.
 	cg permitMethodPruning: true.
 	cg uncheckedAbstractMethods addAll: self abstractSelectors.
-	cg pluginName: self moduleName.
 	
 	^self initializeCodeGenerator: cg
 
