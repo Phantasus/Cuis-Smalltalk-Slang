@@ -9,6 +9,79 @@ authors at the end of the file.
 
 # Entries
 
+## 28th May 2020 (jpb)
+
+In the morning during breakfast I looked at this [ZeroMQ](https://zeromq.org/get-started)
+example of writing a hello world server in ZeroMQ:
+
+```c
+//  Hello World server
+#include <zmq.h>
+#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <assert.h>
+
+int main (void)
+{
+    //  Socket to talk to clients
+    void *context = zmq_ctx_new ();
+    void *responder = zmq_socket (context, ZMQ_REP);
+    int rc = zmq_bind (responder, "tcp://*:5555");
+    assert (rc == 0);
+
+    while (1) {
+        char buffer [10];
+        zmq_recv (responder, buffer, 10, 0);
+        printf ("Received Hello\n");
+        sleep (1);          //  Do some 'work'
+        zmq_send (responder, "World", 5, 0);
+    }
+    return 0;
+}
+```
+
+and my first try of rewriting that example into a possible(?)
+translation into Slang by hand turned out like this:
+
+
+```smalltalk
+main
+    | context responder rc |
+    context := environment perform: 'zmq_ctx_new'.
+    responder := environment
+        perform: 'zmq_socket'
+        with: context
+        with: (environment resolve: 'ZMQ_REP').
+    rc := environment
+        perform: 'zmq_bind'
+        with: responder
+        with: 'tcp://*:5555'.
+    
+    self assert: rc = 0.
+    [
+        | buffer |
+        buffer := ByteArray new: 10.
+        environment perform: 'zmq_recv'
+            with: buffer
+            with: 10
+            with: 0.
+        environment
+            putString: "Received Hello'.
+        environment
+            sleepWith: 1. "Do some  work"
+        environment
+            perform: 'zmq_send'
+            with: responder
+            with: 'World'
+            with: 5
+            with: 0.
+    ]
+```
+
+It's longer with the `perform` style, but I think it makes the
+distinction between "me the object" and "the environment".
+
 ## 27th May 2020 (jpb)
 
 I moved yesterday most of the classes to which could in theory be
@@ -17,8 +90,8 @@ be probably be deleted at some point completly. As plugins aren't
 advised by folks on the Squeak VM mailinglist to begin with and are
 just old tightly coupled balls of rubber band.
 
-Eliot Miranda also pointed out in the [vm-beginners](http://forum.world.st/Stability-of-the-external-plugin-interface-td5117112.html) that I wouldn't need FFI on Cuis as it's supposed to be
-supported here:
+Eliot Miranda also pointed out in the [vm-beginners](http://forum.world.st/Stability-of-the-external-plugin-interface-td5117112.html) in a private mail that I wouldn't need Squeak FFI on Cuis as
+it's supposed to be supported here:
 
 > I don’t understand where you get the idea that Cuis has no callbacks.
 > Cuis supports Alien and has access to the ThreadedFFIPlugin and runs on
@@ -36,7 +109,13 @@ and found the uFFI of pharo hard to understand and hard to use.
 I had less problems with the FFI of Cuis, which  is as thought the
 old SqueakFFI. On the other hand I haven't wrote any FFI code for
 now almost one year. A timespan where you can forget an API easily.
-Anyway.. the response did hurt, let's move on.
+
+I asked then on cuis dev mailinglist as Eliot advised and quoted
+the above private mail, which I didn't realize at the time of
+quoting it, that it was a direct private mail. I got an mailinglist
+[answer](https://lists.cuis.st/mailman/archives/cuis-dev/2020-May/001737.html)
+by Juan Vuletich, that I understood as "ThreadedFFI, Alien is not
+implemented in Cuis, only the old SqueakFFI".
 
 So let's summarize my current desing opinios:
 
