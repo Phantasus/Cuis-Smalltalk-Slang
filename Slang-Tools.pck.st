@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4112] on 27 May 2020 at 10:04:33 pm'!
+'From Cuis 5.0 [latest update: #4112] on 28 May 2020 at 11:01:51 pm'!
 'Description License: MIT'!
-!provides: 'Slang-Tools' 1 16!
+!provides: 'Slang-Tools' 1 18!
 SystemOrganization addCategory: #'Slang-Tools-Tests'!
 SystemOrganization addCategory: #'Slang-Tools'!
 
@@ -147,7 +147,7 @@ SlangCodeGenerator class
 
 !classDefinition: #SlangCCodeGenerator category: #'Slang-Tools'!
 SlangCodeGenerator subclass: #SlangCCodeGenerator
-	instanceVariableNames: 'translationDict inlineList constants variables variableDeclarations scopeStack methods macros apiMethods preparedMethodList variablesSetCache headerFiles globalVariableUsage useSymbolicConstants doNotRemoveMethodList asArgumentTranslationDict receiverDict originClass currentMethod logger declareMethodsStatic permitMethodPruning pools abstractDeclarations uncheckedAbstractMethods selectorTranslations inlineReturnTypes headerNotice versionString typeRepository'
+	instanceVariableNames: 'translationDict inlineList constants variables variableDeclarations scopeStack methods apiMethods preparedMethodList variablesSetCache headerFiles globalVariableUsage useSymbolicConstants doNotRemoveMethodList asArgumentTranslationDict receiverDict originClass currentMethod declareMethodsStatic permitMethodPruning pools abstractDeclarations uncheckedAbstractMethods selectorTranslations inlineReturnTypes headerNotice versionString typeRepository'
 	classVariableNames: 'UseRightShiftForDivide'
 	poolDictionaries: ''
 	category: 'Slang-Tools'!
@@ -435,11 +435,6 @@ comment: aComment
 
 	comment _ aComment ! !
 
-!SlangTParseNode methodsFor: 'testing'!
-isVariable
-
-	^false! !
-
 !SlangTParseNode methodsFor: 'printing'!
 printOn: aStream 
 	"Append a description of the receiver onto the given stream."
@@ -467,11 +462,6 @@ postCopy
 name
 
 	^name! !
-
-!SlangTVariableNode methodsFor: 'testing'!
-isVariable
-
-	^true! !
 
 !SlangCCodeGeneratorTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/19/2020 16:01:41'!
 setUp
@@ -1431,12 +1421,6 @@ buildCodeGeneratorInlined: doInlining
 
 ! !
 
-!SlangTestSupportInterpreter class methodsFor: 'translation' stamp: 'dtl 2/8/2014 14:08'!
-isNonArgumentImplicitReceiverVariableName: aString
-	^aString = 'objectMemory'
-		or: [super isNonArgumentImplicitReceiverVariableName: aString]
-! !
-
 !SlangTestSupportInterpreter class methodsFor: 'translation' stamp: 'dtl 8/22/2011 21:06'!
 requiredMethodNames
 	"return the list of method names that should be retained for export or other support reasons"
@@ -1801,7 +1785,7 @@ initialize
 	stream _ nil.
 ! !
 
-!SlangCLanguageWriter methodsFor: '*Slang-Tools' stamp: 'jpb 5/24/2020 16:20:01'!
+!SlangCLanguageWriter methodsFor: 'as yet unclassified' stamp: 'jpb 5/24/2020 16:20:01'!
 nextPutInclude: aString 
 	"Puts a standard include into the stream. So a include directive which searches only in standard locations for headers"
 	self nextPutAll: '#include ' , '<' , aString , '.h>'! !
@@ -1956,11 +1940,6 @@ addHeaderFile: aString
 	"Add a header file. The argument must be a quoted string!!"
 	headerFiles addLast: aString.! !
 
-!SlangCCodeGenerator methodsFor: 'public' stamp: 'eem 2/14/2009 09:10'!
-addMacro: aString for: selector
-	"Add a macro. aString must be the macro arguments and body without the leading #define or name"
-	macros at: selector put: aString! !
-
 !SlangCCodeGenerator methodsFor: 'public' stamp: 'jpb 5/20/2020 23:29:46'!
 addPoolVarsFor: aClass 
 	"Add the pool variables for the given class to the code base as constants."
@@ -2015,18 +1994,6 @@ declToType: decl
 		].
 	] ifTrue: [ ^nil ].! !
 
-!SlangCCodeGenerator methodsFor: 'public' stamp: 'jpb 5/16/2020 23:02:51'!
-declareModuleName: nameString
-	"add the declaration of a module name, version and local/external tag"
-
-	self var: #moduleName declare:'const char *moduleName =
-#ifdef SQUEAK_BUILTIN_PLUGIN
-	"', nameString,' (i)"
-#else
-	"', nameString,' (e)"
-#endif
-'.! !
-
 !SlangCCodeGenerator methodsFor: 'public' stamp: 'dtl 2/5/2007 07:45'!
 exportedPrimitiveNames
 	"Return an array of all exported primitives"
@@ -2043,7 +2010,7 @@ globalsAsSet
 	].
 	^ variablesSetCache! !
 
-!SlangCCodeGenerator methodsFor: 'public' stamp: 'jpb 5/21/2020 09:27:41'!
+!SlangCCodeGenerator methodsFor: 'public' stamp: 'jpb 5/28/2020 18:56:10'!
 initialize
 	super initialize.
 
@@ -2053,8 +2020,7 @@ initialize
 	
 	variableDeclarations _ Dictionary new: 100.
 	methods _ Dictionary new: 500.
-	macros _ Dictionary new.
-	
+		
 	self initializeTranslationDictionary.
 	
 	receiverDict _ Dictionary new.
@@ -2063,7 +2029,6 @@ initialize
 	
 	useSymbolicConstants _ true.
 	scopeStack _ OrderedCollection new.
-	logger _ Transcript.
 	
 	pools _ IdentitySet new.
 	headerNotice _ 'Slang Generator'.
@@ -2200,7 +2165,7 @@ addMethod: aTMethod
 	].
 	methods at: aTMethod selector put: aTMethod.! !
 
-!SlangCCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/20/2020 23:03:52'!
+!SlangCCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/28/2020 17:08:21'!
 addMethodFor: aClass selector: selector
 	"Add the given method to the code base and answer its translation
 	 or nil if it shouldn't be translated."
@@ -2212,37 +2177,13 @@ addMethodFor: aClass selector: selector
 	   method isAbstract ifTrue: [^nil]."
 	
 	(method pragmaAt: #doNotGenerate) ifNotNil: [^nil].
-
-	"process optional methods by interpreting the argument to the option: pragma as a
-	 class variable name."
-	(method pragmaAt: #option:) ifNotNil:
-		[:pragma| | key |
-		key _ pragma argumentAt: 1.
-		(aClass bindingOf: key) ifNotNil: [:binding| binding value ifFalse: [^nil]]].
 		
 	tmethod _ self compileToTMethodSelector: selector in: aClass.
 	tmethod hasDoNotGenerateStatement ifTrue: [^nil].
 	
 	self addMethod: tmethod.
 	
-	"If the method has a macro then add the macro.  But keep the method
-	 for analysis purposes (e.g. its variable accesses)."
-	(method pragmaAt: #macro:) ifNotNil:
-		[:pragma|
-		self addMacro: (pragma argumentAt: 1) for: selector].
-	
-	(method propertyValueAt: #macro:) ifNotNil:
-		[:macro|
-		self addMacro: macro for: selector].
-	
 	^tmethod! !
-
-!SlangCCodeGenerator methodsFor: 'utilities' stamp: 'dtl 7/2/2008 16:46'!
-builtin: sel 
-	"Answer true if the given selector is one of the builtin selectors."
-	^ sel = #error:
-		or: [(self memoryAccessSelectors includes: sel)
-				or: [translationDict includesKey: sel]]! !
 
 !SlangCCodeGenerator methodsFor: 'utilities' stamp: 'eem 2/12/2009 13:44'!
 checkDeleteVariable: aName
@@ -2344,14 +2285,16 @@ isKernelSelector: sel
 		 coerce:to: coerceSimple:to:)
 			includes: sel)! !
 
-!SlangCCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/15/2020 22:48:58'!
+!SlangCCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/28/2020 19:09:56'!
 localizeGlobalVariables
 	| candidates procedure |
+	self flag: #fixme.
 
 	"find all globals used in only one method"
 	candidates _ globalVariableUsage select: [:e | e size = 1].
-	(candidates keys select: [:k| originClass mustBeGlobal: k]) do:
+	(candidates keys select: [:k| false "FIXME: Mechanism for determining if a variable must be global was removed"  ]) do:
 		[:k| candidates removeKey: k].
+		
 	variables removeAllFoundIn: candidates keys.
 
 	"move any suitable global to be local to the single method using it"
@@ -2362,14 +2305,6 @@ localizeGlobalVariables
 			variableDeclarations at: key ifPresent: [:v | 
 				procedure declarations at: key put: v.
 				variableDeclarations removeKey: key]]].! !
-
-!SlangCCodeGenerator methodsFor: 'utilities' stamp: 'eem 7/28/2008 11:51'!
-logger
-	^logger! !
-
-!SlangCCodeGenerator methodsFor: 'utilities' stamp: 'eem 7/28/2008 11:51'!
-logger: aTranscriptStream
-	logger _ aTranscriptStream! !
 
 !SlangCCodeGenerator methodsFor: 'utilities' stamp: 'dtl 7/3/2008 12:16'!
 memoryAccessSelectors
@@ -2466,7 +2401,7 @@ removeMethodForSelector: aSelector
 	"Remove the given method from the code base"
 	methods removeKey:  aSelector ifAbsent: []! !
 
-!SlangCCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/15/2020 22:48:58'!
+!SlangCCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/28/2020 18:55:35'!
 removeVariable: aName
 	"Remove the given (instance) variable from the code base."
 	self checkDeleteVariable: aName.
@@ -2475,12 +2410,11 @@ removeVariable: aName
 		ifAbsent:
 			[(originClass notNil
 			  and: [originClass isNonArgumentImplicitReceiverVariableName: aName]) ifFalse:
-				[logger
-					ensureCr;
-					show: 'warning, variable '
+				[systemAdapter
+					logWarning: 'warning, variable '
 						, aName
-						, ' doesn''t exist or has already been removed';
-						cr]].
+						, ' doesn''t exist or has already been removed']].
+				
 	variableDeclarations removeKey: aName ifAbsent: []! !
 
 !SlangCCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/27/2020 20:52:31'!
@@ -2711,84 +2645,6 @@ emitCVariablesOn: aStream
 			
 	aStream newLine! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'dtl 4/23/2011 13:21'!
-emitDefineBytesPerWordOn: aStream
-	"Define word size dependent constants. These are mirrored by class
-	variables in ObjectMemory. The macro definitions here are used at compile
-	time to permit building a VM for either 32-bit or 64-bit object memory from
-	a single generated code base.
-	
-	If SQ_VI_BYTES_PER_WORD is defined as 8 (e.g. in config.h), then a VM for
-	64-bit image will be built. Otherwise, a VM for 32-bit image is built."
-
-	aStream cr;
-		nextPutAll: '/*'; cr;
-		nextPutAll: ' * define SQ_VI_BYTES_PER_WORD 8 for a 64-bit word size VM'; cr;
-		nextPutAll: ' * and default to SQ_VI_BYTES_PER_WORD 4 for a 32-bit word size VM'; cr;
-		nextPutAll: ' */'; cr;
-		nextPutAll: '#ifndef SQ_VI_BYTES_PER_WORD'; cr;
-		nextPutAll: '# define SQ_VI_BYTES_PER_WORD ';
-		print: 4; cr; "default to word size 4"
-		nextPutAll: '#endif'; cr; cr;
-		nextPutAll: '#define BYTES_PER_WORD SQ_VI_BYTES_PER_WORD'; cr;
-		nextPutAll: '#define BASE_HEADER_SIZE SQ_VI_BYTES_PER_WORD'; cr;
-
-		"Define various constants that depend on BytesPerWord"
-		nextPutAll: '#if (BYTES_PER_WORD == 4) // 32-bit object memory'; cr;
-		nextPutAll: '# define WORD_MASK 0xffffffff'; cr; "(1 bitShift: BytesPerWord*8) - 1"
-		nextPutAll: '# define SHIFT_FOR_WORD 2'; cr; "(BytesPerWord log: 2) rounded"
-		nextPutAll: '# define SMALL_CONTEXT_SIZE 92'; cr; "ContextFixedSizePlusHeader + 16 * BytesPerWord"
-		"Large contexts have 56 indexable fileds.  Max with single header word."
-		"However note that in 64 bits, for now, large contexts have 3-word headers"
-		nextPutAll: '# define LARGE_CONTEXT_SIZE 252'; cr; "ContextFixedSizePlusHeader + 56 * BytesPerWord."
-		nextPutAll: '# define SIZE_MASK 0xfc'; cr; "Base header word bit field"
-		nextPutAll: '# define LONG_SIZE_MASK 0xfffffffc'; cr; "Base header word bit field"
-		nextPutAll: '# define SIZE_4_BIT 0'; cr;
-		nextPutAll: '# define MARK_BIT 0x80000000'; cr; "Top bit, 1 bitShift: BytesPerWord*8 - 1"
-		nextPutAll: '# define ROOT_BIT 0x40000000'; cr; "Next-to-top bit, 1 bitShift: BytesPerWord*8 - 2"
-		nextPutAll: '# define ALL_BUT_MARK_BIT 0x7fffffff'; cr; "WordMask - MarkBit."
-		nextPutAll: '# define ALL_BUT_ROOT_BIT 0xbfffffff'; cr; "WordMask - RootBit"
-		nextPutAll: '# define ALL_BUT_TYPE_MASK 0xfffffffc'; cr; "WordMask - TypeMask"
-		nextPutAll: '# define ALL_BUT_MARK_BIT_AND_TYPE_MASK 0x7ffffffc'; cr; "AllButTypeMask - MarkBit"
-		nextPutAll: '# define ALL_BUT_HASH_BITS 0xe001ffff'; cr;
-		nextPutAll: '# define SMALL_CONTEXT_SIZE 92'; cr; "16 indexable fields"
-		nextPutAll: '# define LARGE_CONTEXT_SIZE 252'; cr; "56 indexable fields"
-
-		nextPutAll: '#else // 64-bit object memory'; cr;
-		nextPutAll: '# define WORD_MASK 0xffffffffffffffff'; cr;
-		nextPutAll: '# define SHIFT_FOR_WORD 3'; cr;
-		nextPutAll: '# define SMALL_CONTEXT_SIZE 184'; cr;
-		nextPutAll: '# define LARGE_CONTEXT_SIZE 504'; cr;
-		nextPutAll: '# define SIZE_MASK 0xf8'; cr; "Lose the 4 bit in temp 64-bit chunk format"
-		nextPutAll: '# define LONG_SIZE_MASK 0xfffffffffffffff8'; cr;
-		"The 4 bit is excluded from SIZE_MASK for 64-bit object memory, but need it"
-		"for ST size, so define SIZE_4_BIT."
-		nextPutAll: '# define SIZE_4_BIT 4'; cr;
-		nextPutAll: '# define MARK_BIT 0x8000000000000000'; cr;
-		nextPutAll: '# define ROOT_BIT 0x4000000000000000'; cr;
-		nextPutAll: '# define ALL_BUT_MARK_BIT 0x7fffffffffffffff'; cr;
-		nextPutAll: '# define ALL_BUT_ROOT_BIT 0xbfffffffffffffff'; cr;
-		nextPutAll: '# define ALL_BUT_TYPE_MASK 0xfffffffffffffffc'; cr;
-		nextPutAll: '# define ALL_BUT_MARK_BIT_AND_TYPE_MASK 0x7ffffffffffffffc'; cr;
-		nextPutAll: '# define ALL_BUT_HASH_BITS 0xffffffffe001ffff'; cr;
-		nextPutAll: '# define SMALL_CONTEXT_SIZE 184'; cr;
-		nextPutAll: '# define LARGE_CONTEXT_SIZE 504'; cr;
-		nextPutAll: '#endif //  (BYTES_PER_WORD == 4)'; cr
-	
-! !
-
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'dtl 4/6/2010 00:15'!
-emitDefineMemoryAccessInImageOn: aStream
-	"If MemoryAccess is present in the image, then define MEMORY_ACCESS_IN_IMAGE as
-	a C preprocessor macro. When MEMORY_ACCESS_IN_IMAGE is defined, the traditional
-	C preprocessor macros for low level memory access are ignored and will be replaced
-	by directly translated (and inlined) SLANG versions of the same. This enables visibility
-	of the memory access functions for debuggers and profilers."
-
-	(Smalltalk classNamed: #MemoryAccess)
-		ifNotNilDo: [:ma | ma isEnabled
-			ifTrue: [aStream nextPutAll: '#define MEMORY_ACCESS_IN_IMAGE 1'; cr]]! !
-
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'tpr 1/10/2003 16:17'!
 emitExportsOn: aStream
 	"Store all the exported primitives in a form to be used by the internal named prim system"
@@ -2808,12 +2664,6 @@ void* vm_exports[][3] = {'.
 };
 '.! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/13/2020 17:01:33'!
-emitGenerationTimeStampOn: aStream
-	Time dateAndTimeNow do: [:e |
-		 aStream nextPutAll: e asString; nextPut: Character space].
-! !
-
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'tpr 5/28/2013 20:02'!
 emitHeaderFilesOn: aStream
 	"Write a header files onto the given stream. A special hack allows use of 
@@ -2827,19 +2677,6 @@ emitHeaderFilesOn: aStream
 		hdr first ~= $# ifTrue:
 			[aStream nextPutAll: '#include '].
 		aStream nextPutAll: hdr; cr].
-! !
-
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/13/2020 16:33:07'!
-emitVmmVersionOn: aStream
-	"Emit a version string macro suitable for identifying source code version
-	of this interpreter. This is expected to be used in conjunction with a similar
-	identifier for platform source code version, such the the VM can identify
-	the source code version for its platform source and matching VMMaker source."
-
-	aStream nextPutAll: '#define VMMAKER_VERSION "';
-		nextPutAll: versionString;
-		nextPut: $";
-		cr
 ! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/19/2020 21:14:54'!
@@ -2967,12 +2804,10 @@ isLiteral: anObject
 	(anObject isKindOf: Character) ifTrue:[^true]. "ar"
 	^false! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/15/2020 22:48:58'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/28/2020 19:02:16'!
 isNonArgumentImplicitReceiverVariableName: aString
 	^(self typeOfVariable: aString) == #implicit
-	    or: [originClass
-			ifNil: [#('interpreterProxy' 'self') includes: aString]
-	 		ifNotNil: [originClass isNonArgumentImplicitReceiverVariableName: aString]]! !
+	    or: [ #('interpreterProxy' 'self') includes: aString ] ! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/27/2020 21:01:14'!
 prepareMethodsInlined: inlineFlag doAssertions: assertionFlag
@@ -3341,7 +3176,7 @@ pruneUnreachableMethods
 		methods at: sel ifPresent:[:meth| newMethods at: sel put: meth]].
 	methods _ newMethods! !
 
-!SlangCCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/24/2020 10:02:14'!
+!SlangCCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/28/2020 17:41:26'!
 removeAssertions
 	"Remove all assertions in method bodies.  This is for the benefit of inlining, which
 	fails to recognise and disregard empty method bodies when checking the inlinability
@@ -3354,7 +3189,7 @@ removeAssertions
 		label: 'Removing assertions ...'
 		do: [ :bar :m :i |
 			bar value: i.
-			m isAssertion ifFalse: [
+			(m is: #Assertion) ifFalse: [
 				newMethods at: m selector put: m.
 				m removeAssertions]].
 	
@@ -4012,26 +3847,28 @@ generatePlus: msgNode on: aStream indent: level
 	aStream nextPutAll: ' + '.
 	self emitCExpression: msgNode args first on: aStream.! !
 
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'ATG 4/8/2004 15:03'!
+!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 5/28/2020 18:03:50'!
 generatePreDecrement: msgNode on: aStream indent: level
 	"Generate the C code for this message onto the given stream."
 
 	| varNode |
 	varNode _ msgNode receiver.
-	varNode isVariable
+	(varNode is: #Variable)
 		ifFalse: [ self error: 'preDecrement can only be applied to variables' ].
+
 	aStream nextPutAll: '--'.
 	aStream nextPutAll: (self returnPrefixFromVariable: varNode name).
 ! !
 
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'ikp 9/11/2003 20:08'!
+!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 5/28/2020 18:03:58'!
 generatePreIncrement: msgNode on: aStream indent: level
 	"Generate the C code for this message onto the given stream."
 
 	| varNode |
 	varNode _ msgNode receiver.
-	varNode isVariable
+	(varNode is: #Variable)
 		ifFalse: [ self error: 'preIncrement can only be applied to variables' ].
+
 	aStream nextPutAll: '++'.
 	aStream nextPutAll: (self returnPrefixFromVariable: varNode name).
 ! !
@@ -5106,7 +4943,7 @@ renameLabelsUsing: aDictionary
 		].
 	].! !
 
-!SlangTMethod methodsFor: 'inlining support' stamp: 'dtl 6/23/2012 10:32'!
+!SlangTMethod methodsFor: 'inlining support' stamp: 'jpb 5/28/2020 17:54:50'!
 renameVariablesUsing: aDictionary
 	"Rename all variables according to old->new mappings of the given dictionary."
 
@@ -5134,7 +4971,7 @@ renameVariablesUsing: aDictionary
 
 	"map variable names in parse tree"
 	parseTree nodesDo: [ :node |
-		(node isVariable and:
+		((node is: #Variable) and:
 		 [aDictionary includesKey: node name]) ifTrue: [
 			node setName: (aDictionary at: node name).
 		].
@@ -5220,18 +5057,20 @@ allCalls
 
 	^parseTree allCalls! !
 
-!SlangTMethod methodsFor: 'utilities'!
+!SlangTMethod methodsFor: 'utilities' stamp: 'jpb 5/28/2020 18:05:30'!
 freeVariableReferences
 	"Answer a collection of variables referenced this method, excluding locals, arguments, and pseudovariables."
 
 	| refs |
 	refs _ Set new.
 	parseTree nodesDo: [ :node |
-		node isVariable ifTrue: [ refs add: node name asString ].
+		(node is: #Variable) ifTrue: [ refs add: node name asString ].
 	].
+
 	args do: [ :var | refs remove: var asString ifAbsent: [] ].
 	locals do: [ :var | refs remove: var asString ifAbsent: [] ].
 	#('self' 'nil' 'true' 'false') do: [ :var | refs remove: var ifAbsent: [] ].
+	
 	^ refs asSortedCollection! !
 
 !SlangTMethod methodsFor: 'utilities' stamp: 'jpb 5/27/2020 21:17:29'!
@@ -5250,7 +5089,7 @@ nodeCount
 	parseTree nodesDo: [ :n | cnt _ cnt + 1 ].
 	^cnt! !
 
-!SlangTMethod methodsFor: 'utilities' stamp: 'ar 7/8/2003 11:20'!
+!SlangTMethod methodsFor: 'utilities' stamp: 'jpb 5/28/2020 18:17:57'!
 removeUnusedTemps
 	"Remove all of the unused temps in this method. Answer a bag (why the hell a bag???) with the references."
 	"After inlining some variable references are now obsolete, we could fix them there but the 
@@ -5258,13 +5097,16 @@ removeUnusedTemps
 	| refs |
 	refs _ Bag new.
 	"find all the variable names referenced in this method"
+	
 	parseTree nodesDo: [ :node |
-		node isVariable ifTrue: [ refs add: node name asString ].
+		(node is: #Variable) ifTrue: [ refs add: node name asString ].
 		node isStmtList ifTrue: [refs addAll: node args]].
+	
 	"add all the non-arg declarations (might be variables usedonly in cCode sections)"
 	refs addAll:((self declarations keys) reject: [:e | self args includes: e]).
 	"reset the locals to be only those still referred to"
 	locals _ locals select: [:e | refs includes: e].
+	
 	^refs
 ! !
 
@@ -5551,16 +5393,16 @@ isFunctional
 	parseTree statements last expression nodesDo: [ :n | n isReturn ifTrue: [ ^false ]].
 	^true! !
 
-!SlangTMethod methodsFor: 'inlining' stamp: 'ar 5/9/2000 12:13'!
+!SlangTMethod methodsFor: 'inlining' stamp: 'jpb 5/28/2020 17:54:03'!
 isSubstitutableNode: aNode
 	"Answer true if the given parameter node is either a constant, a local variable, or a formal parameter of the receiver. Such parameter nodes may be substituted directly into the body of the method during inlining. Note that global variables cannot be subsituted because the inlined method might depend on the exact ordering of side effects to the globals."
 
 	aNode isConstant ifTrue: [ ^true ].
-	^aNode isVariable and:
+	^(aNode is: #Variable) and:
 		[(locals includes: aNode name) or:
 		[args includes: aNode name]]! !
 
-!SlangTMethod methodsFor: 'inlining'!
+!SlangTMethod methodsFor: 'inlining' stamp: 'jpb 5/28/2020 17:54:22'!
 isSubstitutableNode: aNode intoMethod: targetMeth in: aCodeGen
 	"Answer true if the given parameter node is either a constant, a local variable, or a formal parameter of the receiver. Such parameter nodes may be substituted directly into the body of the method during inlining. Note that global variables cannot be subsituted into methods with possible side effects (i.e., methods that may assign to global variables) because the inlined method might depend on having the value of the global variable captured when it is passed in as an argument."
 
@@ -5579,14 +5421,14 @@ isSubstitutableNode: aNode intoMethod: targetMeth in: aCodeGen
 		node isSend ifTrue: [
 			node isBuiltinOperator ifFalse: [ ^false ].
 		].
-		node isVariable ifTrue: [
+		(node is: #Variable) ifTrue: [
 			var _ node name.
 			((locals includes: var) or:
 			 [(args includes: var) or:
 			 [(#(self true false nil) includes: var) or:
 			 [targetMeth maySubstituteGlobal: var in: aCodeGen]]]) ifFalse: [ ^ false ].
 		].
-		(node isConstant or: [node isVariable or: [node isSend]]) ifFalse: [ ^false ].
+		(node isConstant or: [(node is: #Variable) or: [node isSend]]) ifFalse: [ ^false ].
 	].
 
 	^ true! !
@@ -5684,14 +5526,11 @@ superExpansionNodeFor: aSelector args: argumentNodes
 			superTMethod elideAnyFinalReturn.
 			^superTMethod parseTree]! !
 
-!SlangTMethod methodsFor: 'inlining' stamp: 'dtl 3/10/2014 20:36'!
+!SlangTMethod methodsFor: 'inlining' stamp: 'jpb 5/28/2020 16:24:10'!
 tryToInlineMethodsIn: aCodeGen
 	"Expand any (complete) inline methods called by this method. Set the complete bit when all inlining has been done. Return true if something was inlined."
 
 	| stmtLists didSomething newStatements sendsToInline |
-	self definedAsMacro ifTrue:
-		[complete _ true.
-		 ^false].
 	didSomething _ false.
 	sendsToInline _ Dictionary new: 100.
 	parseTree
@@ -6038,7 +5877,7 @@ buildCaseStmt: aSendNode
 		selectors: aSendNode args second value
 		arguments: (aSendNode args copyFrom: 3 to: aSendNode args size)! !
 
-!SlangTMethod methodsFor: 'transformations' stamp: 'jpb 5/13/2020 22:41:51'!
+!SlangTMethod methodsFor: 'transformations' stamp: 'jpb 5/28/2020 18:04:47'!
 buildSwitchStmt: aSendNode parent: parentNode
 	"Build a switch statement node for the given send of caseOf: or caseOf:otherwise:."
 	| switch |
@@ -6046,7 +5885,8 @@ buildSwitchStmt: aSendNode parent: parentNode
 				expression: aSendNode receiver
 				cases: aSendNode args first
 				otherwiseOrNil: (aSendNode args at: 2 ifAbsent: [nil]).
-	(aSendNode receiver isVariable or: [parentNode isStmtList]) ifFalse:
+				
+	((aSendNode receiver is: #Variable) or: [parentNode isStmtList]) ifFalse:
 		[switch switchVariable: (locals add: (self extraVariableName: 'switch'))].
 	^switch! !
 
@@ -6241,7 +6081,7 @@ prepareToByDoLoopIn:  aCodeGen on: node
 			(locals includes: limitVar) ifFalse: [locals add: limitVar]]
 		ifFalse: [ node arguments: node args allButLast ]! !
 
-!SlangTMethod methodsFor: 'transformations' stamp: 'jpb 5/16/2020 23:10:49'!
+!SlangTMethod methodsFor: 'transformations' stamp: 'jpb 5/28/2020 19:55:47'!
 recordDeclarations
 	"Record C type declarations of the forms
 
@@ -6263,6 +6103,7 @@ recordDeclarations
 				varType _ pragma arguments last.
 				varType last = $* ifFalse: [varType _ varType, ' '].
 				self declarationAt: varName put: varType, varName].
+			
 			pragma keyword = #returnType: ifTrue:
 				[returnType _ pragma arguments last].
 			pragma keyword = #doNotGenerate: ifTrue:
@@ -6299,7 +6140,7 @@ recordDeclarations
 removeAssertions
 	parseTree removeAssertions! !
 
-!SlangTMethod methodsFor: 'transformations' stamp: 'jm 12/14/1998 08:35'!
+!SlangTMethod methodsFor: 'transformations' stamp: 'jpb 5/28/2020 17:54:29'!
 removeFinalSelfReturn
 	"The Smalltalk parser automatically adds the statement '^self' to the end of methods without explicit returns. This method removes such statements, since the generated code has no notion of 'self' anyway."
 
@@ -6308,7 +6149,7 @@ removeFinalSelfReturn
 	lastStmt _ stmtList last.
 
 	((lastStmt isReturn) and:
-	 [(lastStmt expression isVariable) and:
+	 [(lastStmt expression is: #Variable) and:
 	 ['self' = lastStmt expression name]]) ifTrue: [
 		stmtList removeLast.
 		parseTree setStatements: stmtList.
@@ -6376,11 +6217,6 @@ copy
 		yourself
 ! !
 
-!SlangTMethod methodsFor: 'testing' stamp: 'jpb 5/20/2020 22:59:32'!
-definedAsMacro
-	^properties notNil
-	  and: [properties includesKey: #macro:]! !
-
 !SlangTMethod methodsFor: 'testing' stamp: 'eem 8/8/2008 12:02'!
 endsWithReturn
 	"Answer true if the last statement of this method is a return."
@@ -6394,9 +6230,12 @@ hasReturn
 	parseTree nodesDo: [ :n | n isReturn ifTrue: [ ^ true ]].
 	^ false! !
 
-!SlangTMethod methodsFor: 'testing' stamp: 'ikp 9/26/97 14:50'!
-isAssertion
-	^(selector beginsWith: 'assert') or: [selector beginsWith: 'verify']! !
+!SlangTMethod methodsFor: 'testing' stamp: 'jpb 5/28/2020 17:44:01'!
+is: query
+	#Assertion = query
+		ifTrue: [ ^(selector beginsWith: 'assert') or: [selector beginsWith: 'verify'] ].
+		
+	^super is: query! !
 
 !SlangTMethod methodsFor: 'testing' stamp: 'eem 2/11/2009 21:20'!
 isStructAccessor
@@ -6579,21 +6418,9 @@ endsWithReturn
 
 	^false! !
 
-!SlangTParseNode methodsFor: 'testing'!
-hasExplicitReturn
-
-	self nodesDo: [ :node |
-		node isReturn ifTrue: [ ^true ].
-	].
-	^false! !
-
 !SlangTParseNode methodsFor: 'testing' stamp: 'jpb 5/26/2020 20:20:38'!
 is: query
 	^#ParseNode = query or: [ super is: query ]! !
-
-!SlangTParseNode methodsFor: 'testing' stamp: 'ikp 9/26/97 14:50'!
-isAssertion
-	^false! !
 
 !SlangTParseNode methodsFor: 'testing' stamp: 'ikp 9/26/97 14:50'!
 isAssignment
@@ -6615,18 +6442,10 @@ isGoTo
 
 	^false! !
 
-!SlangTParseNode methodsFor: 'testing' stamp: 'eem 7/8/2008 19:57'!
-isInline
-	^false! !
-
 !SlangTParseNode methodsFor: 'testing'!
 isLeaf
 	"Answer true if the receiver is a variable or a constant node."
 
-	^false! !
-
-!SlangTParseNode methodsFor: 'testing' stamp: 'eem 2/24/2009 14:48'!
-isPreprocessorDirective
 	^false! !
 
 !SlangTParseNode methodsFor: 'testing'!
@@ -6651,10 +6470,6 @@ isStmtList
 !SlangTParseNode methodsFor: 'testing' stamp: 'eem 2/10/2009 07:58'!
 isSwitch
 	^false! !
-
-!SlangTParseNode methodsFor: 'testing' stamp: 'eem 2/11/2009 17:12'!
-isTParseNode
-	^true! !
 
 !SlangTParseNode methodsFor: 'testing' stamp: 'jpb 5/26/2020 21:08:52'!
 requiresCLineTerminator
@@ -6935,7 +6750,7 @@ isAssignment
 
 	^true! !
 
-!SlangTAssignmentNode methodsFor: 'testing'!
+!SlangTAssignmentNode methodsFor: 'testing' stamp: 'jpb 5/28/2020 17:53:08'!
 isVariableUpdatingAssignment
 	"Return true if this assignment statement is of one of the forms:
 		var = var + ...
@@ -6943,7 +6758,7 @@ isVariableUpdatingAssignment
 	Such assignments statements can exploit the C updating assignment operators. For example, 'x += 4' can be generated instead of 'x = x + 4'. This produces better code under some C compilers, most notably the CodeWarrior 68K compiler."
 
 	| sel |
-	(expression isSend and: [expression receiver isVariable]) ifFalse: [^ false].
+	(expression isSend and: [expression receiver is: #Variable]) ifFalse: [^ false].
 	sel _ expression selector.
 	^ (expression receiver name = variable name) and: [(sel = #+) or: [sel = #-]]! !
 
@@ -7955,7 +7770,7 @@ isSelfReference: varNode in: aCodeGen
 isStructReference: varNode in: aCodeGen
 	^(varNode structTargetKindIn: aCodeGen) notNil! !
 
-!SlangTSendNode methodsFor: 'C code generation' stamp: 'eem 11/6/2013 14:42'!
+!SlangTSendNode methodsFor: 'C code generation' stamp: 'jpb 5/28/2020 18:08:08'!
 shouldExcludeReceiverAsFirstArgument: aCodeGen
 	"Only include the receiver as the first argument in certain cases.
 	 The receiver is always included if it is an expression.
@@ -7970,12 +7785,12 @@ shouldExcludeReceiverAsFirstArgument: aCodeGen
 		[^true].
 
 	(receiver isSend
-	 and: [receiver receiver isVariable
+	 and: [(receiver receiver is: #Variable)
 	 and: [(self isSelfReference: receiver receiver in: aCodeGen)
 		or: [self isStructReference: receiver receiver in: aCodeGen]]]) ifTrue:
 		[^aCodeGen isNonArgumentImplicitReceiverVariableName: receiver selector].
 
-	^receiver isVariable
+	^(receiver is: #Variable)
 	    and: [(aCodeGen isNonArgumentImplicitReceiverVariableName: receiver name)
 		    or: [(self isSelfReference: receiver in: aCodeGen)
 			    and: [(m _ aCodeGen methodNamed: selector) isNil
@@ -7995,9 +7810,12 @@ shouldIncludeReceiverAsFirstArgument: aCodeGen
 endsWithReturn
 	^self isReturningIf! !
 
-!SlangTSendNode methodsFor: 'testing' stamp: 'ikp 9/26/97 14:50'!
-isAssertion
-	^(selector beginsWith: 'assert') or: [selector beginsWith: 'verify']! !
+!SlangTSendNode methodsFor: 'testing' stamp: 'jpb 5/28/2020 17:43:20'!
+is: query
+	(#Assertion = query)
+		ifTrue: [^ (selector beginsWith: 'assert') or: [selector beginsWith: 'verify'] ].
+		
+	^super is: query! !
 
 !SlangTSendNode methodsFor: 'testing'!
 isBuiltinOperator
@@ -8069,7 +7887,7 @@ structTargetKind: aCodeGen
 	^(aCodeGen selectorReturnsPointerToStruct: selector) ifTrue:
 		[#pointer]! !
 
-!SlangTSendNode methodsFor: 'testing' stamp: 'jpb 5/21/2020 11:17:12'!
+!SlangTSendNode methodsFor: 'testing' stamp: 'jpb 5/28/2020 17:55:14'!
 structTargetKindIn: aCodeGen
 	"Answer if the recever evaluates to a struct or struct pointer
 	 and hence can be dereferenced using . or ->.  Answer any of
@@ -8083,7 +7901,7 @@ structTargetKindIn: aCodeGen
 		[^#pointer].
 
 	selector == #at: ifTrue:
-		[receiver isVariable ifTrue:
+		[(receiver is: #Variable) ifTrue:
 			[(aCodeGen typeOfVariable: receiver name) ifNotNil:
 				[:type|
 				 type last = $* ifFalse:
@@ -8195,12 +8013,12 @@ mapReceiversIn: aDictionary
 	statements do: [ :s | s mapReceiversIn: aDictionary ]
 ! !
 
-!SlangTStmtListNode methodsFor: 'transformations' stamp: 'ikp 9/26/97 14:50'!
+!SlangTStmtListNode methodsFor: 'transformations' stamp: 'jpb 5/28/2020 17:41:37'!
 removeAssertions
 	| newStatements |
 	newStatements _ OrderedCollection new: statements size.
 	statements do: [ :stmt |
-		stmt isAssertion ifFalse: [
+		(stmt is: #Assertion) ifFalse: [
 			newStatements add: (stmt removeAssertions; yourself).
 		]
 	].
@@ -8278,13 +8096,13 @@ endsWithReturn
 		and: [statements last isReturn
 				or: [statements last isReturningIf]]! !
 
-!SlangTStmtListNode methodsFor: 'testing' stamp: 'acg 12/21/1999 02:25'!
+!SlangTStmtListNode methodsFor: 'testing' stamp: 'jpb 5/28/2020 17:55:34'!
 isNilStmtListNode
 
 	|stmt|
 	statements size = 1 ifFalse: [^false].
 	stmt _ statements at: 1.
-	^ stmt isVariable and: [stmt name = 'nil']! !
+	^ (stmt is: #Variable) and: [stmt name = 'nil']! !
 
 !SlangTStmtListNode methodsFor: 'testing'!
 isStmtList
@@ -8489,11 +8307,12 @@ expression: expr cases: aTBraceNode otherwiseOrNil: otherwiseOrNilNode
 	self cases: (self createCasesFromBraceNode: aTBraceNode).
 	self otherwiseOrNil: otherwiseOrNilNode! !
 
-!SlangTSwitchStmtNode methodsFor: 'C code generation' stamp: 'jpb 5/13/2020 22:41:43'!
+!SlangTSwitchStmtNode methodsFor: 'C code generation' stamp: 'jpb 5/28/2020 17:58:32'!
 emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen
 	"Emit the receiver as an if-the-else chain."
 	| varName n |
-	self assert: (expression isVariable or: [switchVariable notNil]).
+	self assert: ((expression is: #Variable) or: [switchVariable notNil]).
+	
 	aStream nextPut: $(.
 	switchVariable
 		ifNil: [varName _ String streamContents: [:s| expression emitCCodeOn: s level: 0 generator: aCodeGen].
@@ -8694,6 +8513,11 @@ emitCCodeOn: aStream level: level generator: aCodeGen
 		ifTrue: [ aStream nextPutAll: (aCodeGen findLiteralFor: nil) ]
 		ifFalse: [ aStream nextPutAll: (aCodeGen returnPrefixFromVariable: name) ].! !
 
+!SlangTVariableNode methodsFor: 'testing' stamp: 'jpb 5/28/2020 17:47:19'!
+is: query
+	^#Variable = query or: [ super is: query ].
+! !
+
 !SlangTVariableNode methodsFor: 'testing'!
 isLeaf
 
@@ -8742,17 +8566,6 @@ nodesDo: aBlock parent: parent
 printOn: aStream level: level
 
 	aStream nextPutAll: name.! !
-
-!Object methodsFor: '*Slang-Tools' stamp: 'jpb 5/16/2020 00:12:03'!
-isNonArgumentImplicitReceiverVariableName: aString 
-	^#('interpreterProxy' 'self') includes: aString
-! !
-
-!Object methodsFor: '*Slang-Tools' stamp: 'jpb 5/16/2020 00:14:17'!
-mustBeGlobal: aString 
-	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
-      ^false
-! !
 
 !AssignmentNode methodsFor: '*Slang-Tools' stamp: 'jpb 5/16/2020 00:00:00'!
 asTranslatorNodeIn: aSlangTMethod 
@@ -8808,7 +8621,7 @@ asTranslatorNodeIn: aSlangTMethod
         name = 'false' ifTrue: [^ SlangTConstantNode new setValue: false].
         ^ SlangTVariableNode new setName: name! !
 
-!MessageNode methodsFor: '*Slang-Tools' stamp: 'jpb 5/27/2020 21:07:36'!
+!MessageNode methodsFor: '*Slang-Tools' stamp: 'jpb 5/28/2020 18:02:33'!
 asTranslatorNodeIn: aSlangTMethod 
 	"make a CCodeGenerator equivalent of me"
 	"selector is sometimes a Symbol, sometimes a SelectorNode!!!!
@@ -8818,7 +8631,7 @@ asTranslatorNodeIn: aSlangTMethod
  	| rcvrOrNil sel args |
   	rcvrOrNil _ receiver ifNotNil: [receiver asTranslatorNodeIn: aSlangTMethod].
      (rcvrOrNil notNil
-        and: [rcvrOrNil isVariable
+        and: [(rcvrOrNil is: #Variable)
         and: [rcvrOrNil name = 'super']]) ifTrue:
                 [^aSlangTMethod superExpansionNodeFor: selector key args: arguments].
 

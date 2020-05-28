@@ -1,12 +1,12 @@
-'From Cuis 5.0 [latest update: #4112] on 27 May 2020 at 10:04:31 pm'!
+'From Cuis 5.0 [latest update: #4112] on 28 May 2020 at 11:01:49 pm'!
 'Description License: MIT'!
-!provides: 'Slang-Javascript' 1 10!
+!provides: 'Slang-Javascript' 1 12!
 SystemOrganization addCategory: #'Slang-Javascript'!
 
 
 !classDefinition: #JSCodeGenerator category: #'Slang-Javascript'!
 SlangCodeGenerator subclass: #JSCodeGenerator
-	instanceVariableNames: 'translationDict inlineList constants variables variableDeclarations scopeStack methods macros preparedMethodList variablesSetCache headerFiles globalVariableUsage useSymbolicConstants generateDeadCode doNotRemoveMethodList asArgumentTranslationDict receiverDict originClass currentMethod logger declareMethodsStatic permitMethodPruning pools abstractDeclarations uncheckedAbstractMethods cCodeTranslationDict oneBasedArrays typeRepository'
+	instanceVariableNames: 'translationDict inlineList constants variables variableDeclarations scopeStack methods preparedMethodList variablesSetCache headerFiles globalVariableUsage useSymbolicConstants generateDeadCode doNotRemoveMethodList asArgumentTranslationDict receiverDict originClass currentMethod logger declareMethodsStatic permitMethodPruning pools abstractDeclarations uncheckedAbstractMethods cCodeTranslationDict oneBasedArrays typeRepository'
 	classVariableNames: 'IsActive UseRightShiftForDivide'
 	poolDictionaries: ''
 	category: 'Slang-Javascript'!
@@ -97,11 +97,6 @@ addClassVarsFor: aClass
 addHeaderFile: aString
 	"Add a header file. The argument must be a quoted string!!"
 	headerFiles addLast: aString.! !
-
-!JSCodeGenerator methodsFor: 'public' stamp: 'eem 2/14/2009 09:10'!
-addMacro: aString for: selector
-	"Add a macro. aString must be the macro arguments and body without the leading #define or name"
-	macros at: selector put: aString! !
 
 !JSCodeGenerator methodsFor: 'public' stamp: 'bf 10/14/2014 15:45'!
 addMethodsForPrimitives: classAndSelectorList 
@@ -207,12 +202,6 @@ codeString
 	self emitJSCodeOn: stream doInlining: true doAssertions: true.
 	^stream contents! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'bf 10/1/2014 13:10'!
-declareModuleName: nameString
-	"add the declaration of a module name, version and local/external tag"
-
-	self var: #moduleName declareC: 'var moduleName = "', nameString,' (e)"'.! !
-
 !JSCodeGenerator methodsFor: 'public' stamp: 'eem 2/11/2009 08:52'!
 declareVar: varName type: type
 	"This both creates a varable and provides its type"
@@ -238,15 +227,16 @@ globalsAsSet
 ignoredMethods
 	^#()! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/24/2020 11:32:01'!
+!JSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/28/2020 16:23:25'!
 initialize
 	translationDict _ Dictionary new.
 	inlineList _ Array new.
 	constants _ Dictionary new: 100.
+	
 	variables _ OrderedCollection new: 100.
 	variableDeclarations _ Dictionary new: 100.
 	methods _ Dictionary new: 500.
-	macros _ Dictionary new.
+	
 	typeRepository _ SlangCTypeRepository new.
 	
 	self initializeTranslationDictionary.
@@ -392,7 +382,7 @@ addMethod: aJSMethod
 	].
 	methods at: aJSMethod selector put: aJSMethod.! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/20/2020 23:04:21'!
+!JSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/28/2020 17:08:12'!
 addMethodFor: aClass selector: selector
 	"Add the given method to the code base and answer its translation
 	 or nil if it shouldn't be translated."
@@ -405,35 +395,12 @@ addMethodFor: aClass selector: selector
 	
 	(method pragmaAt: #doNotGenerate) ifNotNil: [^nil].
 	
-	"process optional methods by interpreting the argument to the option: pragma as a
-	 class variable name."
-	(method pragmaAt: #option:) ifNotNil: [:pragma| | key |
-		key _ pragma argumentAt: 1.
-		
-		(aClass bindingOf: key) ifNotNil:
-			[:binding| binding value ifFalse: [^nil]]].
-	
 	tmethod _ self compileToJSMethodSelector: selector in: aClass.
 	tmethod hasDoNotGenerateStatement ifTrue: [^nil].
 	
 	self addMethod: tmethod.
 	
-	"If the method has a macro then add the macro.  But keep the method
-	 for analysis purposes (e.g. its variable accesses)."
-	(method pragmaAt: #macro:) ifNotNil:
-		[:pragma| self addMacro: (pragma argumentAt: 1) for: selector].
-	
-	(method propertyValueAt: #macro:) ifNotNil:
-		[:macro| self addMacro: macro for: selector].
-	
 	^tmethod! !
-
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'dtl 7/2/2008 16:46'!
-builtin: sel 
-	"Answer true if the given selector is one of the builtin selectors."
-	^ sel = #error:
-		or: [(self memoryAccessSelectors includes: sel)
-				or: [translationDict includesKey: sel]]! !
 
 !JSCodeGenerator methodsFor: 'utilities' stamp: 'eem 2/12/2009 13:44'!
 checkDeleteVariable: aName
@@ -526,13 +493,14 @@ isKernelSelector: sel
 		 coerce:to: coerceSimple:to:)
 			includes: sel)! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/19/2020 15:59:56'!
+!JSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/28/2020 19:09:17'!
 localizeGlobalVariables
 	| candidates procedure |
+	self flag: #fixme.
 
 	"find all globals used in only one method"
 	candidates _ globalVariableUsage select: [:e | e size = 1].
-	(candidates keys select: [:k| originClass mustBeGlobal: k]) do:
+	(candidates keys select: [:k|  false "FIXME: Mechanism for determining if a variable must be global was removed"  ]) do:
 		[:k| candidates removeKey: k].
 	variables removeAllFoundIn: candidates keys.
 
@@ -640,10 +608,11 @@ removeMethodForSelector: aSelector
 	"Remove the given method from the code base"
 	methods removeKey:  aSelector ifAbsent: []! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/24/2020 11:31:47'!
+!JSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/28/2020 18:52:30'!
 removeVariable: aName
 	"Remove the given (instance) variable from the code base."
 	self checkDeleteVariable: aName.
+	
 	variables
 		remove: aName
 		ifAbsent:
@@ -654,6 +623,7 @@ removeVariable: aName
 						, aName
 						, ' doesn''t exist or has already been removed'
 					]].
+			
 	variableDeclarations removeKey: aName ifAbsent: []! !
 
 !JSCodeGenerator methodsFor: 'utilities'!
@@ -821,11 +791,12 @@ checkNonPointer: node op: op
 	self ifPointerVar: node then: [:type |
 		self halt: 'cannot do ', op, ' with ', type]! !
 
-!JSCodeGenerator methodsFor: 'private' stamp: 'bf 11/13/2014 15:55'!
+!JSCodeGenerator methodsFor: 'private' stamp: 'jpb 5/28/2020 17:51:24'!
 ifPointerVar: node then: aBlock
 	(node isSend and: [node selector = #+]) ifTrue: [
 		^self ifPointerVar: node receiver then: aBlock].
-	node isVariable ifTrue: [
+	
+	(node is: #Variable) ifTrue: [
 		(self typeOfVariable: node name) ifNotNil: [:type |
 			(type includes: $*) ifTrue: [aBlock value: type]]].
 ! !
@@ -1066,7 +1037,7 @@ pruneUnreachableMethods
 		methods at: sel ifPresent:[:meth| newMethods at: sel put: meth]].
 	methods _ newMethods! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/24/2020 10:01:34'!
+!JSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/28/2020 17:41:15'!
 removeAssertions
 	"Remove all assertions in method bodies.  This is for the benefit of inlining, which
 	fails to recognise and disregard empty method bodies when checking the inlinability
@@ -1079,7 +1050,7 @@ removeAssertions
 		label: 'Removing assertions ...'
 		do: [ :bar :m :i |
 			bar value: i.
-			m isAssertion ifFalse: [
+			(m is: #Assertion) ifFalse: [
 				newMethods at: m selector put: m.
 				m removeAssertions]].
 		
@@ -1177,72 +1148,6 @@ useSymbolicConstants
 useSymbolicConstants: aBool
 	"Indicate whether we should generate symbolic constants instead of their actual values"
 	useSymbolicConstants _ aBool! !
-
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'dtl 4/23/2011 13:21'!
-emitDefineBytesPerWordOn: aStream
-	"Define word size dependent constants. These are mirrored by class
-	variables in ObjectMemory. The macro definitions here are used at compile
-	time to permit building a VM for either 32-bit or 64-bit object memory from
-	a single generated code base.
-	
-	If SQ_VI_BYTES_PER_WORD is defined as 8 (e.g. in config.h), then a VM for
-	64-bit image will be built. Otherwise, a VM for 32-bit image is built."
-
-	aStream cr;
-		nextPutAll: '/*'; cr;
-		nextPutAll: ' * define SQ_VI_BYTES_PER_WORD 8 for a 64-bit word size VM'; cr;
-		nextPutAll: ' * and default to SQ_VI_BYTES_PER_WORD 4 for a 32-bit word size VM'; cr;
-		nextPutAll: ' */'; cr;
-		nextPutAll: '#ifndef SQ_VI_BYTES_PER_WORD'; cr;
-		nextPutAll: '# define SQ_VI_BYTES_PER_WORD ';
-		print: 4; cr; "default to word size 4"
-		nextPutAll: '#endif'; cr; cr;
-		nextPutAll: '#define BYTES_PER_WORD SQ_VI_BYTES_PER_WORD'; cr;
-		nextPutAll: '#define BASE_HEADER_SIZE SQ_VI_BYTES_PER_WORD'; cr;
-
-		"Define various constants that depend on BytesPerWord"
-		nextPutAll: '#if (BYTES_PER_WORD == 4) // 32-bit object memory'; cr;
-		nextPutAll: '# define WORD_MASK 0xffffffff'; cr; "(1 bitShift: BytesPerWord*8) - 1"
-		nextPutAll: '# define SHIFT_FOR_WORD 2'; cr; "(BytesPerWord log: 2) rounded"
-		nextPutAll: '# define SMALL_CONTEXT_SIZE 92'; cr; "ContextFixedSizePlusHeader + 16 * BytesPerWord"
-		"Large contexts have 56 indexable fileds.  Max with single header word."
-		"However note that in 64 bits, for now, large contexts have 3-word headers"
-		nextPutAll: '# define LARGE_CONTEXT_SIZE 252'; cr; "ContextFixedSizePlusHeader + 56 * BytesPerWord."
-		nextPutAll: '# define SIZE_MASK 0xfc'; cr; "Base header word bit field"
-		nextPutAll: '# define LONG_SIZE_MASK 0xfffffffc'; cr; "Base header word bit field"
-		nextPutAll: '# define SIZE_4_BIT 0'; cr;
-		nextPutAll: '# define MARK_BIT 0x80000000'; cr; "Top bit, 1 bitShift: BytesPerWord*8 - 1"
-		nextPutAll: '# define ROOT_BIT 0x40000000'; cr; "Next-to-top bit, 1 bitShift: BytesPerWord*8 - 2"
-		nextPutAll: '# define ALL_BUT_MARK_BIT 0x7fffffff'; cr; "WordMask - MarkBit."
-		nextPutAll: '# define ALL_BUT_ROOT_BIT 0xbfffffff'; cr; "WordMask - RootBit"
-		nextPutAll: '# define ALL_BUT_TYPE_MASK 0xfffffffc'; cr; "WordMask - TypeMask"
-		nextPutAll: '# define ALL_BUT_MARK_BIT_AND_TYPE_MASK 0x7ffffffc'; cr; "AllButTypeMask - MarkBit"
-		nextPutAll: '# define ALL_BUT_HASH_BITS 0xe001ffff'; cr;
-		nextPutAll: '# define SMALL_CONTEXT_SIZE 92'; cr; "16 indexable fields"
-		nextPutAll: '# define LARGE_CONTEXT_SIZE 252'; cr; "56 indexable fields"
-
-		nextPutAll: '#else // 64-bit object memory'; cr;
-		nextPutAll: '# define WORD_MASK 0xffffffffffffffff'; cr;
-		nextPutAll: '# define SHIFT_FOR_WORD 3'; cr;
-		nextPutAll: '# define SMALL_CONTEXT_SIZE 184'; cr;
-		nextPutAll: '# define LARGE_CONTEXT_SIZE 504'; cr;
-		nextPutAll: '# define SIZE_MASK 0xf8'; cr; "Lose the 4 bit in temp 64-bit chunk format"
-		nextPutAll: '# define LONG_SIZE_MASK 0xfffffffffffffff8'; cr;
-		"The 4 bit is excluded from SIZE_MASK for 64-bit object memory, but need it"
-		"for ST size, so define SIZE_4_BIT."
-		nextPutAll: '# define SIZE_4_BIT 4'; cr;
-		nextPutAll: '# define MARK_BIT 0x8000000000000000'; cr;
-		nextPutAll: '# define ROOT_BIT 0x4000000000000000'; cr;
-		nextPutAll: '# define ALL_BUT_MARK_BIT 0x7fffffffffffffff'; cr;
-		nextPutAll: '# define ALL_BUT_ROOT_BIT 0xbfffffffffffffff'; cr;
-		nextPutAll: '# define ALL_BUT_TYPE_MASK 0xfffffffffffffffc'; cr;
-		nextPutAll: '# define ALL_BUT_MARK_BIT_AND_TYPE_MASK 0x7ffffffffffffffc'; cr;
-		nextPutAll: '# define ALL_BUT_HASH_BITS 0xffffffffe001ffff'; cr;
-		nextPutAll: '# define SMALL_CONTEXT_SIZE 184'; cr;
-		nextPutAll: '# define LARGE_CONTEXT_SIZE 504'; cr;
-		nextPutAll: '#endif //  (BYTES_PER_WORD == 4)'; cr
-	
-! !
 
 !JSCodeGenerator methodsFor: 'JS code generator' stamp: 'tpr 1/10/2003 16:17'!
 emitExportsOn: aStream
@@ -1400,12 +1305,11 @@ isJSLiteral: anObject
 	anObject == false ifTrue: [^true].
 	^false! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/19/2020 15:59:56'!
+!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/28/2020 19:02:39'!
 isNonArgumentImplicitReceiverVariableName: aString
 	^(self typeOfVariable: aString) == #implicit
-	    or: [originClass
-			ifNil: [#('interpreterProxy' 'self') includes: aString]
-	 		ifNotNil: [originClass isNonArgumentImplicitReceiverVariableName: aString]]! !
+	    or: [ #('interpreterProxy' 'self') includes: aString ]
+	 	! !
 
 !JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/21/2020 18:39:05'!
 isPointerToStructVariableName: varName "<String>"
@@ -1546,12 +1450,12 @@ self halt.
 	self emitJSExpression: msgNode receiver on: aStream.
 	aStream nextPut: $)! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/21/2020 11:18:29'!
+!JSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/28/2020 17:49:56'!
 generateAt: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 	| arrayNode indexNode subtractOne complex coerceTo |
 	arrayNode _ msgNode receiver.
-	(arrayNode isSend and: [arrayNode selector = #coerce:to: and: [arrayNode args first isVariable]]) ifTrue: [
+	(arrayNode isSend and: [arrayNode selector = #coerce:to: and: [arrayNode args first is: #Variable]]) ifTrue: [
 		coerceTo _ (arrayNode args second value) copyWithout: $ .
 		arrayNode _ arrayNode args first.
 		aStream nextPutAll: '('].
@@ -2183,26 +2087,27 @@ generatePointerPlus: msgNode type: type on: aStream indent: level
 	^true
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/3/2014 02:12'!
+!JSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/28/2020 17:50:57'!
 generatePreDecrement: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
 	| varNode |
 	varNode _ msgNode receiver.
-	varNode isVariable
+	(varNode is: #Variable)
 		ifFalse: [ self error: 'preDecrement can only be applied to variables' ].
+		
 	self checkNonPointer: varNode op: '--'.
 	aStream nextPutAll: '--'.
 	aStream nextPutAll: (self returnPrefixFromVariable: varNode name).
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/3/2014 02:12'!
+!JSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/28/2020 17:51:08'!
 generatePreIncrement: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
 	| varNode |
 	varNode _ msgNode receiver.
-	varNode isVariable
+	(varNode is: #Variable)
 		ifFalse: [ self error: 'preIncrement can only be applied to variables' ].
 	aStream nextPutAll: '++'.
 	self checkNonPointer: varNode op: '++'.
@@ -2818,10 +2723,11 @@ generateLoadPointInt: msgNode on: aStream indent: level
 	aStream nextPutAll: ']|0)'.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 11/12/2014 16:11'!
+!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'jpb 5/28/2020 17:50:38'!
 generateLoadPointShort: msgNode on: aStream indent: level
-	msgNode args second isVariable ifFalse: [self halt].
+	(msgNode args second is: #Variable) ifFalse: [self halt].
 	msgNode args second name = 'points' ifFalse: [self halt].
+	
 	aStream nextPutAll: '(points.int16Array || (points.int16Array = new Int16Array(points.buffer, points.byteOffset)))['.
 	 msgNode args first emitJSCodeAsExpressionOn: aStream level: 0 generator: self.
 	aStream nextPutAll: ']'.
@@ -3235,7 +3141,7 @@ renameLabelsUsing: aDictionary
 		].
 	].! !
 
-!JSMethod methodsFor: 'inlining support' stamp: 'dtl 6/23/2012 10:32'!
+!JSMethod methodsFor: 'inlining support' stamp: 'jpb 5/28/2020 18:01:26'!
 renameVariablesUsing: aDictionary
 	"Rename all variables according to old->new mappings of the given dictionary."
 
@@ -3244,9 +3150,11 @@ renameVariablesUsing: aDictionary
 	args _ args collect: [ :arg |
 		(aDictionary includesKey: arg) ifTrue: [ aDictionary at: arg ] ifFalse: [ arg ].
 	].
+
 	locals _ locals collect: [ :v |
 		(aDictionary includesKey: v) ifTrue: [ aDictionary at: v ] ifFalse: [ v ].
 	].
+
 	"prevent runaway recursion, e.g. inlining a method with super send"
 	locals size > 1000 ifTrue: [self error: 'recursive inlining in ', selector asString, ', too many locals'].
 
@@ -3263,7 +3171,7 @@ renameVariablesUsing: aDictionary
 
 	"map variable names in parse tree"
 	parseTree nodesDo: [ :node |
-		(node isVariable and:
+		((node is: #Variable) and:
 		 [aDictionary includesKey: node name]) ifTrue: [
 			node setName: (aDictionary at: node name).
 		].
@@ -3349,17 +3257,19 @@ copy
 		yourself
 ! !
 
-!JSMethod methodsFor: 'utilities' stamp: 'bf 10/14/2014 15:07'!
+!JSMethod methodsFor: 'utilities' stamp: 'jpb 5/28/2020 17:51:38'!
 freeVariableReferences
 	"Answer a collection of variables referenced this method, excluding locals, arguments, and pseudovariables."
 
 	| refs |
 	refs _ Set new.
 	parseTree nodesDo: [ :node |
-		node isVariable ifTrue: [ refs add: node name asString ].
+		(node is: #Variable) ifTrue: [ refs add: node name asString ].
 	].
+
 	args do: [ :var | refs remove: var asString ifAbsent: [] ].
 	locals do: [ :var | refs remove: var asString ifAbsent: [] ].
+	
 	#('self' 'nil' 'true' 'false' 'null') do: [ :var | refs remove: var ifAbsent: [] ].
 	^ refs asSortedCollection! !
 
@@ -3379,21 +3289,24 @@ nodeCount
 	parseTree nodesDo: [ :n | cnt _ cnt + 1 ].
 	^cnt! !
 
-!JSMethod methodsFor: 'utilities' stamp: 'ar 7/8/2003 11:20'!
+!JSMethod methodsFor: 'utilities' stamp: 'jpb 5/28/2020 18:01:18'!
 removeUnusedTemps
 	"Remove all of the unused temps in this method. Answer a bag (why the hell a bag???) with the references."
 	"After inlining some variable references are now obsolete, we could fix them there but the 
 	code seems a bit complicated, the other choice to to rebuild the locals before extruding. This is done here"
 	| refs |
 	refs _ Bag new.
+	
 	"find all the variable names referenced in this method"
 	parseTree nodesDo: [ :node |
-		node isVariable ifTrue: [ refs add: node name asString ].
+		(node is: #Variable) ifTrue: [ refs add: node name asString ].
 		node isStmtList ifTrue: [refs addAll: node args]].
+	
 	"add all the non-arg declarations (might be variables usedonly in cCode sections)"
 	refs addAll:((self declarations keys) reject: [:e | self args includes: e]).
 	"reset the locals to be only those still referred to"
 	locals _ locals select: [:e | refs includes: e].
+	
 	^refs
 ! !
 
@@ -3665,23 +3578,23 @@ isFunctional
 	parseTree statements last expression nodesDo: [ :n | n isReturn ifTrue: [ ^false ]].
 	^true! !
 
-!JSMethod methodsFor: 'inlining' stamp: 'ar 5/9/2000 12:13'!
+!JSMethod methodsFor: 'inlining' stamp: 'jpb 5/28/2020 17:51:50'!
 isSubstitutableNode: aNode
 	"Answer true if the given parameter node is either a constant, a local variable, or a formal parameter of the receiver. Such parameter nodes may be substituted directly into the body of the method during inlining. Note that global variables cannot be subsituted because the inlined method might depend on the exact ordering of side effects to the globals."
 
 	aNode isConstant ifTrue: [ ^true ].
-	^aNode isVariable and:
+	^(aNode is: #Variable) and:
 		[(locals includes: aNode name) or:
 		[args includes: aNode name]]! !
 
-!JSMethod methodsFor: 'inlining'!
+!JSMethod methodsFor: 'inlining' stamp: 'jpb 5/28/2020 18:00:55'!
 isSubstitutableNode: aNode intoMethod: targetMeth in: aCodeGen
 	"Answer true if the given parameter node is either a constant, a local variable, or a formal parameter of the receiver. Such parameter nodes may be substituted directly into the body of the method during inlining. Note that global variables cannot be subsituted into methods with possible side effects (i.e., methods that may assign to global variables) because the inlined method might depend on having the value of the global variable captured when it is passed in as an argument."
 
 	| var |
 	aNode isConstant ifTrue: [ ^ true ].
 
-	aNode isVariable ifTrue: [
+	(aNode is: #Variable) ifTrue: [
 		var _ aNode name.
 		((locals includes: var) or: [args includes: var]) ifTrue: [ ^ true ].
 		(#(self true false nil) includes: var) ifTrue: [ ^ true ].
@@ -3693,14 +3606,14 @@ isSubstitutableNode: aNode intoMethod: targetMeth in: aCodeGen
 		node isSend ifTrue: [
 			node isBuiltinOperator ifFalse: [ ^false ].
 		].
-		node isVariable ifTrue: [
+		(node is: #Variable) ifTrue: [
 			var _ node name.
 			((locals includes: var) or:
 			 [(args includes: var) or:
 			 [(#(self true false nil) includes: var) or:
 			 [targetMeth maySubstituteGlobal: var in: aCodeGen]]]) ifFalse: [ ^ false ].
 		].
-		(node isConstant or: [node isVariable or: [node isSend]]) ifFalse: [ ^false ].
+		(node isConstant or: [(node is: #Variable) or: [node isSend]]) ifFalse: [ ^false ].
 	].
 
 	^ true! !
@@ -4302,7 +4215,7 @@ prepareMethodIn: aCodeGen
 							 (#(caseOf: #caseOf:otherwise:) includes: node selector) ifTrue:
 								[parent replaceNodesIn: (Dictionary newFromPairs: { node. self buildSwitchStmt: node parent: parent })]]]]]! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'jpb 5/24/2020 08:45:30'!
+!JSMethod methodsFor: 'transformations' stamp: 'jpb 5/28/2020 19:55:58'!
 recordDeclarations
 	"Record C type declarations of the forms
 
@@ -4328,7 +4241,9 @@ recordDeclarations
 				[returnType _ pragma arguments last].
 			pragma keyword = #doNotGenerate: ifTrue:
 				[locals remove: pragma arguments last]]].
+		
 	newStatements _ OrderedCollection new: parseTree statements size.
+	
 	parseTree statements do: [ :stmt |
 		| isDeclaration |
 		isDeclaration _ false.
@@ -4360,7 +4275,7 @@ recordDeclarations
 removeAssertions
 	parseTree removeAssertions! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'jm 12/14/1998 08:35'!
+!JSMethod methodsFor: 'transformations' stamp: 'jpb 5/28/2020 17:52:10'!
 removeFinalSelfReturn
 	"The Smalltalk parser automatically adds the statement '^self' to the end of methods without explicit returns. This method removes such statements, since the generated code has no notion of 'self' anyway."
 
@@ -4369,7 +4284,7 @@ removeFinalSelfReturn
 	lastStmt _ stmtList last.
 
 	((lastStmt isReturn) and:
-	 [(lastStmt expression isVariable) and:
+	 [(lastStmt expression is: #Variable) and:
 	 ['self' = lastStmt expression name]]) ifTrue: [
 		stmtList removeLast.
 		parseTree setStatements: stmtList.
@@ -4564,9 +4479,12 @@ hasReturn
 	parseTree nodesDo: [ :n | n isReturn ifTrue: [ ^ true ]].
 	^ false! !
 
-!JSMethod methodsFor: 'testing' stamp: 'ikp 9/26/97 14:50'!
-isAssertion
-	^(selector beginsWith: 'assert') or: [selector beginsWith: 'verify']! !
+!JSMethod methodsFor: 'testing' stamp: 'jpb 5/28/2020 17:45:06'!
+is: query
+	#Assertion = query
+		ifTrue: [ ^(selector beginsWith: 'assert') or: [selector beginsWith: 'verify'] ].
+		
+	^super is: query! !
 
 !JSMethod methodsFor: 'initialization' stamp: 'jpb 5/21/2020 11:34:40'!
 newCascadeTempFor: aTParseNode
