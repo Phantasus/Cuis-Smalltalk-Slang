@@ -1,4 +1,4 @@
-'From Cuis 5.0 [latest update: #4112] on 28 May 2020 at 11:01:51 pm'!
+'From Cuis 5.0 [latest update: #4112] on 29 May 2020 at 9:14:32 pm'!
 'Description License: MIT'!
 !provides: 'Slang-Tools' 1 18!
 SystemOrganization addCategory: #'Slang-Tools-Tests'!
@@ -2544,7 +2544,7 @@ emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag
 	self prepareMethodsInlined: inlineFlag doAssertions: assertionFlag.
 	^ self emitCCodeOn: aStream ! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/19/2020 22:46:16'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/29/2020 20:51:48'!
 emitCConstantsOn: aStream
 	"Store the global variable declarations on the given stream."
 	| unused constList node |
@@ -2552,9 +2552,10 @@ emitCConstantsOn: aStream
 	methods do: [ :meth |
 		meth parseTree nodesDo: [ :n |
 			n isConstant ifTrue: [ unused remove: n name ifAbsent: []]]].
+	
 	constList _ constants keys reject: [ :any | unused includes: any].
-	aStream nextPutAll: '/*** Constants ***/';
-		 cr.
+	aStream nextPutAll: '/*** Constants ***/'; newLine.
+		
 	constList asSortedCollection do: [ :varName |
 		node _ constants at: varName.
 		node name isEmpty ifFalse: [
@@ -2562,10 +2563,10 @@ emitCConstantsOn: aStream
 			aStream nextPutAll: node name.
 			aStream space.
 			aStream nextPutAll: (self findLiteralFor: node value).
-			aStream cr
+			aStream newLine
 		].
 	].
-	aStream cr.! !
+	aStream newLine.! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: ' 2/7/08 14:57'!
 emitCExpression: aParseNode on: aStream 
@@ -2580,40 +2581,43 @@ emitCExpression: aParseNode on: aStream
 			 aParseNode emitCCodeAsExpressionOn: aStream level: 0 generator: self.
 			 aStream nextPut: $)]! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'tpr 3/7/2003 19:55'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/29/2020 20:48:34'!
 emitCFunctionPrototypes: methodList on: aStream 
 	"Store prototype declarations for all non-inlined methods on the given stream."
 	| exporting |
-	aStream nextPutAll: '/*** Function Prototypes ***/'; cr.
+	aStream nextPutAll: '/*** Function Prototypes ***/'; newLine.
 	exporting _ false.
+	
 	methodList do: [:m | 
 		m export
 			ifTrue: [exporting
 					ifFalse: 
-						[aStream nextPutAll: '#pragma export on'; cr.
+						[aStream nextPutAll: '#pragma export on'; newLine.
 						exporting _ true]]
 			ifFalse: [exporting
 					ifTrue: 
-						[aStream nextPutAll: '#pragma export off'; cr.
+						[aStream nextPutAll: '#pragma export off'; newLine.
 						exporting _ false]].
+				
 		m emitCFunctionPrototype: aStream generator: self.
-		aStream nextPutAll: ';'; cr].
-	exporting ifTrue: [aStream nextPutAll: '#pragma export off'; cr]! !
+		aStream nextPutAll: ';'; newLine ].
+	
+	exporting ifTrue: [aStream nextPutAll: '#pragma export off'; newLine ]! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/26/2020 21:39:50'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/29/2020 20:49:51'!
 emitCHeaderOn: aStream
 	"Write a C file header onto the given stream."
 
 	aStream nextPutAll: '/* '.
 	aStream nextPutAll: headerNotice.
-	aStream nextPutAll: ' */'; cr;
+	aStream nextPutAll: ' */'; newLine;
 		nextPutAll: (self fileHeaderVersionStampForSourceClass: originClass);
-		cr; cr.
+		newLine; newLine.
 
 	"Additional header files"
 	self emitHeaderFilesOn: aStream.
 
-	aStream cr.! !
+	aStream newLine.! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'dtl 11/9/2006 06:42'!
 emitCTestBlock: aBlockNode on: aStream
@@ -2645,14 +2649,14 @@ emitCVariablesOn: aStream
 			
 	aStream newLine! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'tpr 1/10/2003 16:17'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/29/2020 20:56:12'!
 emitExportsOn: aStream
 	"Store all the exported primitives in a form to be used by the internal named prim system"
 	aStream nextPutAll:'
 
 void* vm_exports[][3] = {'.
 	self exportedPrimitiveNames do:[:primName|
-		aStream cr;
+		aStream newLine;
 			nextPutAll:'	{"", "'; 
 			nextPutAll: primName; 
 			nextPutAll:'", (void*)'; 
@@ -6243,31 +6247,35 @@ isStructAccessor
 		on: MessageNotUnderstood
 		do: [:ex| false]! !
 
-!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 5/16/2020 21:44:18'!
+!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 5/29/2020 21:07:03'!
 emitCCodeOn: aStream generator: aCodeGen
 	"Emit C code for this method onto the given stream. All calls to inlined methods should already have been expanded."
 
 	aCodeGen currentMethod: self.
 	self emitCCommentOn: aStream.	"place method comment before function"
 	self emitCHeaderOn: aStream generator: aCodeGen.
+	
 	parseTree emitCCodeOn: aStream level: 1 generator: aCodeGen.
 	
 	"Ensure code is POSIX compliant"
-	(self returnType = #void or: [self endsWithReturn]) ifFalse: [aStream tab: 1; nextPutAll: 'return null;'; cr].
-	aStream nextPutAll: '}'; cr.! !
+	(self returnType = #void or: [self endsWithReturn])
+		 ifFalse: [aStream tab: 1; nextPutAll: 'return null;'; newLine].
+	
+	aStream nextPutAll: '}'; newLine.! !
 
-!SlangTMethod methodsFor: 'C code generation' stamp: 'hg 8/14/2000 16:09'!
+!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 5/29/2020 20:57:56'!
 emitCCommentOn: aStream
 	"Emit the transferred Smalltalk comments as C comments."
 
 	comment ifNotNil: [
-		aStream cr;cr.
+		aStream newLine; newLine.
+		
 		1 to: comment size do: [:index | 
 			aStream 
 				nextPutAll: '/*'; tab;
 				nextPutAll: (comment at: index);
 				nextPutAll: ' */';
-				cr]]! !
+				newLine ]]! !
 
 !SlangTMethod methodsFor: 'C code generation' stamp: 'eem 2/12/2009 12:29'!
 emitCFunctionPrototype: aStream generator: aCodeGen
@@ -6280,7 +6288,7 @@ emitCFunctionPrototype: aStream generator: aCodeGen
 			^self]].
 	self emitCFunctionPrototype: aStream generator: aCodeGen newlineBeforeName: false! !
 
-!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 5/24/2020 08:45:08'!
+!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 5/29/2020 21:04:42'!
 emitCFunctionPrototype: aStream generator: aCodeGen newlineBeforeName: newlineBeforeName "<Boolean>"
 	"Emit a C function header for this method onto the given stream."
 
@@ -6288,35 +6296,41 @@ emitCFunctionPrototype: aStream generator: aCodeGen newlineBeforeName: newlineBe
 		ifTrue:[aStream nextPutAll: 'EXPORT('; nextPutAll: returnType; nextPut: $)]
 		ifFalse:[(self isStaticIn: aCodeGen) ifTrue:[aStream nextPutAll: 'static '].
 				aStream nextPutAll: returnType].
-	newlineBeforeName ifTrue: [aStream cr] ifFalse: [aStream space].
+			
+	newlineBeforeName ifTrue: [aStream newLine] ifFalse: [aStream space].
+	
 	(returnType last = $)
 	and: [returnType includesSubString: (aCodeGen findFunctionNameFor: self selectorForCodeGeneration)]) ifTrue:
 		["Hack fix for e.g. <returnType: 'void (*setInterruptCheckChain(void (*aFunction)(void)))()'>"
 		 ^self].
+	
 	aStream
 		nextPutAll: (aCodeGen findFunctionNameFor: self selectorForCodeGeneration);
 		nextPut: $(.
+		
 	args isEmpty
 		ifTrue: [aStream nextPutAll: #void]
 		ifFalse:
 			[args
 				do: [:arg| aStream nextPutAll: (self declarationAt: arg)]
 				separatedBy: [ aStream nextPutAll: ', ' ]].
+			
 	aStream nextPut: $)! !
 
-!SlangTMethod methodsFor: 'C code generation' stamp: 'ikp 6/9/2004 16:15'!
+!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 5/29/2020 21:06:39'!
 emitCHeaderOn: aStream generator: aCodeGen
 	"Emit a C function header for this method onto the given stream."
 
-	aStream cr. 
+	aStream newLine. 
 	self emitCFunctionPrototype: aStream generator: aCodeGen.
-	aStream nextPutAll: ' {'; cr.
+	aStream nextPutAll: ' {'; newLine.
+	
 	self emitGlobalStructReferenceOn: aStream.
 	locals do: [ :var |
 		aStream nextPutAll: '    '.
-		aStream nextPutAll: (declarations at: var ifAbsent: [ 'sqInt ', var]), ';'; cr.
+		aStream nextPutAll: (declarations at: var ifAbsent: [ 'sqInt ', var]), ';'; newLine.
 	].
-	locals isEmpty ifFalse: [ aStream cr ].! !
+	locals isEmpty ifFalse: [ aStream newLine ].! !
 
 !SlangTMethod methodsFor: 'C code generation'!
 emitGlobalStructReferenceOn: aStream
@@ -6696,11 +6710,13 @@ emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen
 	self emitCCodeOn: aStream level: level generator: aCodeGen.
 	aStream nextPut: $)! !
 
-!SlangTAssignmentNode methodsFor: 'C code generation' stamp: 'jpb 5/13/2020 22:41:33'!
+!SlangTAssignmentNode methodsFor: 'C code generation' stamp: 'jpb 5/29/2020 20:58:52'!
 emitCCodeOn: aStream level: level generator: aCodeGen
 	expression isSwitch ifTrue:
 		[^expression emitCCodeOn: aStream addToEndOfCases: self level: level generator: aCodeGen].
+		
 	variable emitCCodeOn: aStream level: level generator: aCodeGen.
+	
 	self isVariableUpdatingAssignment
 		ifTrue:
 			[aStream
@@ -6715,6 +6731,7 @@ emitCCodeOn: aStream level: level generator: aCodeGen
 			 "Add an appropriate cast if we need to do so"
 			 vartype _ aCodeGen typeOfVariable: variable name.
 			 vartype _ aCodeGen declToType: vartype.
+			
 			 ((expression isMemberOf: SlangTSendNode) and: [vartype ~= nil])
 				ifTrue:
 					[| fntype expselector |
@@ -6987,21 +7004,22 @@ customizeShortCasesForDispatchVar: varName in: codeGen method: aTMethod
 	cases _ newCases asArray.
 ! !
 
-!SlangTCaseStmtNode methodsFor: 'as yet unclassified' stamp: 'dtl 11/9/2006 06:29'!
+!SlangTCaseStmtNode methodsFor: 'as yet unclassified' stamp: 'jpb 5/29/2020 20:59:08'!
 emitCCodeOn: aStream level: level generator: aCodeGen
 
 	| indent |
 	indent _ (String new: level) collect: [ :ch | Character tab ].
 	aStream nextPutAll: 'switch ('.
 	expression asExpression emitCCodeOn: aStream level: level generator: aCodeGen.
-	aStream nextPutAll: ') {'; cr.
+	aStream nextPutAll: ') {'; newLine.
+	
 	1 to: cases size do: [ :i |
 		(firsts at: i) to: (lasts at: i) do: [ :caseIndex |
-			aStream nextPutAll: indent, 'case ', caseIndex printString, ':'; cr.
+			aStream nextPutAll: indent, 'case ', caseIndex printString, ':'; newLine.
 		].
 		(cases at: i) emitCCodeOn: aStream level: level + 1 generator: aCodeGen.
 		aStream nextPutAll: indent; tab; nextPutAll: 'break;'.
-		aStream cr.
+		aStream newLine.
 	].
 	level timesRepeat: [ aStream tab ].
 	aStream nextPutAll: '}'.! !
@@ -7426,15 +7444,15 @@ unindentOneTab: aStream
 		aStream peek = Character tab ifFalse: [ aStream next ].
 	].! !
 
-!SlangTNotImplementedNode methodsFor: 'C code generation' stamp: 'dtl 6/20/2012 07:59'!
+!SlangTNotImplementedNode methodsFor: 'C code generation' stamp: 'jpb 5/29/2020 20:59:40'!
 emitCCodeOn: aStream level: level generator: aCodeGen
 	"Emit a comment only"
 
-	aStream cr; nextPutAll: '/*** ';
+	aStream newLine; nextPutAll: '/*** ';
 		nextPutAll: self printString;
-		nextPutAll: ' cannot translate: '; cr;
+		nextPutAll: ' cannot translate: '; newLine;
 		nextPutAll: parseNode printString;
-		cr; nextPutAll: ' ***/'; cr
+		newLine; nextPutAll: ' ***/'; newLine
 ! !
 
 !SlangTNotImplementedNode methodsFor: 'accessing' stamp: 'dtl 10/12/2010 19:40'!
@@ -8038,19 +8056,21 @@ copyTree
 		setArguments: arguments copy
 		statements: (statements collect: [ :s | s copyTree ])! !
 
-!SlangTStmtListNode methodsFor: 'as yet unclassified' stamp: 'jpb 5/26/2020 21:09:29'!
+!SlangTStmtListNode methodsFor: 'as yet unclassified' stamp: 'jpb 5/29/2020 21:00:09'!
 emitCCodeOn: aStream level: level generator: aCodeGen
 
 	self emitCCommentOn: aStream level: level.
+	
 	statements do: [:s |
 		s emitCCommentOn: aStream level: level.
 		aStream tab: level.
 		s emitCCodeOn: aStream level: level generator: aCodeGen.
+		
 		(((self endsWithCloseBracket: aStream) not
 			and: [(s is: #Comment) not])
 				and: [s requiresCLineTerminator])
 			ifTrue: [aStream nextPut: $;].
-		aStream cr].
+		aStream newLine].
 ! !
 
 !SlangTStmtListNode methodsFor: 'as yet unclassified'!
@@ -8385,38 +8405,42 @@ emitCCodeOn: aStream addToEndOfCases: aNodeOrNil level: level generator: aCodeGe
 		crtab: level;
 		nextPut: $}! !
 
-!SlangTSwitchStmtNode methodsFor: 'C code generation' stamp: 'eem 2/13/2009 16:41'!
+!SlangTSwitchStmtNode methodsFor: 'C code generation' stamp: 'jpb 5/29/2020 21:01:56'!
 emitCCodeOn: aStream level: level generator: aCodeGen
 
-	aStream crtab: level.
+	aStream newLine; tab: level.
 	aStream nextPutAll: 'switch ('.
 	expression emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen.
 	aStream nextPutAll: ') {'.
+	
 	cases do:
 		[:tuple|
 		 [:labels :case|
 		  labels do:
 			[:label|
 			 aStream
-				crtab: level;
+				newLine; tab: level;
 				nextPutAll: 'case '.
 			label emitCCodeAsArgumentOn: aStream level: level + 1 generator: aCodeGen.
 			aStream nextPut: $:].
-		  aStream crtab: level + 1.
+		  aStream newLine; tab: level + 1.
 		  case emitCCodeOn: aStream level: level + 1 generator: aCodeGen.
 		  case endsWithReturn ifFalse:
 			[aStream tab: level + 1; nextPutAll: 'break;']]
 			valueWithArguments: tuple].
+		
 	aStream
-		crtab: level;
+		newLine; tab: level;
 		nextPutAll: 'default:';
-		crtab: level + 1.
+		newLine; tab: level + 1.
+		
 	otherwiseOrNil
 		ifNotNil:
 			[otherwiseOrNil emitCCodeOn: aStream level: level + 1 generator: aCodeGen]
 		ifNil: [aStream nextPutAll: 'error("Case not found and no otherwise clause");'].
+		
 	aStream
-		crtab: level;
+		newLine; tab: level;
 		nextPut: $}! !
 
 !SlangTSwitchStmtNode methodsFor: 'testing' stamp: 'eem 2/10/2009 07:58'!

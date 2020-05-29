@@ -9,6 +9,15 @@ authors at the end of the file.
 
 # Entries
 
+## 29th May 2020 (jpb)
+
+Removed the `stream cr` and replaced them with `stream newLine` which 
+caused that this first whimsical code generation had carriage returns (CR)
+instead of proper linefeeds in there. This is such a small change which
+did Cuis in my opinion right. Not emulating an OS which prints out CRs to
+end lines, but to model the concept of adding ending a line and starting a new
+one.
+
 ## 28th May 2020 (jpb)
 
 In the morning during breakfast I looked at this [ZeroMQ](https://zeromq.org/get-started)

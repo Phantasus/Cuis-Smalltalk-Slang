@@ -1,4 +1,4 @@
-'From Cuis 5.0 [latest update: #4112] on 28 May 2020 at 11:01:49 pm'!
+'From Cuis 5.0 [latest update: #4112] on 29 May 2020 at 9:14:30 pm'!
 'Description License: MIT'!
 !provides: 'Slang-Javascript' 1 12!
 SystemOrganization addCategory: #'Slang-Javascript'!
@@ -1149,14 +1149,14 @@ useSymbolicConstants: aBool
 	"Indicate whether we should generate symbolic constants instead of their actual values"
 	useSymbolicConstants _ aBool! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'tpr 1/10/2003 16:17'!
+!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/29/2020 20:56:05'!
 emitExportsOn: aStream
 	"Store all the exported primitives in a form to be used by the internal named prim system"
 	aStream nextPutAll:'
 
 void* vm_exports[][3] = {'.
 	self exportedPrimitiveNames do:[:primName|
-		aStream cr;
+		aStream newLine;
 			nextPutAll:'	{"", "'; 
 			nextPutAll: primName; 
 			nextPutAll:'", (void*)'; 
