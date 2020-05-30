@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4112] on 29 May 2020 at 9:14:30 pm'!
+'From Cuis 5.0 [latest update: #4112] on 30 May 2020 at 12:28:44 pm'!
 'Description License: MIT'!
-!provides: 'Slang-Javascript' 1 12!
+!provides: 'Slang-Javascript' 1 13!
 SystemOrganization addCategory: #'Slang-Javascript'!
 
 
@@ -4550,5 +4550,367 @@ initialize
 	"JSMethod initialize"	
 	CaseStatements _ IdentitySet new: 10.
 	CaseStatements addAll: #(dispatchOn:in: dispatchOn:in:with: dispatchOn:in:with:with:).! !
+
+!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:09:42'!
+emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen
+	^self emitJSCodeOn: aStream level: level generator: aCodeGen! !
+
+!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:09:52'!
+emitJSCodeAsExpressionOn: aStream level: level generator: aCodeGen
+	^self emitJSCodeOn: aStream level: level generator: aCodeGen! !
+
+!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:10:04'!
+emitJSCodeOn: aStream level: lev generator: gen
+	self subclassResponsibility.! !
+
+!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:10:12'!
+emitJSCommentOn: aStream level: level
+	"Emit the transferred Smalltalk comments as C comments."
+
+	comment ifNotNil: [
+		comment isString ifTrue: [^self].	"safety catch"
+		aStream cr.
+		1 to: comment size do: [:index | 
+			aStream 
+				tab: level;
+				nextPutAll: '/* ';
+				nextPutAll: (comment at: index);
+				nextPutAll: ' */';
+				cr].
+		aStream cr]! !
+
+!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:10:20'!
+isBitBltPtr
+	^false! !
+
+!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:10:32'!
+isConstantNull
+	^false! !
+
+!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:10:41'!
+isConstantZero
+	^false! !
+
+!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:10:50'!
+isEqualityTest
+	^false! !
+
+!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:10:59'!
+isInterpreterProxyConstant
+	^false! !
+
+!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:11:11'!
+isLeafOrFunc
+	^self isLeaf! !
+
+!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:11:21'!
+isPlusOne
+	^false! !
+
+!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:11:51'!
+isTimesFour
+	^false! !
+
+!SlangTAssignmentNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:03:42'!
+emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen
+	aStream nextPut: $(.
+	self emitJSCodeOn: aStream level: level generator: aCodeGen.
+	aStream nextPut: $)! !
+
+!SlangTAssignmentNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:04:11'!
+emitJSCodeAsExpressionOn: aStream level: level generator: aCodeGen
+	aStream nextPut: $(.
+	self emitJSCodeOn: aStream level: level generator: aCodeGen.
+	aStream nextPut: $)! !
+
+!SlangTAssignmentNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:04:25'!
+emitJSCodeOn: aStream level: level generator: aCodeGen
+	expression isSwitch ifTrue:
+		[^expression emitJSCodeOn: aStream addToEndOfCases: self level: level generator: aCodeGen].
+	(self isVariableUpdatingAssignment and: [(aCodeGen isPointer: variable) not])
+		ifTrue:
+			[(expression args first isConstant and: [expression args first value = 1])
+				ifTrue: [aStream nextPutAll: expression selector, expression selector.
+					variable emitJSCodeOn: aStream level: level generator: aCodeGen]
+				ifFalse: [
+					variable emitJSCodeOn: aStream level: level generator: aCodeGen.
+					aStream nextPutAll: ' ', expression selector, '= '.
+					expression args first emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen]]
+		ifFalse:
+			[ | coerceToInt |
+			coerceToInt := (variable isFloatIn: aCodeGen) not and: [expression isFloatIn: aCodeGen].
+			variable emitJSCodeOn: aStream level: level generator: aCodeGen.
+			aStream nextPutAll: ' = '.
+			expression emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen.
+			coerceToInt ifTrue: [aStream nextPutAll: '|0'].]! !
+
+!SlangTAssignmentNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:04:51'!
+isFloatIn: aCodeGen
+	^variable isFloatIn: aCodeGen! !
+
+!SlangTCaseStmtNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:05:32'!
+emitJSCodeOn: aStream level: level generator: aCodeGen
+
+	| indent |
+	indent := (String new: level) collect: [ :ch | Character tab ].
+	aStream nextPutAll: 'switch ('.
+	expression asExpression emitJSCodeOn: aStream level: level generator: aCodeGen.
+	aStream nextPutAll: ') {'; cr.
+	1 to: cases size do: [ :i |
+		(firsts at: i) to: (lasts at: i) do: [ :caseIndex |
+			aStream nextPutAll: indent, 'case ', caseIndex printString, ':'; cr.
+		].
+		(cases at: i) emitJSCodeOn: aStream level: level + 1 generator: aCodeGen.
+		aStream nextPutAll: indent; tab; nextPutAll: 'break;'.
+		aStream cr.
+	].
+	level timesRepeat: [ aStream tab ].
+	aStream nextPutAll: '}'.! !
+
+!SlangTConstantNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:06:03'!
+emitJSCodeOn: aStream level: level generator: aCodeGen
+	"Emit a C literal."
+
+	aStream nextPutAll: (aCodeGen jsLiteralFor: value).! !
+
+!SlangTConstantNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:06:20'!
+isConstantZero
+	^ value = 0! !
+
+!SlangTConstantNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:06:31'!
+isFloatIn: aCodeGen
+	^value isFloat! !
+
+!SlangTDefineNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:07:00'!
+emitJSCodeOn: aStream level: level generator: aCodeGen
+	"Emit a C literal."
+
+	aStream nextPutAll: name.! !
+
+!SlangTGoToNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:07:26'!
+emitJSCodeOn: aStream level: level generator: aCodeGen
+	"Emit a C goto statement."
+
+	aStream nextPutAll: 'goto '.
+	aStream nextPutAll: label.! !
+
+!SlangTInlineNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:08:13'!
+emitJSCodeOn: aStream level: level generator: aCodeGen
+	method emitInlineOn: aStream level: level generator: aCodeGen.! !
+
+!SlangTLabeledCommentNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:08:41'!
+emitJSCodeOn: aStream level: level generator: aCodeGen
+	"Emit a C comment with optional label."
+
+	self printOptionalLabelOn: aStream.
+	aStream nextPutAll: '/* '.
+	aStream nextPutAll: comment.
+	aStream nextPutAll: ' */'.! !
+
+!SlangTNotImplementedNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:09:12'!
+emitJSCodeOn: aStream level: level generator: aCodeGen
+	"Emit a comment only"
+
+	aStream cr; nextPutAll: '/*** ';
+		nextPutAll: self printString;
+		nextPutAll: ' cannot translate: '; cr;
+		nextPutAll: parseNode printString;
+		cr; nextPutAll: ' ***/'; cr
+! !
+
+!SlangTReturnNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:12:08'!
+emitJSCodeOn: aStream level: level generator: aCodeGen
+
+	(expression isSwitch
+	 or: [expression isCaseStmt]) ifTrue:
+		[^expression emitJSCodeOn: aStream addToEndOfCases: self level: level generator: aCodeGen].
+
+	('void' = aCodeGen currentMethod returnType) ifTrue: [
+		"If the function is void, don't say 'return x' instead say ' x; return' "
+		expression isLeaf ifFalse: [
+			expression emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen.	
+			aStream nextPutAll: ';'; space.
+		].
+		aStream nextPutAll: 'return'.
+	] ifFalse: [
+		aStream nextPutAll: 'return'.
+		aStream space.
+		expression emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen
+	].! !
+
+!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:12:30'!
+emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen
+	"Emit the receiver in a form that can be passed as an argument."
+
+	"If the selector is a built-in construct, translate it and return"
+	(aCodeGen emitBuiltinConstructAsArgumentFor: self asExpression on: aStream level: level) ifFalse:
+		["If it is a pointer dereference generate it"
+		(self emitJSCodeAsPointerDereferenceOn: aStream level: level generator: aCodeGen) ifFalse:
+			["Otherwise generate the vanilla C function call."
+			 self emitJSCodeAsFunctionCallOn: aStream level: level generator: aCodeGen]]! !
+
+!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:12:40'!
+emitJSCodeAsExpressionOn: aStream level: level generator: aCodeGen
+	^self emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen! !
+
+!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:12:48'!
+emitJSCodeAsFunctionCallOn: aStream level: level generator: aCodeGen
+
+	"Translate this message send into a JS function call"
+	"Special case for pluggable modules. Replace messages to interpreterProxy
+	 by interpreterProxy->message(..) if the message is not builtin"
+	(aCodeGen isGeneratingPluginCode
+	 and: [receiver isVariable
+	 and: ['interpreterProxy' = receiver name
+	 and: [self isBuiltinOperator not]]]) ifTrue:
+		[aStream nextPutAll:'interpreterProxy.'].
+	"Translate this message send into a JS function call."
+	aStream nextPutAll: (aCodeGen jsFunctionNameFor: selector); nextPut: $(.
+	"Only include the receiver as the first argument in certain cases.
+	 The receiver is always included if it is an expression.
+	 If it is a variable:
+		 If the vmClass says it is an implicit variable, don't include it.
+		 If the variable is 'self' and the method being called is not in
+		 the method set (i.e. it is some external code), don't include it."
+	(self shouldIncludeReceiverAsFirstArgument: aCodeGen) ifTrue:
+		[receiver emitJSCodeOn: aStream level: level generator: aCodeGen.
+		arguments isEmpty ifFalse:
+			[aStream nextPutAll: ', ']].
+	arguments do:
+		[ :arg| arg emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen]
+		separatedBy: [aStream nextPut: $,; space].
+	aStream nextPut: $)! !
+
+!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:13:01'!
+emitJSCodeAsPointerDereferenceOn: aStream level: level generator: aCodeGen
+	"If appropriate, translate this message send as a pointer dereference"
+
+	(self isStructSend: aCodeGen) ifFalse:
+		[^false].
+
+	aStream nextPut: $(.
+	receiver  emitJSCodeAsExpressionOn: aStream level: 0 generator: aCodeGen.
+	aStream nextPut: $-; nextPut: $>.
+	aStream nextPutAll: (aCodeGen jsFunctionNameFor: selector).
+	arguments isEmpty ifFalse:
+		[self assert: arguments size = 1.
+		 aStream nextPutAll: ' = '.
+		 arguments first emitJSCodeAsExpressionOn: aStream level: level generator: aCodeGen].
+	aStream nextPut: $).
+	^true! !
+
+!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:13:11'!
+emitJSCodeOn: aStream level: level generator: aCodeGen
+	"Emit the receiver as a statement."
+
+	"If the selector is a built-in construct, translate it and return"
+	(aCodeGen emitBuiltinConstructFor: self on: aStream level: level) ifFalse:
+		["If it is a pointer dereference generate it"
+		(self emitJSCodeAsPointerDereferenceOn: aStream level: level generator: aCodeGen) ifFalse:
+			["Otherwise generate the vanilla C function call."
+			 self emitJSCodeAsFunctionCallOn: aStream level: level generator: aCodeGen]]! !
+
+!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:13:27'!
+emitJSPointerArithmetic: type on: aStream level: level generator: aGenerator type: cType top: top
+	(selector = #+) ifFalse: [self halt].
+	receiver isVariable
+		ifTrue: [ | func |
+			func := ({'int' -> 'PTR_ADD'. 'float' -> 'FPTR_ADD'} as: Dictionary)
+				at: ((cType copyUpTo: $*) copyWithout: $ ).
+			aStream nextPutAll: func, '(',  receiver name, ', ']
+		ifFalse: [receiver emitJSPointerArithmetic: type on: aStream level: level generator: aGenerator type: cType top: false.
+			aStream nextPutAll: ' + '].
+	aGenerator emitJSExpression: arguments first on: aStream.
+	top ifTrue: [aStream nextPutAll: ')'].! !
+
+!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:13:36'!
+isEqualityTest
+	^#(= == ~= ~~) includes: self selector! !
+
+!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:13:45'!
+isFloatIn: aCodeGen
+	selector precedence = 2 ifFalse: [^false].
+	^ (receiver isFloatIn: aCodeGen)
+		or: [arguments first isFloatIn: aCodeGen]! !
+
+!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:13:59'!
+isInterpreterProxyConstant
+	^#(nilObject trueObject falseObject) includes: self selector! !
+
+!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:14:07'!
+isLeafOrFunc
+	selector precedence = 2 ifTrue: [^false].
+	(#(and: or: bitAnd: bitOr: bitXor: bitShift:) includes: selector) ifTrue: [^false].
+	^true! !
+
+!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:14:21'!
+isPlusOne
+	^ self selector = #+ and: [self args first isConstant and: [self args first value = 1]]! !
+
+!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:14:28'!
+isTimesFour
+	^self args first isConstant and:
+		[(self selector = #* and: [self args first value = 4])
+		or: [self selector = #<< and: [self args first value = 2]]]! !
+
+!SlangTStmtListNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:15:03'!
+emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen
+
+	| statementWasComment |
+	statementWasComment := false.
+	statements
+		do:
+			[:s |
+			s emitJSCommentOn: aStream level: level.
+			s emitJSCodeAsArgumentOn: aStream level: 0 generator: aCodeGen.
+			statementWasComment := s is: #Comment]
+		separatedBy:
+			[((self endsWithCloseBracket: aStream)
+			  or: [statementWasComment]) ifFalse: [aStream nextPut: $,]]! !
+
+!SlangTStmtListNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:15:06'!
+emitJSCodeAsExpressionOn: aStream level: level generator: aCodeGen
+	^self emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen! !
+
+!SlangTStmtListNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:15:19'!
+emitJSCodeOn: aStream level: level generator: aCodeGen
+
+	self emitJSCommentOn: aStream level: level.
+	statements do: [:s |
+		s emitJSCommentOn: aStream level: level.
+		aStream tab: level.
+		s emitJSCodeOn: aStream level: level generator: aCodeGen.
+		(((self endsWithCloseBracket: aStream) not
+			and: [(s is: #Comment) not])
+				and: [s requiresCLineTerminator])
+			ifTrue: [aStream nextPut: $;].
+		aStream cr].
+! !
+
+!SlangTVariableNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:15:35'!
+emitJSCodeOn: aStream level: level generator: aCodeGen
+
+	name = 'nil'
+		ifTrue: [ aStream nextPutAll: (aCodeGen jsLiteralFor: nil) ]
+		ifFalse: [ aStream nextPutAll: (aCodeGen returnPrefixFromVariable: name) ].! !
+
+!SlangTVariableNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:15:44'!
+isBitBltPtr
+	^#('sourceBits' 'destBits') includes: self name! !
+
+!SlangTVariableNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:15:52'!
+isConstantNull
+	^ name = 'nil'! !
+
+!SlangTVariableNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:16:00'!
+isFloatIn: aCodeGen
+	| type |
+	type := aCodeGen typeOfVariable: name.
+	type isNil ifTrue: [^false].
+	(type includes: $*) ifTrue: [^false].
+	(type beginsWithAnyOf: #('register ' 'static ')) ifTrue: [type := type copyAfter: $ ].
+	(type beginsWithAnyOf: #('double ' 'float ')) ifTrue: [^true].
+	(type beginsWithAnyOf: #('int ' 'unsigned ' 'sqInt ' 'usqInt ' 'var ')) ifTrue: [^false].
+	self halt: 'need to handle ', type! !
 JSCodeGenerator initialize!
 JSMethod initialize!

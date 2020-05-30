@@ -9,6 +9,19 @@ authors at the end of the file.
 
 # Entries
 
+## 30th May 2020 (jpb)
+
+I added the vmmaker javascript methods for generating from the parse
+nodes the translated javascript code. I needed to get that stuff over
+early as of the danger that these two APIs diverge too strong from each
+other after my refactoring and I want to get javascript as early as
+possible in or else I have reproduced the state in the vmmaker again.
+
+What I have noticed in the VMMakerJS code is that it awfully reads
+like a bunch of hacks as it seems to have been copied from the 
+`CCodeGenerator` 1:1 and then was modified so that it somehow could
+generate JavaScript.
+
 ## 29th May 2020 (jpb)
 
 Removed the `stream cr` and replaced them with `stream newLine` which 

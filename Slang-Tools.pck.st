@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4112] on 29 May 2020 at 9:14:32 pm'!
+'From Cuis 5.0 [latest update: #4112] on 30 May 2020 at 12:28:42 pm'!
 'Description License: MIT'!
-!provides: 'Slang-Tools' 1 18!
+!provides: 'Slang-Tools' 1 19!
 SystemOrganization addCategory: #'Slang-Tools-Tests'!
 SystemOrganization addCategory: #'Slang-Tools'!
 

@@ -4,6 +4,15 @@ This file lists the history of changes made to the repository
 in a more wordy fashion of what this was about as an addition
 to descriptive commit messages.
 
+## Update 0.001d1
+
+Affected versions
+  Slang-Tools 1.19, Slang-JavaScript 1.13, Slang-Tools-Tests 1.2, Slang-PluginMaker 1.2
+
+Adds from the VMMakerJS the actual implementations of the translation parse nodes
+vmmaker-js implementations. For historical records. These methods were originally
+written by Bert Freudenberg.
+
 ## Update 0.001c
 
 Affected versions
