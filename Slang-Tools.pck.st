@@ -1,9 +1,19 @@
-'From Cuis 5.0 [latest update: #4112] on 30 May 2020 at 12:28:42 pm'!
+'From Cuis 5.0 [latest update: #4112] on 30 May 2020 at 10:44:50 pm'!
 'Description License: MIT'!
-!provides: 'Slang-Tools' 1 19!
+!provides: 'Slang-Tools' 1 20!
 SystemOrganization addCategory: #'Slang-Tools-Tests'!
 SystemOrganization addCategory: #'Slang-Tools'!
 
+
+!classDefinition: #SlangBrowser category: #'Slang-Tools'!
+Browser subclass: #SlangBrowser
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-Tools'!
+!classDefinition: 'SlangBrowser class' category: #'Slang-Tools'!
+SlangBrowser class
+	instanceVariableNames: ''!
 
 !classDefinition: #SlangCCodeGeneratorTest category: #'Slang-Tools-Tests'!
 TestCase subclass: #SlangCCodeGeneratorTest
@@ -346,6 +356,9 @@ SlangTVariableNode class
 	instanceVariableNames: ''!
 
 
+!SlangBrowser commentStamp: '<historical>' prior: 0!
+A codeprovider which supports in addition to the normal one translating it to installed Slang target languages!
+
 !SlangCCodeGeneratorTest commentStamp: '<historical>' prior: 0!
 I test the generic C code generator!
 
@@ -462,6 +475,73 @@ postCopy
 name
 
 	^name! !
+
+!SlangBrowser methodsFor: 'what to show' stamp: 'jpb 5/30/2020 21:57:41'!
+showCSource: aBoolean
+	aBoolean
+		ifTrue: [ self contentsSymbol: #slangCSource ]
+		ifFalse: [ self contentsSymbol: #source ]! !
+
+!SlangBrowser methodsFor: 'what to show' stamp: 'jpb 5/30/2020 21:55:07'!
+showingCSource
+	^self contentsSymbol == #slangCSource! !
+
+!SlangBrowser methodsFor: 'what to show' stamp: 'jpb 5/30/2020 21:53:52'!
+showingCSourceString
+	^ (self showingCSource 
+		ifTrue:
+			['<yes>']
+		ifFalse:
+			['<no>']), 'C source'! !
+
+!SlangBrowser methodsFor: 'what to show' stamp: 'jpb 5/30/2020 21:53:07'!
+toggleShowCSource
+	self showCSource: self showingCSource not! !
+
+!SlangBrowser methodsFor: 'controls' stamp: 'jpb 5/30/2020 21:51:06'!
+contentsSymbolQuints
+	| slangSymbolQuints |
+	slangSymbolQuints _ #(
+		(slangCSource				toggleShowCSource 			showingCSourceString
+		'translated to C'			'the code translated to C')
+	).
+	
+
+	^super contentsSymbolQuints , slangSymbolQuints! !
+
+!SlangBrowser methodsFor: 'as yet unclassified' stamp: 'jpb 5/30/2020 22:31:28'!
+findCodeGenerator
+	| cg |
+	cg _ SlangCCodeGenerator new initialize.
+	cg declareMethodsStatic: false.
+	cg permitMethodPruning: true.
+	cg prepareMethodsInlined: false doAssertions: true.
+	
+	^ cg! !
+
+!SlangBrowser methodsFor: 'as yet unclassified' stamp: 'jpb 5/30/2020 22:26:48'!
+selectedMessage
+	"Answer a copy of the source code for the selected message."
+	^self showingCSource
+		ifTrue: [ self translatedCSource ]
+		ifFalse: [ super selectedMessage ].! !
+
+!SlangBrowser methodsFor: 'as yet unclassified' stamp: 'jpb 5/30/2020 22:43:43'!
+translatedCSource
+	"Returns the C source of the selected class using Slang as generating"
+	 | selectedClass selector codeGenerator translatedSource methodNode |
+	selectedClass _ self selectedClassOrMetaClass.
+	
+	(selectedClass isNil or: [(selector _ self selectedMessageName) isNil]) ifTrue: [^ ''].
+	selectedClass compiledMethodAt: selector ifAbsent: [^ ''].
+	codeGenerator _ self findCodeGenerator.
+	
+	codeGenerator addClass: selectedClass.
+	methodNode _ codeGenerator methodNamed: selector.
+	translatedSource _ ReadWriteStream on: String new.
+	methodNode emitCCodeOn: translatedSource generator: codeGenerator.
+	
+	^translatedSource contents! !
 
 !SlangCCodeGeneratorTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/19/2020 16:01:41'!
 setUp
@@ -1839,6 +1919,10 @@ findBaseTypeForType: typeName
 	"Returns the base type for the given type. For example 'int' if it's a subtype of int"
 	^nil! !
 
+!SlangCTypeRepository methodsFor: 'as yet unclassified' stamp: 'jpb 5/30/2020 16:35:46'!
+findDefaultVariableDeclarationString
+	^'int '! !
+
 !SlangCTypeRepository methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 11:28:58'!
 findStructTargetKindForDeclaration: decl
 	"Returns the kind of a struct declaration or nil based on the given declaration"
@@ -2544,7 +2628,7 @@ emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag
 	self prepareMethodsInlined: inlineFlag doAssertions: assertionFlag.
 	^ self emitCCodeOn: aStream ! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/29/2020 20:51:48'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/30/2020 16:38:56'!
 emitCConstantsOn: aStream
 	"Store the global variable declarations on the given stream."
 	| unused constList node |
@@ -2554,7 +2638,10 @@ emitCConstantsOn: aStream
 			n isConstant ifTrue: [ unused remove: n name ifAbsent: []]]].
 	
 	constList _ constants keys reject: [ :any | unused includes: any].
-	aStream nextPutAll: '/*** Constants ***/'; newLine.
+	
+	constList size > 0 ifTrue: [
+		self emitCSectionHeader: 'Constants' on: aStream.
+	].
 		
 	constList asSortedCollection do: [ :varName |
 		node _ constants at: varName.
@@ -2581,28 +2668,21 @@ emitCExpression: aParseNode on: aStream
 			 aParseNode emitCCodeAsExpressionOn: aStream level: 0 generator: self.
 			 aStream nextPut: $)]! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/29/2020 20:48:34'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/30/2020 16:24:32'!
 emitCFunctionPrototypes: methodList on: aStream 
 	"Store prototype declarations for all non-inlined methods on the given stream."
-	| exporting |
-	aStream nextPutAll: '/*** Function Prototypes ***/'; newLine.
-	exporting _ false.
 	
-	methodList do: [:m | 
-		m export
-			ifTrue: [exporting
-					ifFalse: 
-						[aStream nextPutAll: '#pragma export on'; newLine.
-						exporting _ true]]
-			ifFalse: [exporting
-					ifTrue: 
-						[aStream nextPutAll: '#pragma export off'; newLine.
-						exporting _ false]].
-				
+	methodList size > 0 ifTrue: [
+		self emitCFunctionPrototypesSectionHeaderOn: aStream.
+	].
+
+	methodList do: [:m | 				
 		m emitCFunctionPrototype: aStream generator: self.
-		aStream nextPutAll: ';'; newLine ].
-	
-	exporting ifTrue: [aStream nextPutAll: '#pragma export off'; newLine ]! !
+		aStream nextPutAll: ';'; newLine ].! !
+
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/30/2020 16:23:35'!
+emitCFunctionPrototypesSectionHeaderOn: aStream
+	aStream nextPutAll: '/*** Function Prototypes ***/'; newLine.! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/29/2020 20:49:51'!
 emitCHeaderOn: aStream
@@ -2619,6 +2699,10 @@ emitCHeaderOn: aStream
 
 	aStream newLine.! !
 
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/30/2020 16:39:23'!
+emitCSectionHeader: header on: aStream
+	aStream nextPutAll: '/*** ' , header , ' ***/'; newLine.! !
+
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'dtl 11/9/2006 06:42'!
 emitCTestBlock: aBlockNode on: aStream
 	"Emit C code for the given block node to be used as a loop test."
@@ -2633,11 +2717,11 @@ emitCTestBlock: aBlockNode on: aStream
 emitCTypesOn: aStream 
 	"Store local type declarations on the given stream."! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/24/2020 20:11:49'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/30/2020 16:35:13'!
 emitCVariablesOn: aStream 
 	"Store the global variable declarations on the given stream."
 	| varString |
-	aStream nextPutAll: '/*** Variables ***/'; newLine.
+	variables size > 0 ifTrue: [ self emitCVariablesSectionHeaderOn: aStream ].
 	
 	variables asSortedCollection
 		do: [:var | 
@@ -2645,9 +2729,15 @@ emitCVariablesOn: aStream
 			(variableDeclarations includesKey: varString)
 				ifTrue: [aStream nextPutAll: (variableDeclarations at: varString) , ';'; newLine]
 				ifFalse: ["default variable declaration"
-					aStream nextPutAll: 'sqInt ' , varString , ';'; newLine]].
+					aStream nextPutAll: typeRepository findDefaultVariableDeclarationString , varString , ';'; newLine]].
 			
 	aStream newLine! !
+
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/30/2020 16:25:42'!
+emitCVariablesSectionHeaderOn: aStream 
+	"Emit the header comment for the variables section of a generated file"
+	aStream nextPutAll: '/*** Variables ***/'; newLine.
+	! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/29/2020 20:56:12'!
 emitExportsOn: aStream
@@ -2668,7 +2758,7 @@ void* vm_exports[][3] = {'.
 };
 '.! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'tpr 5/28/2013 20:02'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/30/2020 16:02:36'!
 emitHeaderFilesOn: aStream
 	"Write a header files onto the given stream. A special hack allows use of 
 	#ifdef THING
@@ -2680,7 +2770,7 @@ emitHeaderFilesOn: aStream
 	headerFiles do:[:hdr|
 		hdr first ~= $# ifTrue:
 			[aStream nextPutAll: '#include '].
-		aStream nextPutAll: hdr; cr].
+		aStream nextPutAll: hdr; newLine].
 ! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/19/2020 21:14:54'!
@@ -3246,6 +3336,16 @@ extractTypeFor: aVariable fromDeclaration: aVariableDeclaration
 	"Eliminate inessentials from aVariableDeclaration to answer a C type without the variable,
 	 or initializations etc"
 	^typeRepository findTypeFor: aVariable fromDeclaration: aVariableDeclaration! !
+
+!SlangCCodeGenerator methodsFor: 'C types lookup' stamp: 'jpb 5/30/2020 16:51:12'!
+findDefaultReturnTypeDeclarationString
+	"Returns the C type declaration string when no return type for functions was defined"
+	^typeRepository findDefaultVariableDeclarationString ! !
+
+!SlangCCodeGenerator methodsFor: 'C types lookup' stamp: 'jpb 5/30/2020 16:50:32'!
+findDefaultVariableDeclarationString
+	"Returns the C type declaration string when no type was defined"
+	^typeRepository findDefaultVariableDeclarationString ! !
 
 !SlangCCodeGenerator methodsFor: 'C types lookup' stamp: 'jpb 5/21/2020 09:56:57'!
 isPointerToStructVariableName: varName "<String>"
@@ -4665,21 +4765,15 @@ showProgressIn: collection label: progressLabel do: aBlock
 				collection withIndexDo: [ :item :itemIndex |
 					aBlock value: progress value: item value: itemIndex ] ]! !
 
-!SlangTMethod methodsFor: 'accessing' stamp: 'asf 9/29/2014 11:45'!
-argTypes
-	"Get the types of the parameters of this method"
-
-	^args collect: [ :a | self declarationAt: a ]! !
-
 !SlangTMethod methodsFor: 'accessing'!
 args
 	"The arguments of this method."
 
 	^args! !
 
-!SlangTMethod methodsFor: 'accessing' stamp: 'eem 3/3/2009 08:59'!
-declarationAt: aVariableName
-	^declarations at: aVariableName ifAbsent: [#sqInt, ' ', aVariableName]! !
+!SlangTMethod methodsFor: 'accessing' stamp: 'jpb 5/30/2020 17:00:58'!
+declarationAt: aVariableName ifAbsent: absentValue
+	^declarations at: aVariableName ifAbsent: absentValue! !
 
 !SlangTMethod methodsFor: 'accessing' stamp: 'eem 3/3/2009 08:42'!
 declarationAt: aVariableName  "<String>" put: aDeclaration "<String>" "^aDeclaration"
@@ -4705,9 +4799,13 @@ export
 	^ export
 ! !
 
-!SlangTMethod methodsFor: 'accessing' stamp: 'jm 11/24/1998 09:03'!
-globalStructureBuildMethodHasFoo
-	^globalStructureBuildMethodHasFoo! !
+!SlangTMethod methodsFor: 'accessing' stamp: 'jpb 5/30/2020 17:00:34'!
+findArgTypesWith: aCodeGen
+	"Get the types of the parameters of this method"
+	| default |
+	default _ aCodeGen findDefaultVariableDeclarationString.
+
+	^args collect: [ :a | self declarationAt: a ifAbsent: [ default ] ]! !
 
 !SlangTMethod methodsFor: 'accessing'!
 globalStructureBuildMethodHasFoo: number
@@ -6288,9 +6386,12 @@ emitCFunctionPrototype: aStream generator: aCodeGen
 			^self]].
 	self emitCFunctionPrototype: aStream generator: aCodeGen newlineBeforeName: false! !
 
-!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 5/29/2020 21:04:42'!
+!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 5/30/2020 17:02:36'!
 emitCFunctionPrototype: aStream generator: aCodeGen newlineBeforeName: newlineBeforeName "<Boolean>"
 	"Emit a C function header for this method onto the given stream."
+	| defaultDeclaration |
+	
+	defaultDeclaration _ aCodeGen findDefaultVariableDeclarationString.
 
 	export 
 		ifTrue:[aStream nextPutAll: 'EXPORT('; nextPutAll: returnType; nextPut: $)]
@@ -6312,33 +6413,27 @@ emitCFunctionPrototype: aStream generator: aCodeGen newlineBeforeName: newlineBe
 		ifTrue: [aStream nextPutAll: #void]
 		ifFalse:
 			[args
-				do: [:arg| aStream nextPutAll: (self declarationAt: arg)]
+				do: [:arg| aStream nextPutAll: (self declarationAt: arg ifAbsent: defaultDeclaration)]
 				separatedBy: [ aStream nextPutAll: ', ' ]].
 			
 	aStream nextPut: $)! !
 
-!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 5/29/2020 21:06:39'!
+!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 5/30/2020 16:56:04'!
 emitCHeaderOn: aStream generator: aCodeGen
 	"Emit a C function header for this method onto the given stream."
 
 	aStream newLine. 
 	self emitCFunctionPrototype: aStream generator: aCodeGen.
 	aStream nextPutAll: ' {'; newLine.
-	
-	self emitGlobalStructReferenceOn: aStream.
-	locals do: [ :var |
+
+	locals do: [ :var | |declaration|
 		aStream nextPutAll: '    '.
-		aStream nextPutAll: (declarations at: var ifAbsent: [ 'sqInt ', var]), ';'; newLine.
+		declaration _ (declarations at: var ifAbsent: [
+			aCodeGen findDefaultVariableDeclarationString , var]).
+		
+		aStream nextPutAll: declaration, ';'; newLine.
 	].
 	locals isEmpty ifFalse: [ aStream newLine ].! !
-
-!SlangTMethod methodsFor: 'C code generation'!
-emitGlobalStructReferenceOn: aStream
-	"Add a reference to the globals struct if needed"
-
-	(self globalStructureBuildMethodHasFoo > 1)
-		ifTrue: [aStream nextPutAll: 'register struct foo * foo = &fum;'; cr].
-! !
 
 !SlangTMethod methodsFor: 'C code generation' stamp: 'ikp 6/9/2004 16:15'!
 emitInlineOn: aStream level: level generator: aCodeGen
@@ -7705,7 +7800,7 @@ emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen
 emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen
 	^self emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen! !
 
-!SlangTSendNode methodsFor: 'C code generation' stamp: 'jpb 5/24/2020 20:11:05'!
+!SlangTSendNode methodsFor: 'C code generation' stamp: 'jpb 5/30/2020 16:59:01'!
 emitCCodeAsFunctionCallOn: aStream level: level generator: aCodeGen
 
 	"Translate this message send into a C function call"
@@ -7726,7 +7821,7 @@ emitCCodeAsFunctionCallOn: aStream level: level generator: aCodeGen
 			[aStream nextPutAll: ', ']].
 		
 	fn _ aCodeGen methodNamed: self selector.
-	fn notNil ifTrue: [ fnargtypes _ fn argTypes ].
+	fn notNil ifTrue: [ fnargtypes _ fn findArgTypesWith: aCodeGen ].
 	fnargtypes notNil ifTrue: [ fnargtypes size = arguments size ifFalse: [ fnargtypes _ nil ] ].
 	fnargtypes notNil ifTrue: [ fnargtypes _ fnargtypes collect: [ :a | aCodeGen declToType: a ]].
 	

@@ -1,6 +1,6 @@
-'From Cuis 5.0 [latest update: #4112] on 30 May 2020 at 12:28:44 pm'!
+'From Cuis 5.0 [latest update: #4112] on 30 May 2020 at 10:44:48 pm'!
 'Description License: MIT'!
-!provides: 'Slang-Javascript' 1 13!
+!provides: 'Slang-Javascript' 1 14!
 SystemOrganization addCategory: #'Slang-Javascript'!
 
 
@@ -2898,10 +2898,6 @@ export
 	^ export
 ! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'jm 11/24/1998 09:03'!
-globalStructureBuildMethodHasFoo
-	^globalStructureBuildMethodHasFoo! !
-
 !JSMethod methodsFor: 'accessing'!
 globalStructureBuildMethodHasFoo: number
 	globalStructureBuildMethodHasFoo _ number! !
@@ -4315,14 +4311,6 @@ replaceNodesIn: map
 !JSMethod methodsFor: 'JS code generation' stamp: 'bf 10/3/2014 17:33'!
 beOneBasedArray: varName
 	oneBasedArrays add: varName.
-! !
-
-!JSMethod methodsFor: 'JS code generation' stamp: 'bf 10/1/2014 13:47'!
-emitGlobalStructReferenceOn: aStream
-	"Add a reference to the globals struct if needed"
-
-	(self globalStructureBuildMethodHasFoo > 1)
-		ifTrue: [aStream nextPutAll: 'var foo = fum;'; cr].
 ! !
 
 !JSMethod methodsFor: 'JS code generation' stamp: 'ikp 6/9/2004 16:15'!

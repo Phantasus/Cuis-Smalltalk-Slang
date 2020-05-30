@@ -4,6 +4,15 @@ This file lists the history of changes made to the repository
 in a more wordy fashion of what this was about as an addition
 to descriptive commit messages.
 
+## Update 0.001d2
+
+Affected versions
+  Slang-Tools 1.20, Slang-JavaScript 1.14, Slang-Tools-Tests 1.2, Slang-PluginMaker 1.2
+
+Adds the SlangBrowser, a standard browser which can also translate methods to C
+using the SlangCCodegenerator.
+
+
 ## Update 0.001d1
 
 Affected versions

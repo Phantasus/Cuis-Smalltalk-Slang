@@ -22,6 +22,34 @@ like a bunch of hacks as it seems to have been copied from the
 `CCodeGenerator` 1:1 and then was modified so that it somehow could
 generate JavaScript.
 
+I read this post by David T. Lewis (dtl) on the cuis-dev mailinglist
+about a set of changes to the vmmaker to allow [browsing](https://lists.cuis.st/mailman/archives/cuis-dev/2020-May/001797.html). This inspired me to add to Slang the `SlangBrowser` as this is how
+Cuis expects to extend the `CodeProvider` where actually all the
+messages for showing the bytecodes, the source, the prettified source
+and so on are defined. So I needed to do a subclass of the subclass
+of it, which was `Browser`.
+
+And tada, here I get a preliminary result, it still needs a class which
+is a subclass of`SlangModule`as input as there is the only class on which
+the special method `prepareToBeAddedToCodeGenerator:` was defined. In
+VMMaker this method is bolted on the `Object` and I'm not a fan of this
+way of extending functionality by bolting arbitrary methods on objects,
+which in turn makes their interface cluttered. So let's see if I find
+a better way of adding Slang translations besides just subclassing
+`SlangModule`.
+
+Here is a picture of the SlangBrowser running, the window was created
+with the expression:
+
+```smalltalk
+BrowserWindow open: SlangBrowser new label: 'Slang'.
+```
+
+Result:
+
+![A special code browser showing the code of getModuleName as C source](Assets/slang_browser_20200530.png "Translated C Source")
+
+
 ## 29th May 2020 (jpb)
 
 Removed the `stream cr` and replaced them with `stream newLine` which 
