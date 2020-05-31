@@ -4,6 +4,14 @@ This file lists the history of changes made to the repository
 in a more wordy fashion of what this was about as an addition
 to descriptive commit messages.
 
+## Update 0.001e1
+
+Affected versions
+  Slang-Tools 1.21, Slang-JavaScript 1.16, Slang-Tools-Tests 1.2, Slang-PluginMaker 1.2
+
+Adds to SlangBrowser to translate to JavaScript and to the Slang-JavaScript package
+to print source without ending the basic constructs with CRs.
+
 ## Update 0.001d2
 
 Affected versions

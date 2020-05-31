@@ -9,6 +9,21 @@ authors at the end of the file.
 
 # Entries
 
+## 31th May 2020 (jpb)
+
+Today I found the time to finally a little bit adopt the code
+which merged in from the VMMakerJS package, which originally came
+from the SqueakJS project. And I fiddled with it and got the
+JavaScript translation barely working so that it produces output.
+
+And then I just added it to the `SlangBrowser` as a possible translation
+target in a way which produces output, but it's still not correctly setup
+to register it in an extendable fashion. I'm not a big fan of using
+categories to extend an existing tool.
+
+![A SlangBrowser window showing the code of getModuleName as JavaScript source](Assets/slang_browser_20200531.png "Translated JavaScript Source")
+
+
 ## 30th May 2020 (jpb)
 
 I added the vmmaker javascript methods for generating from the parse
