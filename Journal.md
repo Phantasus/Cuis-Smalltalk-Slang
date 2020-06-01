@@ -18,7 +18,7 @@ bang for buck in terms of userbase. To make a pragmatic choice on
 which languages are currently used and then generate to these target
 languages, to get a wide reach.
 
-![Githut: Java(1st), Go(2nd), Swift(3rd)](Assets/githut_20200531.png "Three Githut candidates")
+![Githut: Java(1st), Go(2nd), Swift(3rd)](Assets/githut_20200601.png "Three Githut candidates")
 
 Currently it seems if I or anybody invests time in building further
 code generators then it's best (at the time of writing) invested in
