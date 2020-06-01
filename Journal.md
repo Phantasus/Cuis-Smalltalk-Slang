@@ -26,6 +26,16 @@ building one for Java and then Swift. As Java is used on Android
 for App development and Swift is used on IOS (take that Apple for
 not allowing interpreter languages back in the beginnings).
 
+I splited the C translation into its own package and the basic functionality
+was put into Slang-Kernel. So that these things can be loaded independently,
+when someone just wants to translate a specifc project to JavaScript and
+then unloads it again afterwards. I'm not a big fan of over modularization,
+but I hope I'm not doing that by just breaking modules not on a namespace
+boundary but on a "functionality boundary". So put things in packages which
+make in combination sense. Maybe the tests should be just put into Slang-Tests
+as when you are testing you are normally using the whole stack. Something
+to ponder.
+
 
 ## 31st May 2020 (jpb)
 

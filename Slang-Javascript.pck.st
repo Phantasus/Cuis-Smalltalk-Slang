@@ -1,50 +1,53 @@
-'From Cuis 5.0 [latest update: #4112] on 30 May 2020 at 10:44:48 pm'!
-'Description License: MIT'!
-!provides: 'Slang-Javascript' 1 14!
-SystemOrganization addCategory: #'Slang-Javascript'!
+'From Cuis 5.0 [latest update: #4112] on 1 June 2020 at 12:45:34 pm'!
+'Description Converting Slang to JavaScript is achieved by this package.
+
+License: MIT'!
+!provides: 'Slang-Javascript' 1 18!
+!requires: 'Slang-Kernel' 1 0 nil!
+SystemOrganization addCategory: #'Slang-JavaScript'!
 
 
-!classDefinition: #JSCodeGenerator category: #'Slang-Javascript'!
-SlangCodeGenerator subclass: #JSCodeGenerator
+!classDefinition: #SlangJSCodeGenerator category: #'Slang-JavaScript'!
+SlangCodeGenerator subclass: #SlangJSCodeGenerator
 	instanceVariableNames: 'translationDict inlineList constants variables variableDeclarations scopeStack methods preparedMethodList variablesSetCache headerFiles globalVariableUsage useSymbolicConstants generateDeadCode doNotRemoveMethodList asArgumentTranslationDict receiverDict originClass currentMethod logger declareMethodsStatic permitMethodPruning pools abstractDeclarations uncheckedAbstractMethods cCodeTranslationDict oneBasedArrays typeRepository'
 	classVariableNames: 'IsActive UseRightShiftForDivide'
 	poolDictionaries: ''
-	category: 'Slang-Javascript'!
-!classDefinition: 'JSCodeGenerator class' category: #'Slang-Javascript'!
-JSCodeGenerator class
+	category: 'Slang-JavaScript'!
+!classDefinition: 'SlangJSCodeGenerator class' category: #'Slang-JavaScript'!
+SlangJSCodeGenerator class
 	instanceVariableNames: ''!
 
-!classDefinition: #JSMethod category: #'Slang-Javascript'!
-Object subclass: #JSMethod
+!classDefinition: #SlangJSMethod category: #'Slang-JavaScript'!
+Object subclass: #SlangJSMethod
 	instanceVariableNames: 'selector returnType args locals declarations primitive parseTree labels possibleSideEffectsCache complete export static sharedLabel sharedCase comment definingClass globalStructureBuildMethodHasFoo canAsmLabel mustAsmLabel properties cascadeVariableNumber extraVariableNumber oneBasedArrays'
 	classVariableNames: 'CaseStatements'
 	poolDictionaries: ''
-	category: 'Slang-Javascript'!
-!classDefinition: 'JSMethod class' category: #'Slang-Javascript'!
-JSMethod class
+	category: 'Slang-JavaScript'!
+!classDefinition: 'SlangJSMethod class' category: #'Slang-JavaScript'!
+SlangJSMethod class
 	instanceVariableNames: ''!
 
 
-!JSCodeGenerator commentStamp: 'bf 10/4/2014 13:42' prior: 0!
+!SlangJSCodeGenerator commentStamp: 'bf 10/4/2014 13:42' prior: 0!
 This class is a copy of CCodeGenerator hacked to generate JavaScript instead of C for use with the SqueakJS virtual machine.
 
 C and JS semantics are pretty close except for pointers, types, and divide/modulo/shift operations. !
 
-!JSMethod commentStamp: 'bf 10/3/2014 04:14' prior: 0!
+!SlangJSMethod commentStamp: 'bf 10/3/2014 04:14' prior: 0!
 A JSMethod is a translation method, representing a MethodNode that is to be translated to JavaScript source. It has a parseTree of translation nodes that mirrors the parse tree of the corresponding Smalltalk method.!
 
-!JSMethod methodsFor: 'accessing' stamp: 'hg 8/14/2000 15:57'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'hg 8/14/2000 15:57'!
 comment: aComment
 
 	comment _ aComment ! !
 
-!JSMethod methodsFor: 'printing' stamp: 'TPR 3/2/2000 18:36'!
+!SlangJSMethod methodsFor: 'printing' stamp: 'TPR 3/2/2000 18:36'!
 printOn: aStream
 
 	super printOn: aStream.
 	aStream nextPutAll: ' (', selector, ')'.! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'TPR 3/2/2000 11:22'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'TPR 3/2/2000 11:22'!
 addAllClassVarsFor: aClass
 	"Add the class variables for the given class (and its superclasses) to the code base as constants."
 
@@ -53,7 +56,7 @@ addAllClassVarsFor: aClass
 	allClasses do: [:c | self addClassVarsFor: c].
 ! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/19/2020 15:59:56'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/19/2020 15:59:56'!
 addClass: aClass
 	"Add the variables and methods of the given class to the code base."
 
@@ -81,7 +84,7 @@ addClass: aClass
 		
 	aClass declareVarsIn: self! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/21/2020 00:01:05'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/21/2020 00:01:05'!
 addClassVarsFor: aClass
 	"Add the class variables for the given class to the code base as constants."
 	| val node |
@@ -93,12 +96,12 @@ addClassVarsFor: aClass
 		constants at: assoc key asString put: node].
 ! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'ar 2/14/1999 01:08'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'ar 2/14/1999 01:08'!
 addHeaderFile: aString
 	"Add a header file. The argument must be a quoted string!!"
 	headerFiles addLast: aString.! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'bf 10/14/2014 15:45'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 6/1/2020 12:11:30'!
 addMethodsForPrimitives: classAndSelectorList 
 	| sel aClass source verbose meth primInstVars sharedInstVars assignedInstVars |
 	classAndSelectorList do:[:classAndSelector | 
@@ -122,7 +125,7 @@ addMethodsForPrimitives: classAndSelectorList
 						parse: source
 						in: aClass
 						notifying: nil)
-						asTranslationMethodOfClass: self translationMethodClass.
+						asSlangTranslationMethodOfClass: self translationMethodClass.
 
 			(aClass includesSelector: sel)
 				ifTrue: [meth definingClass: aClass]
@@ -179,7 +182,7 @@ addMethodsForPrimitives: classAndSelectorList
 		m locals addAll: (m freeVariableReferences difference: sharedInstVars)].
 	! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/21/2020 00:01:15'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/21/2020 00:01:15'!
 addPoolVarsFor: aClass 
 	"Add the pool variables for the given class to the code base as constants."
 
@@ -193,7 +196,7 @@ addPoolVarsFor: aClass
 						ifFalse:[SlangTConstantNode new setValue: assoc value].
 			constants at: assoc key asString put: node]].! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'ikp 9/26/97 14:48'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'ikp 9/26/97 14:48'!
 codeString
 	"Return a string containing all the C code for the code base. Used for testing."
 
@@ -202,18 +205,18 @@ codeString
 	self emitJSCodeOn: stream doInlining: true doAssertions: true.
 	^stream contents! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'eem 2/11/2009 08:52'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'eem 2/11/2009 08:52'!
 declareVar: varName type: type
 	"This both creates a varable and provides its type"
 	self var: (variables add: varName asString) type: type! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'dtl 2/5/2007 07:45'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'dtl 2/5/2007 07:45'!
 exportedPrimitiveNames
 	"Return an array of all exported primitives"
 	^methods select:[:m| m export] thenCollect:[:m| m selectorForCodeGeneration copyWithout: $:].
 ! !
 
-!JSCodeGenerator methodsFor: 'public'!
+!SlangJSCodeGenerator methodsFor: 'public'!
 globalsAsSet
 	"Used by the inliner to avoid name clashes with global variables."
 
@@ -223,12 +226,14 @@ globalsAsSet
 	].
 	^ variablesSetCache! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'bf 10/6/2014 23:48'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'bf 10/6/2014 23:48'!
 ignoredMethods
 	^#()! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/28/2020 16:23:25'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/31/2020 14:23:26'!
 initialize
+	super initialize.
+
 	translationDict _ Dictionary new.
 	inlineList _ Array new.
 	constants _ Dictionary new: 100.
@@ -236,7 +241,7 @@ initialize
 	variables _ OrderedCollection new: 100.
 	variableDeclarations _ Dictionary new: 100.
 	methods _ Dictionary new: 500.
-	
+
 	typeRepository _ SlangCTypeRepository new.
 	
 	self initializeTranslationDictionary.
@@ -244,24 +249,26 @@ initialize
 	receiverDict _ Dictionary new.
 	headerFiles _ OrderedCollection new.
 	globalVariableUsage _ Dictionary new.
+	
 	useSymbolicConstants _ true.
 	scopeStack _ OrderedCollection new.
 	pools _ IdentitySet new.
+	
 	abstractDeclarations _ IdentitySet new.
 	uncheckedAbstractMethods _ OrderedCollection new.
 ! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'JMM 11/28/2002 11:52'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'JMM 11/28/2002 11:52'!
 isGlobalStructureBuild
 	^false! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'bf 10/1/2014 16:30'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'bf 10/1/2014 16:30'!
 storeCodeOnFile: fileName doInlining: inlineFlag
 	"Store JS code for this code base on the given file."
 
 	self storeCodeOnFile: fileName doInlining: inlineFlag doAssertions: true! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/20/2020 23:38:31'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/20/2020 23:38:31'!
 storeCodeOnFile: fileName doInlining: inlineFlag doAssertions: assertionFlag
 	"Store JS code for this code base on the given file."
 
@@ -271,7 +278,7 @@ storeCodeOnFile: fileName doInlining: inlineFlag doAssertions: assertionFlag
 		self emitJSCodeOn: stream doInlining: inlineFlag doAssertions: assertionFlag.
 	] ensure: [stream close]! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'eem 7/16/2009 14:07'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'eem 7/16/2009 14:07'!
 var: varName declareC: declarationString
 	"Record the given C declaration for a global variable."
 
@@ -279,12 +286,12 @@ var: varName declareC: declarationString
 		[self error: 'declaration omits variable name.  probably an error.  use e.g. var:type:'].
 	variableDeclarations at: varName asString put: declarationString.! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/16/2020 23:14:25'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/16/2020 23:14:25'!
 var: varName type: type
 "Use this in preference to #var:declareC: whenver possible since it avoids typing the varname twice and thus avoids the potential for a typo. See also #var:type:array:"
 	self var: varName declare: type , ' ' , varName! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'bf 10/5/2014 15:30'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'bf 10/5/2014 15:30'!
 var: varName type: type array: array
 "use this in preference to #var:declareC: when possible. This produces a JS statment of the form
 var fooArray = [1,2,3]
@@ -299,17 +306,17 @@ See also #var:type: for simple var decls"
 			self printArray: array on: s.
 			s nextPut: $]])! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/19/2020 15:59:56'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/19/2020 15:59:56'!
 vmClass
 	"Answer the interpreter classs if any.  This is nil other than for the core VM."
 	^originClass! !
 
-!JSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/19/2020 15:59:56'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/19/2020 15:59:56'!
 vmClass: aClass
 	"Set the interpreter class if any.  This is nil other than for the core VM."
 	originClass _ aClass! !
 
-!JSCodeGenerator methodsFor: 'composition' stamp: 'dtl 1/25/2012 05:18'!
+!SlangJSCodeGenerator methodsFor: 'composition' stamp: 'dtl 1/25/2012 05:18'!
 addClass: aClass selectorPrefix: prefix
 	"Incorporate the methods of aClass, and rename with prefixes reflecting the
 	variable name. This is a simple transformation intended to support MemoryAccess,
@@ -321,7 +328,7 @@ addClass: aClass selectorPrefix: prefix
 			as: (prefix, '_', sel) asSymbol].
 ! !
 
-!JSCodeGenerator methodsFor: 'composition' stamp: 'dtl 4/11/2012 21:28'!
+!SlangJSCodeGenerator methodsFor: 'composition' stamp: 'dtl 4/11/2012 21:28'!
 addClass: aClass upTo: aSuperclass asInstanceVariable: varName
 	"For an instance variable var in one of the classes that has been added to
 	this code generator, assume that an instance of aClass would normally be
@@ -339,7 +346,7 @@ addClass: aClass upTo: aSuperclass asInstanceVariable: varName
 				cls _ cls superclass]
 ! !
 
-!JSCodeGenerator methodsFor: 'composition' stamp: 'dtl 4/11/2012 18:52'!
+!SlangJSCodeGenerator methodsFor: 'composition' stamp: 'dtl 4/11/2012 18:52'!
 mapVar: instanceVarName asInstanceOf: aClass to: newName
 	"A class that has been added to this code generator has an instance variable
 	instanceVarName that should point to an instance of aClass. Treat sends to
@@ -355,7 +362,7 @@ mapVar: instanceVarName asInstanceOf: aClass to: newName
 			variables remove: instanceVarName ifAbsent: [] ]
 ! !
 
-!JSCodeGenerator methodsFor: 'composition' stamp: 'dtl 8/20/2011 14:32'!
+!SlangJSCodeGenerator methodsFor: 'composition' stamp: 'dtl 8/20/2011 14:32'!
 renameSelector: selectorName as: newSelectorName
 	"Rename selectors such that generated code will use the newSelectorName. This
 	is intended to allow methods that may have default implementations in the support
@@ -373,7 +380,7 @@ renameSelector: selectorName as: newSelectorName
 	methods removeKey: selectorName
 ! !
 
-!JSCodeGenerator methodsFor: 'utilities'!
+!SlangJSCodeGenerator methodsFor: 'utilities'!
 addMethod: aJSMethod
 	"Add the given method to the code base."
 
@@ -382,7 +389,7 @@ addMethod: aJSMethod
 	].
 	methods at: aJSMethod selector put: aJSMethod.! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/28/2020 17:08:12'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/28/2020 17:08:12'!
 addMethodFor: aClass selector: selector
 	"Add the given method to the code base and answer its translation
 	 or nil if it shouldn't be translated."
@@ -402,11 +409,11 @@ addMethodFor: aClass selector: selector
 	
 	^tmethod! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'eem 2/12/2009 13:44'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'eem 2/12/2009 13:44'!
 checkDeleteVariable: aName
 	"Hook for debugging variable deletion."! !
 
-!JSCodeGenerator methodsFor: 'utilities'!
+!SlangJSCodeGenerator methodsFor: 'utilities'!
 checkForGlobalUsage: vars in: aJSMethod 
 	| item |
 	vars
@@ -423,17 +430,14 @@ checkForGlobalUsage: vars in: aJSMethod
 					item add: aJSMethod selector]].
 	aJSMethod referencesGlobalStructMakeZero! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'eem 2/12/2009 10:50'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 6/1/2020 12:11:30'!
 compileToJSMethodSelector: selector in: aClass
 	"Compile a method to a JSMethod"
 
-	^(Compiler new
-		parse: (aClass sourceCodeAt: selector)
-		in: aClass
-		notifying: nil)
-			asTranslationMethodOfClass: self translationMethodClass! !
+	^(systemAdapter parseSelector: selector in: aClass)
+		asSlangTranslationMethodOfClass: self translationMethodClass! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: '2/7/08 14:57'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: '2/7/08 14:57'!
 emitBuiltinConstructAsArgumentFor: msgNode on: aStream level: level
 	"If the given selector is in the translation dictionary, translate it into a target code construct and return true. Otherwise, do nothing and return false."
 
@@ -444,7 +448,7 @@ emitBuiltinConstructAsArgumentFor: msgNode on: aStream level: level
 	self perform: action with: msgNode with: aStream with: level.
 	^true! !
 
-!JSCodeGenerator methodsFor: 'utilities'!
+!SlangJSCodeGenerator methodsFor: 'utilities'!
 emitBuiltinConstructFor: msgNode on: aStream level: level
 	"If the given selector is in the translation dictionary, translate it into a target code construct and return true. Otherwise, do nothing and return false."
 
@@ -453,7 +457,7 @@ emitBuiltinConstructFor: msgNode on: aStream level: level
 	self perform: action with: msgNode with: aStream with: level.
 	^true! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/20/2020 21:52:16'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/20/2020 21:52:16'!
 findCodeForMethod: selector
 	"Answer a string containing the C code for the given method."
 	"Example:
@@ -468,13 +472,13 @@ findCodeForMethod: selector
 	m emitJSCodeOn: s generator: self.
 	^ s contents! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'eem 7/19/2013 10:32'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'eem 7/19/2013 10:32'!
 isBuiltinSelector: sel
 	"Answer true if the given selector is one of the builtin selectors."
 
 	^(self isKernelSelector: sel) or: [translationDict includesKey: sel]! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/21/2020 11:19:55'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/21/2020 11:19:55'!
 isKernelSelector: sel
 	"Answer true if the given selector is one of the kernel selectors that are implemented as macros."
 
@@ -493,7 +497,7 @@ isKernelSelector: sel
 		 coerce:to: coerceSimple:to:)
 			includes: sel)! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/28/2020 19:09:17'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/28/2020 19:09:17'!
 localizeGlobalVariables
 	| candidates procedure |
 	self flag: #fixme.
@@ -513,7 +517,7 @@ localizeGlobalVariables
 				procedure declarations at: key put: v.
 				variableDeclarations removeKey: key]]].! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'dtl 7/3/2008 12:16'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'dtl 7/3/2008 12:16'!
 memoryAccessSelectors
 	"Answer the selectors used for low level memory access. These are traditionally
 	implemented as C preprocessor macros (or static inlined functions) in the external
@@ -528,13 +532,13 @@ memoryAccessSelectors
 		#intAtPointer: . #intAtPointer:put: .
 		#longAtPointer: . #longAtPointer:put: }! !
 
-!JSCodeGenerator methodsFor: 'utilities'!
+!SlangJSCodeGenerator methodsFor: 'utilities'!
 methodNamed: selector
 	"Answer the method in the code base with the given selector."
 
 	^ methods at: selector ifAbsent: [ nil ]! !
 
-!JSCodeGenerator methodsFor: 'utilities'!
+!SlangJSCodeGenerator methodsFor: 'utilities'!
 methodsReferringToGlobal: v
 	"Return a collection of methods that refer to the given global variable."
 
@@ -547,7 +551,7 @@ methodsReferringToGlobal: v
 	].
 	^ out! !
 
-!JSCodeGenerator methodsFor: 'utilities'!
+!SlangJSCodeGenerator methodsFor: 'utilities'!
 methodsThatCanInvoke: aSelectorList
 	"Return a set of methods that can invoke one of the given selectors, either directly or via a sequence of intermediate methods."
 
@@ -570,7 +574,7 @@ methodsThatCanInvoke: aSelectorList
 	^ out
 	! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/20/2020 22:49:14'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/20/2020 22:49:14'!
 nilOrBooleanConstantReceiverOf: sendNode
 	"Answer nil or the boolean constant that is the receiver of the given message send. Used to suppress conditional code when the condition is a translation-time constant."
 
@@ -582,7 +586,7 @@ nilOrBooleanConstantReceiverOf: sendNode
 	^ nil
 ! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'dtl 1/22/2012 14:34'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'dtl 1/22/2012 14:34'!
 prepareMethods
 	"Prepare methods for browsing."
 
@@ -603,12 +607,12 @@ prepareMethods
 		m prepareMethodIn: self.
 	].! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'eem 4/17/2009 14:40'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'eem 4/17/2009 14:40'!
 removeMethodForSelector: aSelector
 	"Remove the given method from the code base"
 	methods removeKey:  aSelector ifAbsent: []! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/28/2020 18:52:30'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/28/2020 18:52:30'!
 removeVariable: aName
 	"Remove the given (instance) variable from the code base."
 	self checkDeleteVariable: aName.
@@ -626,7 +630,7 @@ removeVariable: aName
 			
 	variableDeclarations removeKey: aName ifAbsent: []! !
 
-!JSCodeGenerator methodsFor: 'utilities'!
+!SlangJSCodeGenerator methodsFor: 'utilities'!
 reportRecursiveMethods
 	"Report in transcript all methods that can call themselves directly or indirectly or via a chain of N intermediate methods."
 
@@ -652,7 +656,7 @@ reportRecursiveMethods
 		].
 	].! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'bf 10/7/2014 00:06'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'bf 10/7/2014 00:06'!
 returnPrefixFromVariable: aName
 	aName = 'class'
 		ifTrue: [^'sq_class'].
@@ -660,19 +664,19 @@ returnPrefixFromVariable: aName
 		ifTrue: [^'in_'].
 	^aName! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'eem 5/20/2010 20:46'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'eem 5/20/2010 20:46'!
 sortMethods: aJSMethodCollection
 	"We need to define this since different Squeak versions answer different results
 	 for asSortedCollection and if sort order changes, generated code changes too."
 	^aJSMethodCollection asSortedCollection:
 		[:a :b| a selector caseSensitiveLessOrEqual: b selector]! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'bf 9/30/2014 22:38'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/31/2020 07:42:22'!
 translationMethodClass
 	"return the class used to produce JS translation methods from MethodNodes"
-	^JSMethod! !
+	^SlangJSMethod! !
 
-!JSCodeGenerator methodsFor: 'utilities' stamp: 'ar 7/17/1999 15:06'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'ar 7/17/1999 15:06'!
 unreachableMethods
 	"Return a collection of methods that are never invoked."
 
@@ -689,7 +693,7 @@ unreachableMethods
 	].
 	^ out! !
 
-!JSCodeGenerator methodsFor: 'error notification' stamp: 'dtl 6/17/2012 23:05'!
+!SlangJSCodeGenerator methodsFor: 'error notification' stamp: 'dtl 6/17/2012 23:05'!
 checkAbstractMethods
 	"For each method that has been declared abstract, ensure that a concrete
 	implementation has been provided. This check should be performed prior to
@@ -702,7 +706,7 @@ checkAbstractMethods
 			ifFalse: [self notify: 'missing implementation for ', sel]]
 ! !
 
-!JSCodeGenerator methodsFor: 'error notification' stamp: 'jpb 5/21/2020 11:09:54'!
+!SlangJSCodeGenerator methodsFor: 'error notification' stamp: 'jpb 5/21/2020 11:09:54'!
 checkClassForNameConflicts: aClass
 	"Verify that the given class does not have constant, variable, or method names that conflict with
 	 those of previously added classes. Raise an error if a conflict is found, otherwise just return."
@@ -730,7 +734,7 @@ checkClassForNameConflicts: aClass
 			meth isAbstract not and: [(meth pragmaAt: #doNotGenerate) isNil]]) ifTrue:
 				[self error: 'Method ', sel, ' was defined in a previously added class.']]! !
 
-!JSCodeGenerator methodsFor: 'error notification'!
+!SlangJSCodeGenerator methodsFor: 'error notification'!
 printUnboundCallWarnings
 	"Print a warning message for every unbound method call in the code base."
 
@@ -757,7 +761,7 @@ printUnboundCallWarnings
 		].
 	].! !
 
-!JSCodeGenerator methodsFor: 'error notification'!
+!SlangJSCodeGenerator methodsFor: 'error notification'!
 printUnboundVariableReferenceWarnings
 	"Print a warning message for every unbound variable reference in the code base."
 
@@ -786,12 +790,12 @@ printUnboundVariableReferenceWarnings
 		].
 	].! !
 
-!JSCodeGenerator methodsFor: 'private' stamp: 'bf 11/12/2014 11:01'!
+!SlangJSCodeGenerator methodsFor: 'private' stamp: 'bf 11/12/2014 11:01'!
 checkNonPointer: node op: op
 	self ifPointerVar: node then: [:type |
 		self halt: 'cannot do ', op, ' with ', type]! !
 
-!JSCodeGenerator methodsFor: 'private' stamp: 'jpb 5/28/2020 17:51:24'!
+!SlangJSCodeGenerator methodsFor: 'private' stamp: 'jpb 5/28/2020 17:51:24'!
 ifPointerVar: node then: aBlock
 	(node isSend and: [node selector = #+]) ifTrue: [
 		^self ifPointerVar: node receiver then: aBlock].
@@ -801,12 +805,12 @@ ifPointerVar: node then: aBlock
 			(type includes: $*) ifTrue: [aBlock value: type]]].
 ! !
 
-!JSCodeGenerator methodsFor: 'private' stamp: 'bf 11/12/2014 11:03'!
+!SlangJSCodeGenerator methodsFor: 'private' stamp: 'bf 11/12/2014 11:03'!
 isPointer: node
 	self ifPointerVar: node then: [:type | ^true].
 	^false! !
 
-!JSCodeGenerator methodsFor: 'private' stamp: 'sma 3/3/2000 12:08'!
+!SlangJSCodeGenerator methodsFor: 'private' stamp: 'sma 3/3/2000 12:08'!
 printArray: array on: aStream
 	| first |
 	first _ true.
@@ -818,12 +822,12 @@ printArray: array on: aStream
 		i \\ 16 = 1 ifTrue: [aStream cr].
 		self printInt: (array at: i) on: aStream]! !
 
-!JSCodeGenerator methodsFor: 'private' stamp: 'bf 10/5/2014 15:31'!
+!SlangJSCodeGenerator methodsFor: 'private' stamp: 'bf 10/5/2014 15:31'!
 printInt: int on: aStream
 	aStream print: int.
 ! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/27/2020 21:02:18'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/27/2020 21:02:18'!
 collectInlineList
 	"Make a list of methods that should be inlined."
 	"Details: The method must not include any inline C, since the translator cannot
@@ -888,7 +892,7 @@ not]) ifTrue: [
 		].
 	].! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/24/2020 10:35:16'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/24/2020 10:35:16'!
 doBasicInlining: inlineFlag
 	"Inline the bodies of all methods that are suitable for inlining.
 	This method does only the basic inlining suitable for both the core VM and plugins - no bytecode inlining etc"
@@ -898,7 +902,7 @@ doBasicInlining: inlineFlag
 	self tryMethodInliningWithProgressNotification.
 ! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'dtl 8/21/2011 21:12'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'dtl 8/21/2011 21:12'!
 doInlining: inlineFlag
 	"Inline the bodies of all methods that are suitable for inlining."
 	"Modified slightly for the core VM translator, since the first level of inlining for the interpret loop must be performed in order that the instruction implementations can easily discover their addresses. Remember to inline the bytecode routines as well"
@@ -923,13 +927,13 @@ doInlining: inlineFlag
 		ifTrue: [self pruneUnreachableMethods]
 ! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'dtl 6/21/2008 12:54'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'dtl 6/21/2008 12:54'!
 inlineCaseStatementBranchesInMethodNamed: selector localizingVars: varsList 
 	"Inline case statement branches in the method with the given name."
 	(self methodNamed: selector)
 		ifNotNilDo: [:m | m inlineCaseStatementBranchesIn: self localizingVars: varsList]! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'ar 7/8/2003 11:27'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'ar 7/8/2003 11:27'!
 inlineDispatchesInMethodNamed: selector localizingVars: varsList
 	"Inline dispatches (case statements) in the method with the given name."
 
@@ -954,17 +958,17 @@ inlineDispatchesInMethodNamed: selector localizingVars: varsList
 	].
 ! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'eem 7/30/2013 16:26'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'eem 7/30/2013 16:26'!
 isAssertSelector: selector
 	^#(assert: asserta: assert:l: asserta:l:) includes: selector! !
 
-!JSCodeGenerator methodsFor: 'inlining'!
+!SlangJSCodeGenerator methodsFor: 'inlining'!
 mayInline: sel
 	"Answer true if the method with the given selector may be inlined."
 
 	^ inlineList includes: sel! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/27/2020 21:16:27'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/27/2020 21:16:27'!
 methodStatsString
 	"Return a string describing the size, # of locals, and # of senders of
 each method. Note methods that have inline C code or C declarations."
@@ -1016,12 +1020,12 @@ calls registers selr m |
 	].
 	^ s contents! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'ar 2/3/2001 17:08'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'ar 2/3/2001 17:08'!
 pruneMethods: selectorList
 	"Explicitly prune some methods"
 	selectorList do:[:sel| methods removeKey: sel ifAbsent:[]].! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'tpr 3/2/2004 11:09'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'tpr 3/2/2004 11:09'!
 pruneUnreachableMethods
 	"Remove any methods that are not reachable. Retain methods needed by the translated classes - see implementors of requiredMethodNames"
  	
@@ -1037,7 +1041,7 @@ pruneUnreachableMethods
 		methods at: sel ifPresent:[:meth| newMethods at: sel put: meth]].
 	methods _ newMethods! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/28/2020 17:41:15'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/28/2020 17:41:15'!
 removeAssertions
 	"Remove all assertions in method bodies.  This is for the benefit of inlining, which
 	fails to recognise and disregard empty method bodies when checking the inlinability
@@ -1056,7 +1060,7 @@ removeAssertions
 		
 	methods _ newMethods.! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'dtl 6/21/2008 09:21'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'dtl 6/21/2008 09:21'!
 removeMethodsReferingToGlobals: varList except: methodNames
 	"Remove any methods (presumably inlined) that still contain references to the given obsolete global variables."
 
@@ -1068,14 +1072,14 @@ removeMethodsReferingToGlobals: varList except: methodNames
 				ifTrue: [methods removeKey: sel ifAbsent: []]]
 ! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'tpr 2/27/2004 18:49'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'tpr 2/27/2004 18:49'!
 retainMethods: aListOfMethodsToKeep
 "add aListOfMethodsToKeep to doNotRemoveMethodList so that they will not be pruned"
 	doNotRemoveMethodList ifNil:[doNotRemoveMethodList _ Set new:100].
 	doNotRemoveMethodList addAll: aListOfMethodsToKeep.
 	^aListOfMethodsToKeep! !
 
-!JSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/24/2020 10:34:44'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 5/24/2020 10:34:44'!
 tryMethodInliningWithProgressNotification
 	| pass max progress |
 	pass _ 0.
@@ -1098,38 +1102,38 @@ tryMethodInliningWithProgressNotification
 							ifTrue: [progress _ true]]]].
 ! !
 
-!JSCodeGenerator methodsFor: 'accessing' stamp: 'eem 7/2/2008 16:01'!
+!SlangJSCodeGenerator methodsFor: 'accessing' stamp: 'eem 7/2/2008 16:01'!
 currentMethod
 	^currentMethod! !
 
-!JSCodeGenerator methodsFor: 'accessing' stamp: 'eem 7/2/2008 16:01'!
+!SlangJSCodeGenerator methodsFor: 'accessing' stamp: 'eem 7/2/2008 16:01'!
 currentMethod: aJSMethod
 	currentMethod _ aJSMethod! !
 
-!JSCodeGenerator methodsFor: 'accessing' stamp: 'dtl 8/21/2011 17:25'!
+!SlangJSCodeGenerator methodsFor: 'accessing' stamp: 'dtl 8/21/2011 17:25'!
 declareMethodsStatic
 	"If true generated methods will be declared static. Default is true,
 	appropriate for plugins."
 	^ declareMethodsStatic
 		ifNil: [declareMethodsStatic _ true]! !
 
-!JSCodeGenerator methodsFor: 'accessing' stamp: 'dtl 8/21/2011 17:26'!
+!SlangJSCodeGenerator methodsFor: 'accessing' stamp: 'dtl 8/21/2011 17:26'!
 declareMethodsStatic: aBoolean
 	"If set false, generated methods will be not declared static.
 	Default value is true."
 	declareMethodsStatic _ aBoolean! !
 
-!JSCodeGenerator methodsFor: 'accessing' stamp: 'dtl 8/21/2011 18:54'!
+!SlangJSCodeGenerator methodsFor: 'accessing' stamp: 'dtl 8/21/2011 18:54'!
 permitMethodPruning
 	"If false, pruning unreferenced methods will be disabled"
 	^ permitMethodPruning ~= false! !
 
-!JSCodeGenerator methodsFor: 'accessing' stamp: 'dtl 8/21/2011 18:53'!
+!SlangJSCodeGenerator methodsFor: 'accessing' stamp: 'dtl 8/21/2011 18:53'!
 permitMethodPruning: aBoolean
 	"If false, pruning unreferenced methods will be disabled"
 	permitMethodPruning _ aBoolean! !
 
-!JSCodeGenerator methodsFor: 'accessing' stamp: 'dtl 6/17/2012 23:01'!
+!SlangJSCodeGenerator methodsFor: 'accessing' stamp: 'dtl 6/17/2012 23:01'!
 uncheckedAbstractMethods
 	"Answer the selectors for methods that should not be checked to ensure existence
 	of concrete implementations, such as methods that are generated directly by the
@@ -1139,17 +1143,17 @@ uncheckedAbstractMethods
 
 ! !
 
-!JSCodeGenerator methodsFor: 'accessing' stamp: 'ar 7/8/2003 11:23'!
+!SlangJSCodeGenerator methodsFor: 'accessing' stamp: 'ar 7/8/2003 11:23'!
 useSymbolicConstants
 	"Answer whether we should generate symbolic constants instead of their actual values"
 	^useSymbolicConstants! !
 
-!JSCodeGenerator methodsFor: 'accessing' stamp: 'ar 7/8/2003 11:23'!
+!SlangJSCodeGenerator methodsFor: 'accessing' stamp: 'ar 7/8/2003 11:23'!
 useSymbolicConstants: aBool
 	"Indicate whether we should generate symbolic constants instead of their actual values"
 	useSymbolicConstants _ aBool! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/29/2020 20:56:05'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/29/2020 20:56:05'!
 emitExportsOn: aStream
 	"Store all the exported primitives in a form to be used by the internal named prim system"
 	aStream nextPutAll:'
@@ -1168,7 +1172,7 @@ void* vm_exports[][3] = {'.
 };
 '.! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/26/2020 21:53:46'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/26/2020 21:53:46'!
 emitJSCodeOn: aStream 
 	"Emit C code for all methods in the code base onto the given stream. All inlined method calls should already have been expanded."
 
@@ -1186,14 +1190,14 @@ emitJSCodeOn: aStream
 	self emitExportsOn: aStream.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/26/2020 21:53:46'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/26/2020 21:53:46'!
 emitJSCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag
 	"Emit C code for all methods in the code base onto the given stream. All inlined method calls should already have been expanded."
 
 	self prepareMethodsInlined: inlineFlag doAssertions: assertionFlag.
 	^ self emitJSCodeOn: aStream ! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/6/2014 15:40'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/6/2014 15:40'!
 emitJSConstantsOn: aStream
 	"Store the global variable declarations on the given stream."
 	| unused constList node |
@@ -1218,7 +1222,7 @@ emitJSConstantsOn: aStream
 	].
 	aStream cr.! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 11/3/2014 13:22'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 11/3/2014 13:22'!
 emitJSExpression: aParseNode on: aStream 
 	"Emit C code for the expression described by the given parse node."
 
@@ -1231,11 +1235,10 @@ emitJSExpression: aParseNode on: aStream
 			 aParseNode emitJSCodeAsExpressionOn: aStream level: 0 generator: self.
 			 aStream nextPut: $)]! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/6/2014 15:34'!
-emitJSHeaderOn: aStream
-	self halt.! !
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/31/2020 14:35:28'!
+emitJSHeaderOn: aStream! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/6/2014 15:38'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/6/2014 15:38'!
 emitJSTestBlock: aBlockNode on: aStream
 	"Emit JS code for the given block node to be used as a loop test."
 
@@ -1245,17 +1248,11 @@ emitJSTestBlock: aBlockNode on: aStream
 		aBlockNode statements first asExpression emitJSCodeOn: aStream level: 0 generator: self.
 	].! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/19/2020 15:59:56'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/31/2020 14:37:04'!
 emitJSTypesOn: aStream 
-	"Store local type declarations on the given stream."
-	originClass ifNotNil:
-		[originClass ancilliaryStructClasses do:
-			[:structClass|
-			(originClass shouldGenerateTypedefFor: structClass) ifTrue:
-				[structClass printTypedefOn: aStream.
-				 aStream cr; cr]]]! !
+	"Store local type declarations on the given stream."! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/6/2014 12:44'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/6/2014 12:44'!
 emitJSVariablesOn: aStream 
 	"Store the global variable declarations on the given stream."
 	aStream nextPutAll: '/*** Variables ***/'; cr.
@@ -1280,7 +1277,7 @@ emitJSVariablesOn: aStream
 	aStream cr.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/20/2020 23:53:07'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/20/2020 23:53:07'!
 fileHeaderVersionStampForSourceClass: sourceClass
 	"Answer a suitable version stamp to include in the header."
 	| slangDescription sourceDescription |
@@ -1295,7 +1292,7 @@ fileHeaderVersionStampForSourceClass: sourceClass
 			[s nextPutAll: '\   from\	' ; nextPutAll: sourceDescription ].
 		s newLine; nextPutAll: ' */'; newLine]! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/6/2014 15:39'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/6/2014 15:39'!
 isJSLiteral: anObject
 	(anObject isKindOf: Integer) ifTrue: [^true].
 	(anObject isKindOf: String) ifTrue: [^true].
@@ -1305,28 +1302,28 @@ isJSLiteral: anObject
 	anObject == false ifTrue: [^true].
 	^false! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/28/2020 19:02:39'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/28/2020 19:02:39'!
 isNonArgumentImplicitReceiverVariableName: aString
 	^(self typeOfVariable: aString) == #implicit
 	    or: [ #('interpreterProxy' 'self') includes: aString ]
 	 	! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/21/2020 18:39:05'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/21/2020 18:39:05'!
 isPointerToStructVariableName: varName "<String>"
 	^self isType: (self typeOfVariable: varName) kind: #pointerToStruct! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/21/2020 09:56:57'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/21/2020 09:56:57'!
 isTypedPointerToStruct: type "<String>"
 	^originClass notNil
 	  and: [originClass isTypedPointerToStruct: type]! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/6/2014 15:41'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/6/2014 15:41'!
 jsFunctionNameFor: aSelector
 	"Create a JS function name from the given selector by omitting colons
 	and prefixing with the plugin name if the method is exported."
 	^aSelector copyWithout: $:! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/6/2014 15:40'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/6/2014 15:40'!
 jsLiteralFor: anObject
 	"Return a string representing theJS literal value for the given object."
 	(anObject isKindOf: Integer) ifTrue: [^ anObject printString].
@@ -1339,7 +1336,7 @@ jsLiteralFor: anObject
 		'Warning: A Smalltalk literal could not be translated into a JS constant: ', anObject printString.
 	^'"XXX UNTRANSLATABLE CONSTANT XXX"'! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/27/2020 21:01:23'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/27/2020 21:01:23'!
 prepareMethodsInlined: inlineFlag doAssertions: assertionFlag
 	"Prepare to emit JS code for all methods in the code base. All inlined method calls should be expanded. Answer a list of methods to be emitted as C code."
 
@@ -1366,19 +1363,19 @@ prepareMethodsInlined: inlineFlag doAssertions: assertionFlag
 	^ preparedMethodList _ methodList
 ! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'eem 7/2/2008 14:21'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'eem 7/2/2008 14:21'!
 pushScope: variableToType "<Dictionary>" while: aBlock
 	scopeStack addLast: variableToType.
 	^aBlock ensure: [scopeStack removeLast]! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/21/2020 09:56:57'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/21/2020 09:56:57'!
 selectorReturnsPointerToStruct: selector "<Symbol>"
 	| tMethod |
 	^originClass notNil
 	  and: [(tMethod _ methods at: selector ifAbsent: []) notNil
 	  and: [originClass isTypedPointerToStruct: tMethod returnType]]! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'eem 2/10/2009 15:05'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'eem 2/10/2009 15:05'!
 shortMonticelloDescriptionForClass: aClass
 	"Answer a suitable Monticello package stamp to include in a moduleName."
 	| mdesc |
@@ -1387,18 +1384,18 @@ shortMonticelloDescriptionForClass: aClass
 				do: [:ex| ^' ', Date today asString].
 	^mdesc copyFrom: 1 to: (mdesc indexOfSubCollection: ' uuid:') - 1! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/21/2020 11:31:54'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/21/2020 11:31:54'!
 structTargetKindForVariableName: varName "<String>"
 	^typeRepository findStructTargetKindForDeclaration: (self typeOfVariable: varName)! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/2/2014 18:36'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'bf 10/2/2014 18:36'!
 typeOfArgument: argIndex in: selector
 	| method |
 	method _ methods at: selector.
 	^method declarations at: (method args at: argIndex).
 ! !
 
-!JSCodeGenerator methodsFor: 'JS code generator' stamp: 'eem 2/9/2009 20:39'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'eem 2/9/2009 20:39'!
 typeOfVariable: varName "<String>" 
 	scopeStack reverseDo:
 		[:dict|
@@ -1406,7 +1403,7 @@ typeOfVariable: varName "<String>"
 			[^dict at: varName]].
 	^variableDeclarations at: varName ifAbsent: nil! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:09'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:09'!
 generateAddressOf: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 self halt.
@@ -1414,7 +1411,7 @@ self halt.
 	self emitJSExpression: msgNode args first on: aStream.
 	aStream nextPut: $)! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:09'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:09'!
 generateAnd: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1422,27 +1419,27 @@ generateAnd: msgNode on: aStream indent: level
 	aStream nextPutAll: ' && '.
 	self emitJSExpression: msgNode args first on: aStream.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/5/2014 23:01'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/5/2014 23:01'!
 generateAsFloat: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 	self emitJSExpression: msgNode receiver on: aStream.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/5/2014 21:36'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/5/2014 21:36'!
 generateAsInteger: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 	aStream nextPutAll:'('.
 	self emitJSExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: '|0)'! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 15:41'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 15:41'!
 generateAsSymbol: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream.
 	 The receiver is expected to be a JSConstantNode."
 
 	aStream nextPutAll: (self jsFunctionNameFor: msgNode receiver nameOrValue)! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:26'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:26'!
 generateAsUnsignedInteger: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 self halt.
@@ -1450,7 +1447,7 @@ self halt.
 	self emitJSExpression: msgNode receiver on: aStream.
 	aStream nextPut: $)! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/28/2020 17:49:56'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/28/2020 17:49:56'!
 generateAt: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 	| arrayNode indexNode subtractOne complex coerceTo |
@@ -1478,7 +1475,7 @@ generateAt: msgNode on: aStream indent: level
 		aStream nextPutAll: '|0)'].
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/21/2020 11:18:34'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/21/2020 11:18:34'!
 generateAtPut: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 	| putExpr incExpr |
@@ -1496,7 +1493,7 @@ generateAtPut: msgNode on: aStream indent: level
 	aStream nextPutAll: ' = '.
 	self emitJSExpression: putExpr on: aStream! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
 generateBaseHeaderSize: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 self halt.
@@ -1504,7 +1501,7 @@ self halt.
 
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
 generateBetweenAnd: msgNode on: aStream indent: level
 	"Generate the JS code for the between:and: message onto the given stream."
 
@@ -1518,7 +1515,7 @@ generateBetweenAnd: msgNode on: aStream indent: level
 	self emitJSExpression: msgNode args second on: aStream.
 	aStream nextPutAll: '))'! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
 generateBitAnd: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1526,7 +1523,7 @@ generateBitAnd: msgNode on: aStream indent: level
 	aStream nextPutAll: ' & '.
 	self emitJSExpression: msgNode args first on: aStream.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
 generateBitClear: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1538,14 +1535,14 @@ generateBitClear: msgNode on: aStream indent: level
 	self emitJSExpression: msgNode args first on: aStream.
 	aStream nextPut: '|0))'! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
 generateBitInvert32: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
 	aStream nextPut: $~.
 	self emitJSExpression: msgNode receiver on: aStream! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
 generateBitOr: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1553,7 +1550,7 @@ generateBitOr: msgNode on: aStream indent: level
 	aStream nextPutAll: ' | '.
 	self emitJSExpression: msgNode args first on: aStream.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/21/2020 11:18:39'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/21/2020 11:18:39'!
 generateBitShift: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1581,7 +1578,7 @@ generateBitShift: msgNode on: aStream indent: level
 		aStream nextPutAll: ')'.
 	].! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
 generateBitXor: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1589,14 +1586,14 @@ generateBitXor: msgNode on: aStream indent: level
 	aStream nextPutAll: ' ^ '.
 	self emitJSExpression: msgNode args first on: aStream.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
 generateBytesPerWord: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 self halt.
 	aStream nextPutAll: 'BYTES_PER_WORD'
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 11/12/2014 17:43'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 11/12/2014 17:43'!
 generateCCoercion: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 	| expr cType |.
@@ -1628,7 +1625,7 @@ generateCCoercion: msgNode on: aStream indent: level
 	]
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 11/12/2014 11:22'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 11/12/2014 11:22'!
 generateDivide: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1660,7 +1657,7 @@ generateDivide: msgNode on: aStream indent: level
 	].
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'dtl 11/9/2006 06:24'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'dtl 11/9/2006 06:24'!
 generateDoWhileFalse: msgNode on: aStream indent: level
 	"Generate do {stmtList} while(!!(cond))"
 
@@ -1675,7 +1672,7 @@ generateDoWhileFalse: msgNode on: aStream indent: level
 	testStmt asExpression emitJSCodeOn: aStream level: 0 generator: self.
 	aStream nextPutAll: '))'.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'dtl 11/9/2006 06:24'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'dtl 11/9/2006 06:24'!
 generateDoWhileTrue: msgNode on: aStream indent: level
 	"Generate do {stmtList} while(cond)"
 
@@ -1690,7 +1687,7 @@ generateDoWhileTrue: msgNode on: aStream indent: level
 	testStmt asExpression emitJSCodeOn: aStream level: 0 generator: self.
 	aStream nextPutAll: ')'.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 15:20'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 15:20'!
 generateEqual: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 	| argNode test |
@@ -1708,7 +1705,7 @@ generateEqual: msgNode on: aStream indent: level
 	aStream nextPutAll: ' === '.
 	self emitJSExpression: argNode on: aStream.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:28'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:28'!
 generateGreaterThan: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1716,7 +1713,7 @@ generateGreaterThan: msgNode on: aStream indent: level
 	aStream nextPutAll: ' > '.
 	self emitJSExpression: msgNode args first on: aStream.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:28'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:28'!
 generateGreaterThanOrEqual: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1724,7 +1721,7 @@ generateGreaterThanOrEqual: msgNode on: aStream indent: level
 	aStream nextPutAll: ' >= '.
 	self emitJSExpression: msgNode args first on: aStream.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/21/2020 11:38:46'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/21/2020 11:38:46'!
 generateIfFalse: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1744,7 +1741,7 @@ generateIfFalse: msgNode on: aStream indent: level
 			const ifFalse:
 				["FIXME: msgNode args first emitJSCodeOn: aStream level: level generator: self"]]! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:26'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:26'!
 generateIfFalseAsArgument: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1760,7 +1757,7 @@ generateIfFalseAsArgument: msgNode on: aStream indent: level
 			const ifFalse:
 				[msgNode args first emitJSCodeAsArgumentOn: aStream level: level generator: self]]! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:28'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:28'!
 generateIfFalseIfTrue: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1778,7 +1775,7 @@ generateIfFalseIfTrue: msgNode on: aStream indent: level
 			 (const ifTrue: [msgNode args last] ifFalse: [msgNode args first])
 				emitJSCodeOn: aStream level: level generator: self]! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:28'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:28'!
 generateIfFalseIfTrueAsArgument: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1798,7 +1795,7 @@ generateIfFalseIfTrueAsArgument: msgNode on: aStream indent: level
 				ifFalse: [msgNode args first])
 					emitJSCodeAsArgumentOn: aStream level: level generator: self]! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:29'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:29'!
 generateIfTrue: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1815,7 +1812,7 @@ generateIfTrue: msgNode on: aStream indent: level
 			const ifTrue:
 				[msgNode args first emitJSCodeOn: aStream level: level generator: self]]! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:29'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:29'!
 generateIfTrueAsArgument: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1831,7 +1828,7 @@ generateIfTrueAsArgument: msgNode on: aStream indent: level
 			const ifTrue:
 				[msgNode args first emitJSCodeAsArgumentOn: aStream level: level generator: self]]! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:29'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:29'!
 generateIfTrueIfFalse: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1849,7 +1846,7 @@ generateIfTrueIfFalse: msgNode on: aStream indent: level
 			(const ifTrue: [msgNode args first] ifFalse: [msgNode args last])
 				emitJSCodeOn: aStream level: level generator: self]! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:29'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:29'!
 generateIfTrueIfFalseAsArgument: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1867,7 +1864,7 @@ generateIfTrueIfFalseAsArgument: msgNode on: aStream indent: level
 			(const ifTrue: [msgNode args first] ifFalse: [msgNode args last])
 				emitJSCodeAsArgumentOn: aStream level: level generator: self]! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:31'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:31'!
 generateInlineDirective: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1876,21 +1873,21 @@ generateInlineDirective: msgNode on: aStream indent: level
 	aStream nextPutAll: ' */'.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:38'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:38'!
 generateIntegerObjectOf: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
 	self emitJSExpression: msgNode args first on: aStream.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:39'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:39'!
 generateIntegerValueOf: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
 	self emitJSExpression: msgNode args first on: aStream.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:39'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:39'!
 generateIsIntegerObject: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1898,7 +1895,7 @@ generateIsIntegerObject: msgNode on: aStream indent: level
 	self emitJSExpression: msgNode args first on: aStream.
 	aStream nextPutAll: ' === "number"'.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 13:04'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 13:04'!
 generateIsNil: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1906,7 +1903,7 @@ generateIsNil: msgNode on: aStream indent: level
 	self emitJSExpression: msgNode receiver on: aStream.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 11/3/2014 12:27'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 11/3/2014 12:27'!
 generateJSCodeForCcode: cCode on: aStream indent: level
 	cCode = '' ifTrue: [^self].
 	aStream nextPutAll: (cCodeTranslationDict at: cCode ifAbsent: [
@@ -1927,7 +1924,7 @@ generateJSCodeForCcode: cCode on: aStream indent: level
 		self error: 'C: ' , cCode]]]]]]])
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:38'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:38'!
 generateLessThan: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1935,7 +1932,7 @@ generateLessThan: msgNode on: aStream indent: level
 	aStream nextPutAll: ' < '.
 	self emitJSExpression: msgNode args first on: aStream.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:38'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:38'!
 generateLessThanOrEqual: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1943,7 +1940,7 @@ generateLessThanOrEqual: msgNode on: aStream indent: level
 	aStream nextPutAll: ' <= '.
 	self emitJSExpression: msgNode args first on: aStream.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 11/3/2014 12:43'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 11/3/2014 12:43'!
 generateMath: msgNode on: aStream indent: level
 	"Generate the JS code for the message onto the given stream."
 	aStream nextPutAll: 'Math.'; nextPutAll: msgNode selector; nextPut: $(.
@@ -1951,7 +1948,7 @@ generateMath: msgNode on: aStream indent: level
 	aStream nextPut: $).
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:06'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:06'!
 generateMax: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1962,7 +1959,7 @@ generateMax: msgNode on: aStream indent: level
 	aStream nextPutAll: ')'.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:06'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:06'!
 generateMin: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1973,7 +1970,7 @@ generateMin: msgNode on: aStream indent: level
 	aStream nextPutAll: ')'.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/3/2014 02:13'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/3/2014 02:13'!
 generateMinus: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 	self checkNonPointer: msgNode receiver op: '-'.
@@ -1983,7 +1980,7 @@ generateMinus: msgNode on: aStream indent: level
 	aStream nextPutAll: ' - '.
 	self emitJSExpression: msgNode args first on: aStream.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/4/2014 14:06'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/4/2014 14:06'!
 generateModulo: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1994,7 +1991,7 @@ generateModulo: msgNode on: aStream indent: level
 	aStream nextPutAll: ')'.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:08'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:08'!
 generateNegated: msgNode on: aStream indent: level
 	"Generate the JS code for the negated message onto the given stream."
 
@@ -2004,7 +2001,7 @@ generateNegated: msgNode on: aStream indent: level
 	aStream nextPutAll: ')'.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 14:26'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 14:26'!
 generateNot: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 	| expr |
@@ -2020,7 +2017,7 @@ generateNot: msgNode on: aStream indent: level
 	aStream nextPutAll: '!!'.
 	self emitJSExpression: expr on: aStream.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 15:16'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 15:16'!
 generateNotEqual: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 	| argNode test |
@@ -2039,7 +2036,7 @@ generateNotEqual: msgNode on: aStream indent: level
 	aStream nextPutAll: ' !!== '.
 	self emitJSExpression: msgNode args first on: aStream.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 13:04'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 13:04'!
 generateNotNil: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -2047,7 +2044,7 @@ generateNotNil: msgNode on: aStream indent: level
 	self emitJSExpression: msgNode receiver on: aStream.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:40'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:40'!
 generateOr: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -2055,7 +2052,7 @@ generateOr: msgNode on: aStream indent: level
 	aStream nextPutAll: ' || '.
 	self emitJSExpression: msgNode args first on: aStream.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:40'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:40'!
 generatePerform: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 self halt.
@@ -2066,7 +2063,7 @@ self halt.
 	] separatedBy:[aStream nextPutAll:', '].
 	aStream nextPut: $)! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 11/12/2014 11:09'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 11/12/2014 11:09'!
 generatePlus: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 	msgNode receiver isBitBltPtr ifFalse: [
@@ -2079,7 +2076,7 @@ generatePlus: msgNode on: aStream indent: level
 		aStream nextPutAll: ' + '].
 	self emitJSExpression: msgNode args first on: aStream.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 11/13/2014 18:49'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 11/13/2014 18:49'!
 generatePointerPlus: msgNode type: type on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 	(#('B2DPlugin' 'GeniePlugin') includes: self pluginName) ifFalse: [self halt].
@@ -2087,7 +2084,7 @@ generatePointerPlus: msgNode type: type on: aStream indent: level
 	^true
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/28/2020 17:50:57'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/28/2020 17:50:57'!
 generatePreDecrement: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -2101,7 +2098,7 @@ generatePreDecrement: msgNode on: aStream indent: level
 	aStream nextPutAll: (self returnPrefixFromVariable: varNode name).
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/28/2020 17:51:08'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/28/2020 17:51:08'!
 generatePreIncrement: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -2114,7 +2111,7 @@ generatePreIncrement: msgNode on: aStream indent: level
 	aStream nextPutAll: (self returnPrefixFromVariable: varNode name).
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:42'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:42'!
 generateRaisedTo: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -2124,7 +2121,7 @@ generateRaisedTo: msgNode on: aStream indent: level
 	self emitJSExpression: msgNode args first on: aStream.
 	aStream nextPutAll:')'.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:42'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:42'!
 generateRepeat: msgNode on: aStream indent: level
 	"Generate while(true) { stmtList } "
 
@@ -2134,7 +2131,7 @@ generateRepeat: msgNode on: aStream indent: level
 	aStream nextPutAll: '}'
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:43'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:43'!
 generateSequentialAnd: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -2143,7 +2140,7 @@ generateSequentialAnd: msgNode on: aStream indent: level
 	self emitJSTestBlock: msgNode args first on: aStream.
 	aStream nextPut: $)! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:43'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:43'!
 generateSequentialOr: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -2152,7 +2149,7 @@ generateSequentialOr: msgNode on: aStream indent: level
 	self emitJSTestBlock: msgNode args last on: aStream.
 	aStream nextPutAll: ')'! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:44'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:44'!
 generateSharedCodeDirective: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -2161,7 +2158,7 @@ generateSharedCodeDirective: msgNode on: aStream indent: level
 	aStream nextPutAll: ' */'.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/4/2014 14:12'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/4/2014 14:12'!
 generateShiftLeft: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 	| arg rcvr |
@@ -2184,7 +2181,7 @@ generateShiftLeft: msgNode on: aStream indent: level
 		aStream nextPutAll: ')'.
 	].! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/4/2014 14:12'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/4/2014 14:12'!
 generateShiftRight: msgNode on: aStream indent: level
 	"Generate the JS code for unsigned right-shift onto the given stream."
 	| rcvr arg |
@@ -2208,7 +2205,7 @@ generateShiftRight: msgNode on: aStream indent: level
 		aStream nextPutAll: ')'.
 	].! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 14:51'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/6/2014 14:51'!
 generateSignedBitShift: msgNode on: aStream indent: level
 	"Generate the JS code for signedBitShift: onto the given stream."
 
@@ -2229,7 +2226,7 @@ generateSignedBitShift: msgNode on: aStream indent: level
 		self error: 'non-constant signed shift not implemented yet'
 	].! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:45'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:45'!
 generateSignedIntFromLong: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 self halt.
@@ -2239,7 +2236,7 @@ self halt.
 
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:46'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:46'!
 generateSignedIntFromShort: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 self halt.
@@ -2249,7 +2246,7 @@ self halt.
 
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:46'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:46'!
 generateSignedIntToLong: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 self halt.
@@ -2259,7 +2256,7 @@ self halt.
 
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:46'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:46'!
 generateSignedIntToShort: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 self halt.
@@ -2269,13 +2266,13 @@ self halt.
 
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:46'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:46'!
 generateSmalltalkMetaError: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
 	aStream nextPutAll: 'throw Error("'; nextPutAll: msgNode selector; nextPutAll: '")'! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:47'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:47'!
 generateTimes: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -2283,7 +2280,7 @@ generateTimes: msgNode on: aStream indent: level
 	aStream nextPutAll: ' * '.
 	self emitJSExpression: msgNode args first on: aStream.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/4/2014 14:45'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/4/2014 14:45'!
 generateToByDo: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 	"N.B. MessageNode>>asTranslatorNodeIn: adds the limit var as a hidden fourth argument."
@@ -2316,7 +2313,7 @@ generateToByDo: msgNode on: aStream indent: level
 	aStream tab: level.
 	aStream nextPut: $}! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:48'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:48'!
 generateToDo: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -2334,12 +2331,12 @@ generateToDo: msgNode on: aStream indent: level
 	level timesRepeat: [ aStream tab ].
 	aStream nextPutAll: '}'.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:48'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:48'!
 generateTouch: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream - which is to say absolutely nothing"
 ! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:50'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:50'!
 generateWhileFalse: msgNode on: aStream indent: level
 	"Generate JS code for a loop in one of the following formats, as appropriate:
 		while(!!(cond)) { stmtList }
@@ -2352,7 +2349,7 @@ generateWhileFalse: msgNode on: aStream indent: level
 		ifTrue: [^self generateDoWhileFalse: msgNode on: aStream indent: level].
 	^self generateWhileForeverBreakTrueLoop: msgNode on: aStream indent: level! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'acg 12/22/1999 01:41'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'acg 12/22/1999 01:41'!
 generateWhileFalseLoop: msgNode on: aStream indent: level
 	"Generate while(!!(cond)) {stmtList}."
 
@@ -2364,7 +2361,7 @@ generateWhileFalseLoop: msgNode on: aStream indent: level
 	level timesRepeat: [ aStream tab ].
 	aStream nextPutAll: '}'.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:50'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:50'!
 generateWhileForeverBreakFalseLoop: msgNode on: aStream indent: level
 	"Generate while(true) {stmtListA; if(!!(cond)) break; stmtListB}."
 
@@ -2383,7 +2380,7 @@ generateWhileForeverBreakFalseLoop: msgNode on: aStream indent: level
 	level timesRepeat: [ aStream tab ].
 	aStream nextPutAll: '}'.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:49'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:49'!
 generateWhileForeverBreakTrueLoop: msgNode on: aStream indent: level
 	"Generate while(true) {stmtListA; if(cond) break; stmtListB}."
 
@@ -2402,7 +2399,7 @@ generateWhileForeverBreakTrueLoop: msgNode on: aStream indent: level
 	level timesRepeat: [ aStream tab ].
 	aStream nextPutAll: '}'.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:50'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:50'!
 generateWhileTrue: msgNode on: aStream indent: level
 	"Generate C code for a loop in one of the following formats, as appropriate:
 		while(cond) { stmtList }
@@ -2415,7 +2412,7 @@ generateWhileTrue: msgNode on: aStream indent: level
 		ifTrue: [^self generateDoWhileTrue: msgNode on: aStream indent: level].
 	^self generateWhileForeverBreakFalseLoop: msgNode on: aStream indent: level! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'acg 12/22/1999 01:38'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'acg 12/22/1999 01:38'!
 generateWhileTrueLoop: msgNode on: aStream indent: level
 	"Generate while(cond) {stmtList}."
 
@@ -2427,7 +2424,7 @@ generateWhileTrueLoop: msgNode on: aStream indent: level
 	level timesRepeat: [ aStream tab ].
 	aStream nextPutAll: '}'.! !
 
-!JSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/27/2020 21:57:28'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/27/2020 21:57:28'!
 initializeTranslationDictionary 
 	"Initialize the dictionary mapping message names to actions for JS code generation."
 
@@ -2592,21 +2589,21 @@ initializeTranslationDictionary
 		cCodeTranslationDict at: (pairs at: i) put: (pairs at: i + 1)].
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/6/2014 01:43'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/6/2014 01:43'!
 generateByteAtPointer: msgNode on: aStream indent: level
 	msgNode args first asString = 'sourcePtr + charIndex - 1'
 		ifTrue: [^aStream nextPutAll: 'sourcePtr[charIndex - 1]'].
 	self halt
 	! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/5/2014 18:07'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/5/2014 18:07'!
 generateByteSizeOf: msgNode on: aStream indent: level
 	aStream nextPutAll: 'BYTESIZEOF('.
 	msgNode args first emitJSCodeOn: aStream level: level generator: self.
 	aStream nextPutAll: ')'.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/4/2014 14:55'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/4/2014 14:55'!
 generateCDigitCopy: msgNode on: aStream indent: level
 	"LargeIntegerPlugin>>cDigitReplace:from:to:with:startingAt: uses pointer arithmetic. Replace it here"
 	msgNode args first selector = #+ ifFalse: [
@@ -2623,7 +2620,7 @@ generateCDigitCopy: msgNode on: aStream indent: level
 	}();
 '! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/6/2014 14:36'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/6/2014 14:36'!
 generateDstLongAt: msgNode on: aStream indent: level
 	aStream nextPutAll: 'destBits['.
 	msgNode args first emitJSCodeAsExpressionOn: aStream level: level generator: self.
@@ -2631,7 +2628,7 @@ generateDstLongAt: msgNode on: aStream indent: level
 	
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/6/2014 14:36'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/6/2014 14:36'!
 generateDstLongAtPut: msgNode on: aStream indent: level
 	aStream nextPutAll: 'destBits['.
 	msgNode args first emitJSCodeAsExpressionOn: aStream level: level generator: self.
@@ -2640,14 +2637,14 @@ generateDstLongAtPut: msgNode on: aStream indent: level
 	
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/5/2014 16:46'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/5/2014 16:46'!
 generateFetchClassOf: msgNode on: aStream indent: level
 	aStream nextPutAll: 'CLASSOF('.
 	msgNode args first emitJSCodeOn: aStream level: level generator: self.
 	aStream nextPut: $).
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'jpb 5/21/2020 11:37:27'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'jpb 5/21/2020 11:37:27'!
 generateFirstIndexableField: msgNode on: aStream indent: level
 	| parent cType accessor |
 	self flag: #fixme.
@@ -2684,37 +2681,37 @@ generateFirstIndexableField: msgNode on: aStream indent: level
 	
 	^ nil "FIXME: msgNode emitJSCodeAsFunctionCallOn: aStream level: level generator: self"! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/3/2014 17:25'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/3/2014 17:25'!
 generateIdentityUnary: msgNode on: aStream indent: level
 	"ignore this send, just use its value"
 	msgNode receiver emitJSCodeOn: aStream level: level generator: self.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/5/2014 16:44'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/5/2014 16:44'!
 generateInstanceSizeOf: msgNode on: aStream indent: level
 	msgNode args first emitJSCodeOn: aStream level: level generator: self.
 	aStream nextPutAll: '.classInstSize()'.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'jpb 5/21/2020 11:18:45'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'jpb 5/21/2020 11:18:45'!
 generateIntAtPointer: msgNode on: aStream indent: level
 	msgNode args first asString = 'self coerce: argPtr + i to: ''char*'''
 		ifTrue: [^aStream nextPutAll: 'argPtr[i]'].
 	self halt
 	! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/4/2014 13:11'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/4/2014 13:11'!
 generateInterpreterProxyCall: msgNode on: aStream indent: level
 	aStream nextPutAll: 'interpreterProxy.'.
 	^ msgNode emitJSCodeAsFunctionCallOn: aStream level: level generator: self! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/5/2014 21:48'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/5/2014 21:48'!
 generateIsFloatObject: msgNode on: aStream indent: level
 	msgNode args first emitJSCodeOn: aStream level: level generator: self.
 	aStream nextPutAll: '.isFloat'.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 11/12/2014 16:11'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 11/12/2014 16:11'!
 generateLoadPointInt: msgNode on: aStream indent: level
 	aStream nextPutAll: '('.
 	self emitJSExpression: msgNode args second on: aStream. 
@@ -2723,7 +2720,7 @@ generateLoadPointInt: msgNode on: aStream indent: level
 	aStream nextPutAll: ']|0)'.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'jpb 5/28/2020 17:50:38'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'jpb 5/28/2020 17:50:38'!
 generateLoadPointShort: msgNode on: aStream indent: level
 	(msgNode args second is: #Variable) ifFalse: [self halt].
 	msgNode args second name = 'points' ifFalse: [self halt].
@@ -2733,7 +2730,7 @@ generateLoadPointShort: msgNode on: aStream indent: level
 	aStream nextPutAll: ']'.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/6/2014 14:42'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/6/2014 14:42'!
 generateLong32At: msgNode on: aStream indent: level
 	| expr index |
 	expr _ msgNode args first.
@@ -2749,7 +2746,7 @@ generateLong32At: msgNode on: aStream indent: level
 	aStream nextPut: $].
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'jpb 5/21/2020 11:19:38'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'jpb 5/21/2020 11:19:38'!
 generateMakeUnsignedFrom: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 	| expr type coerce |	
@@ -2769,7 +2766,7 @@ generateMakeUnsignedFrom: msgNode on: aStream indent: level
 	aStream nextPut: $].
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/6/2014 01:59'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/6/2014 01:59'!
 generateOopForPointer: msgNode on: aStream indent: level
 	| arg |
 	arg _ msgNode args first asString.
@@ -2784,7 +2781,7 @@ generateOopForPointer: msgNode on: aStream indent: level
 	self halt
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/4/2014 13:07'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/4/2014 13:07'!
 generateSizeOfSTArrayFromCPrimitive: msgNode on: aStream indent: level
 	| cType sizer |
 	cType _ self typeOfVariable: msgNode args first name.
@@ -2799,14 +2796,14 @@ generateSizeOfSTArrayFromCPrimitive: msgNode on: aStream indent: level
 	aStream nextPutAll: 'interpreterProxy.'.
 	^ msgNode emitJSCodeAsFunctionCallOn: aStream level: level generator: self! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/6/2014 11:07'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/6/2014 11:07'!
 generateSlotSizeOf: msgNode on: aStream indent: level
 	aStream nextPutAll: 'SIZEOF('.
 	msgNode args first emitJSCodeOn: aStream level: level generator: self.
 	aStream nextPut: $).
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/6/2014 14:36'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/6/2014 14:36'!
 generateSrcLongAt: msgNode on: aStream indent: level
 	aStream nextPutAll: 'sourceBits['.
 	msgNode args first emitJSCodeAsExpressionOn: aStream level: level generator: self.
@@ -2814,48 +2811,48 @@ generateSrcLongAt: msgNode on: aStream indent: level
 	
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/5/2014 16:53'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/5/2014 16:53'!
 generateSuperclassOf: msgNode on: aStream indent: level
 	msgNode args first emitJSCodeOn: aStream level: level generator: self.
 	aStream nextPutAll: '.superclass()'.
 ! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/4/2014 12:39'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/4/2014 12:39'!
 isOneBasedArray: varName in: method
 	^(method isOneBasedArray: varName)
 		ifNil: [self oneBasedArrays]
 		ifNotNil: [:oneBased | self oneBasedArrays: oneBased]! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/4/2014 12:17'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/4/2014 12:17'!
 oneBasedArrays
 	oneBasedArrays ifNil: [oneBasedArrays _ false].
 	^oneBasedArrays! !
 
-!JSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/4/2014 12:27'!
+!SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/4/2014 12:27'!
 oneBasedArrays: aBoolean
 	oneBasedArrays ifNil: [^oneBasedArrays _ aBoolean].
 	oneBasedArrays = aBoolean ifFalse: [
 		self halt: 'mixed one-based and zero-based array access'].
 	^aBoolean! !
 
-!JSCodeGenerator class methodsFor: 'preferences' stamp: 'bf 10/14/2014 13:39'!
+!SlangJSCodeGenerator class methodsFor: 'preferences' stamp: 'bf 10/14/2014 13:39'!
 beActiveDuring: aBlock
 	| wasActive |
 	wasActive _ self isActive.
 	self isActive: true.
 	aBlock ensure: [self isActive: wasActive].! !
 
-!JSCodeGenerator class methodsFor: 'preferences' stamp: 'bf 9/30/2014 14:43'!
+!SlangJSCodeGenerator class methodsFor: 'preferences' stamp: 'bf 9/30/2014 14:43'!
 isActive
 	"should I be used instead of CCodeGenerator?"
 	^IsActive == true! !
 
-!JSCodeGenerator class methodsFor: 'preferences' stamp: 'bf 9/30/2014 14:45'!
+!SlangJSCodeGenerator class methodsFor: 'preferences' stamp: 'bf 9/30/2014 14:45'!
 isActive: aBoolean
 	"should I be used instead of CCodeGenerator?"
 	IsActive _ aBoolean! !
 
-!JSCodeGenerator class methodsFor: 'class initialization' stamp: 'jm 8/19/1998 10:03'!
+!SlangJSCodeGenerator class methodsFor: 'class initialization' stamp: 'jm 8/19/1998 10:03'!
 initialize
 	"JSCodeGenerator initialize"
 
@@ -2864,140 +2861,140 @@ initialize
 		"Note: The Kernighan and Ritchie 2nd Edition C manual, p. 49, leaves the semantics of right-shifting a negative number open to the discretion of the compiler implementor. However, it strongly suggests that most compilers should generate an arithmetic right shift (i.e., shifting in the sign bit), which is the same as dividing by a power of two. If your compiler does not generate or simulate an arithmetic shift, then make this class variable false and re-translate."
 ! !
 
-!JSMethod methodsFor: 'accessing'!
+!SlangJSMethod methodsFor: 'accessing'!
 args
 	"The arguments of this method."
 
 	^args! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'eem 3/3/2009 08:59'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'eem 3/3/2009 08:59'!
 declarationAt: aVariableName
 	^declarations at: aVariableName ifAbsent: [#sqInt, ' ', aVariableName]! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'eem 3/3/2009 08:42'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'eem 3/3/2009 08:42'!
 declarationAt: aVariableName  "<String>" put: aDeclaration "<String>" "^aDeclaration"
 	^declarations at: aVariableName put: aDeclaration! !
 
-!JSMethod methodsFor: 'accessing'!
+!SlangJSMethod methodsFor: 'accessing'!
 declarations
 	"The type declaration dictionary of this method."
 
 	^declarations! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'ar 2/3/2001 17:29'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'ar 2/3/2001 17:29'!
 definingClass
 	^definingClass! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'ar 2/3/2001 17:29'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'ar 2/3/2001 17:29'!
 definingClass: aClass
 	definingClass _ aClass.! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'jm 11/24/1998 09:03'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'jm 11/24/1998 09:03'!
 export
 
 	^ export
 ! !
 
-!JSMethod methodsFor: 'accessing'!
+!SlangJSMethod methodsFor: 'accessing'!
 globalStructureBuildMethodHasFoo: number
 	globalStructureBuildMethodHasFoo _ number! !
 
-!JSMethod methodsFor: 'accessing'!
+!SlangJSMethod methodsFor: 'accessing'!
 isComplete
 	"A method is 'complete' if it does not contain any more inline-able calls."
 
 	^complete! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'dtl 8/21/2011 17:43'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'dtl 8/21/2011 17:43'!
 isStaticIn: aCodeGen
 	"If static has been explicitly set, honor that setting. Otherwise defer
 	to the code generator for a default setting."
 	^static ifNil: [aCodeGen declareMethodsStatic]! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'ar 5/9/2000 12:13'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'ar 5/9/2000 12:13'!
 labels
 
 	^labels! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'ar 5/9/2000 12:13'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'ar 5/9/2000 12:13'!
 locals
 	"The local variables of this method."
 
 	^locals! !
 
-!JSMethod methodsFor: 'accessing'!
+!SlangJSMethod methodsFor: 'accessing'!
 parseTree
 	"The parse tree of this method."
 
 	^parseTree! !
 
-!JSMethod methodsFor: 'accessing'!
+!SlangJSMethod methodsFor: 'accessing'!
 parseTree: aNode
 	"Set the parse tree of this method."
 
 	parseTree _ aNode.! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'jm 2/12/98 11:56'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'jm 2/12/98 11:56'!
 primitive
 	"The primitive number of this method; zero if not a primitive."
 
 	^ primitive
 ! !
 
-!JSMethod methodsFor: 'accessing'!
+!SlangJSMethod methodsFor: 'accessing'!
 referencesGlobalStructIncrementBy: value
 	globalStructureBuildMethodHasFoo _ globalStructureBuildMethodHasFoo + value.! !
 
-!JSMethod methodsFor: 'accessing'!
+!SlangJSMethod methodsFor: 'accessing'!
 referencesGlobalStructMakeZero
 	globalStructureBuildMethodHasFoo _ 0! !
 
-!JSMethod methodsFor: 'accessing'!
+!SlangJSMethod methodsFor: 'accessing'!
 returnType
 	"The type of the values returned by this method. This string will be used in the C declaration of this function."
 
 	^returnType! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'eem 8/1/2008 10:34'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'eem 8/1/2008 10:34'!
 returnType: aString
 	"Set the type of the values returned by this method. This string will be used in the C declaration of this function."
 
 	returnType _ aString! !
 
-!JSMethod methodsFor: 'accessing'!
+!SlangJSMethod methodsFor: 'accessing'!
 selector
 	"The Smalltalk selector of this method."
 
 	^selector! !
 
-!JSMethod methodsFor: 'accessing'!
+!SlangJSMethod methodsFor: 'accessing'!
 selector: newSelector
 
 	selector _ newSelector.! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'dtl 12/21/2008 14:55'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'dtl 12/21/2008 14:55'!
 selectorForCodeGeneration
 	"Subclasses may allow a directive to override the selector specification."
 
 	^ selector! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'ar 7/6/2003 21:18'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'ar 7/6/2003 21:18'!
 sharedCase
 	^sharedCase! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'ar 7/6/2003 21:41'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'ar 7/6/2003 21:41'!
 sharedCase: aNumber
 	sharedCase _ aNumber.! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'ar 7/6/2003 21:18'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'ar 7/6/2003 21:18'!
 sharedLabel
 	^sharedLabel! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'ar 7/6/2003 21:40'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'ar 7/6/2003 21:40'!
 sharedLabel: aString
 	sharedLabel _ aString! !
 
-!JSMethod methodsFor: 'accessing'!
+!SlangJSMethod methodsFor: 'accessing'!
 statements
 
 	parseTree isStmtList
@@ -3007,11 +3004,11 @@ statements
 
 	^parseTree statements! !
 
-!JSMethod methodsFor: 'accessing' stamp: 'eem 2/10/2009 13:53'!
+!SlangJSMethod methodsFor: 'accessing' stamp: 'eem 2/10/2009 13:53'!
 static: aBoolean
 	static _ aBoolean! !
 
-!JSMethod methodsFor: 'inlining support'!
+!SlangJSMethod methodsFor: 'inlining support'!
 addVarsDeclarationsAndLabelsOf: methodToBeInlined
 	"Prepare to inline the body of the given method into the receiver by making the args and locals of the argument to the receiver be locals of the receiver. Record any type declarations for these variables. Record labels. Assumes that the variables have already be renamed to avoid name clashes."
 
@@ -3025,7 +3022,7 @@ addVarsDeclarationsAndLabelsOf: methodToBeInlined
 		labels add: label.
 	].! !
 
-!JSMethod methodsFor: 'inlining support'!
+!SlangJSMethod methodsFor: 'inlining support'!
 computePossibleSideEffectsIn: aCodeGen
 	"Answer true if this method may have side effects. It has side effects if it assigns to a global variable. It may have side effects if it calls a non-built-in method."
 
@@ -3036,13 +3033,13 @@ computePossibleSideEffectsIn: aCodeGen
 	].
 	^ false! !
 
-!JSMethod methodsFor: 'inlining support'!
+!SlangJSMethod methodsFor: 'inlining support'!
 endsWithReturn
 	"Answer true if the last statement of this method is a return."
 
 	^ parseTree statements last isReturn! !
 
-!JSMethod methodsFor: 'inlining support' stamp: 'dtl 9/19/2010 13:20'!
+!SlangJSMethod methodsFor: 'inlining support' stamp: 'dtl 9/19/2010 13:20'!
 extractInlineDirective
 	"Scan the top-level statements for an inlining directive of the form:
 
@@ -3072,7 +3069,7 @@ extractInlineDirective
 		valueBlock: [:sendNode| sendNode args first value = true]
 		default: #dontCare! !
 
-!JSMethod methodsFor: 'inlining support' stamp: 'dtl 8/25/2011 22:37'!
+!SlangJSMethod methodsFor: 'inlining support' stamp: 'dtl 8/25/2011 22:37'!
 hasDoNotGenerateStatement
 	"True if method has a #doNotGenerate statement, equivalent to pragma <doNotGenerate>
 	or if it has a #subclassResponsibility statement."
@@ -3083,7 +3080,7 @@ hasDoNotGenerateStatement
 		ifNone: [^ false].
 	^ true! !
 
-!JSMethod methodsFor: 'inlining support'!
+!SlangJSMethod methodsFor: 'inlining support'!
 maySubstituteGlobal: globalVar in: aCodeGen
 	"Answer true if this method does or may have side effects on the given global variable."
 
@@ -3103,7 +3100,7 @@ maySubstituteGlobal: globalVar in: aCodeGen
 	 and does not itself assign to the given global variable"
 	^ true! !
 
-!JSMethod methodsFor: 'inlining support' stamp: 'jm 12/13/1998 10:06'!
+!SlangJSMethod methodsFor: 'inlining support' stamp: 'jm 12/13/1998 10:06'!
 renameLabelsForInliningInto: destMethod
 	"Rename any labels that would clash with those of the destination method."
 
@@ -3120,7 +3117,7 @@ renameLabelsForInliningInto: destMethod
 	].
 	self renameLabelsUsing: labelMap.! !
 
-!JSMethod methodsFor: 'inlining support' stamp: 'jpb 5/26/2020 21:11:24'!
+!SlangJSMethod methodsFor: 'inlining support' stamp: 'jpb 5/26/2020 21:11:24'!
 renameLabelsUsing: aDictionary
 	"Rename all labels according to the old->new mappings of the given dictionary."
 
@@ -3137,7 +3134,7 @@ renameLabelsUsing: aDictionary
 		].
 	].! !
 
-!JSMethod methodsFor: 'inlining support' stamp: 'jpb 5/28/2020 18:01:26'!
+!SlangJSMethod methodsFor: 'inlining support' stamp: 'jpb 5/28/2020 18:01:26'!
 renameVariablesUsing: aDictionary
 	"Rename all variables according to old->new mappings of the given dictionary."
 
@@ -3181,7 +3178,7 @@ renameVariablesUsing: aDictionary
 		].
 	].! !
 
-!JSMethod methodsFor: 'inlining support' stamp: 'jm 12/13/1998 10:07'!
+!SlangJSMethod methodsFor: 'inlining support' stamp: 'jm 12/13/1998 10:07'!
 renameVarsForCaseStmt
 	"Rename the arguments and locals of this method with names like t1, t2, t3, etc. Return the number of variable names assigned. This is done to allow registers to be shared among the cases."
 
@@ -3195,7 +3192,7 @@ renameVarsForCaseStmt
 	self renameVariablesUsing: varMap.
 	^ i - 1! !
 
-!JSMethod methodsFor: 'inlining support' stamp: 'jm 12/13/1998 10:07'!
+!SlangJSMethod methodsFor: 'inlining support' stamp: 'jm 12/13/1998 10:07'!
 renameVarsForInliningInto: destMethod in: aCodeGen
 	"Rename any variables that would clash with those of the destination method."
 
@@ -3214,7 +3211,7 @@ renameVarsForInliningInto: destMethod in: aCodeGen
 	].
 	self renameVariablesUsing: varMap.! !
 
-!JSMethod methodsFor: 'inlining support'!
+!SlangJSMethod methodsFor: 'inlining support'!
 unusedNamePrefixedBy: aString avoiding: usedNames
 	"Choose a unique variable or label name with the given string as a prefix, avoiding the names in the given collection. The selected name is added to usedNames."
 
@@ -3228,13 +3225,13 @@ unusedNamePrefixedBy: aString avoiding: usedNames
 	usedNames add: newVarName.
 	^ newVarName! !
 
-!JSMethod methodsFor: 'utilities'!
+!SlangJSMethod methodsFor: 'utilities'!
 allCalls
 	"Answer a collection of selectors for the messages sent by this method."
 
 	^parseTree allCalls! !
 
-!JSMethod methodsFor: 'utilities' stamp: 'ar 7/6/2003 21:40'!
+!SlangJSMethod methodsFor: 'utilities' stamp: 'ar 7/6/2003 21:40'!
 copy
 	"Make a deep copy of this JSMethod."
 
@@ -3253,7 +3250,7 @@ copy
 		yourself
 ! !
 
-!JSMethod methodsFor: 'utilities' stamp: 'jpb 5/28/2020 17:51:38'!
+!SlangJSMethod methodsFor: 'utilities' stamp: 'jpb 5/28/2020 17:51:38'!
 freeVariableReferences
 	"Answer a collection of variables referenced this method, excluding locals, arguments, and pseudovariables."
 
@@ -3269,14 +3266,14 @@ freeVariableReferences
 	#('self' 'nil' 'true' 'false' 'null') do: [ :var | refs remove: var ifAbsent: [] ].
 	^ refs asSortedCollection! !
 
-!JSMethod methodsFor: 'utilities' stamp: 'jpb 5/27/2020 21:16:58'!
+!SlangJSMethod methodsFor: 'utilities' stamp: 'jpb 5/27/2020 21:16:58'!
 hasNoCCode
 	"Answer true if the receiver does not use inlined C or C declarations, which are not currently renamed properly by the the inliner."
 
 	declarations isEmpty ifFalse: [ ^ false ].
 	^ true! !
 
-!JSMethod methodsFor: 'utilities'!
+!SlangJSMethod methodsFor: 'utilities'!
 nodeCount
 	"Answer the number of nodes in this method's parseTree (a rough measure of its size)."
 
@@ -3285,7 +3282,7 @@ nodeCount
 	parseTree nodesDo: [ :n | cnt _ cnt + 1 ].
 	^cnt! !
 
-!JSMethod methodsFor: 'utilities' stamp: 'jpb 5/28/2020 18:01:18'!
+!SlangJSMethod methodsFor: 'utilities' stamp: 'jpb 5/28/2020 18:01:18'!
 removeUnusedTemps
 	"Remove all of the unused temps in this method. Answer a bag (why the hell a bag???) with the references."
 	"After inlining some variable references are now obsolete, we could fix them there but the 
@@ -3306,7 +3303,7 @@ removeUnusedTemps
 	^refs
 ! !
 
-!JSMethod methodsFor: 'utilities'!
+!SlangJSMethod methodsFor: 'utilities'!
 variablesAssignedTo
 	"Answer a collection of variables assigned to by this method."
 
@@ -3317,7 +3314,7 @@ variablesAssignedTo
 	].
 	^ refs! !
 
-!JSMethod methodsFor: 'inlining' stamp: 'jpb 5/20/2020 23:59:55'!
+!SlangJSMethod methodsFor: 'inlining' stamp: 'jpb 5/20/2020 23:59:55'!
 argAssignmentsFor: meth args: argList in: aCodeGen
 	"Return a collection of assignment nodes that assign the given argument expressions to the formal parameter variables of the given method."
 	"Optimization: If the actual parameters are either constants or local variables in the target method (the receiver), substitute them directly into the body of meth. Note that global variables cannot be subsituted because the inlined method might depend on the exact ordering of side effects to the globals."
@@ -3338,7 +3335,7 @@ argAssignmentsFor: meth args: argList in: aCodeGen
 	meth parseTree: (meth parseTree bindVariablesIn: substitutionDict).
 	^stmtList! !
 
-!JSMethod methodsFor: 'inlining'!
+!SlangJSMethod methodsFor: 'inlining'!
 checkForCompleteness: stmtLists in: aCodeGen
 	"Set the complete flag if none of the given statement list nodes contains further candidates for inlining."
 
@@ -3358,7 +3355,7 @@ checkForCompleteness: stmtLists in: aCodeGen
 		].
 	].! !
 
-!JSMethod methodsFor: 'inlining' stamp: 'jpb 5/21/2020 00:00:11'!
+!SlangJSMethod methodsFor: 'inlining' stamp: 'jpb 5/21/2020 00:00:11'!
 exitVar: exitVar label: exitLabel
 	"Replace each return statement in this method with an assignment to the exit variable followed by a goto to the given label. Return true if a goto was generated."
 	"Optimization: If exitVar is nil, the return value of the inlined method is not being used, so don't add the assignment statement."
@@ -3396,7 +3393,7 @@ exitVar: exitVar label: exitLabel
 	].
 	^labelUsed! !
 
-!JSMethod methodsFor: 'inlining' stamp: 'jpb 5/21/2020 11:39:14'!
+!SlangJSMethod methodsFor: 'inlining' stamp: 'jpb 5/21/2020 11:39:14'!
 inlineCaseStatementBranchesIn: aCodeGen localizingVars: varsList
 
 	| stmt sel meth newStatements maxTemp usedVars exitLabel v |
@@ -3453,7 +3450,7 @@ inlineCaseStatementBranchesIn: aCodeGen localizingVars: varsList
 	].
 ! !
 
-!JSMethod methodsFor: 'inlining'!
+!SlangJSMethod methodsFor: 'inlining'!
 inlineCodeOrNilForStatement: aNode in: aCodeGen
 	"If the given statement node can be inlined, answer the statements that replace it. Otherwise, answer nil."
 
@@ -3479,7 +3476,7 @@ inlineCodeOrNilForStatement: aNode in: aCodeGen
 	].
 	^nil! !
 
-!JSMethod methodsFor: 'inlining' stamp: 'dtl 6/3/2010 00:31'!
+!SlangJSMethod methodsFor: 'inlining' stamp: 'dtl 6/3/2010 00:31'!
 inlineFunctionCall: aSendNode in: aCodeGen
 	"Answer the body of the called function, substituting the actual parameters for the formal argument variables in the method body."
 	"Assume caller has established that:
@@ -3500,7 +3497,7 @@ inlineFunctionCall: aSendNode in: aCodeGen
 	meth parseTree bindVariablesIn: substitutionDict.
 	^ meth statements first expression! !
 
-!JSMethod methodsFor: 'inlining' stamp: 'jpb 5/21/2020 11:33:23'!
+!SlangJSMethod methodsFor: 'inlining' stamp: 'jpb 5/21/2020 11:33:23'!
 inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in: aCodeGen
 	"Answer a collection of statments to replace the given send. directReturn indicates that the send is the expression of a return statement, so returns can be left in the body of the inlined method. If exitVar is nil, the value returned by the send is not used; thus, returns need not assign to the output variable."
 
@@ -3542,7 +3539,7 @@ inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in: aCodeGen
 	].
 	^inlineStmts! !
 
-!JSMethod methodsFor: 'inlining'!
+!SlangJSMethod methodsFor: 'inlining'!
 inlineableFunctionCall: aNode in: aCodeGen
 	"Answer true if the given send node is a call to a 'functional' method--a method whose body is a single return statement of some expression and whose actual parameters can all be directly substituted."
 
@@ -3556,7 +3553,7 @@ inlineableFunctionCall: aNode in: aCodeGen
 		^false
 	].! !
 
-!JSMethod methodsFor: 'inlining'!
+!SlangJSMethod methodsFor: 'inlining'!
 inlineableSend: aNode in: aCodeGen
 	"Answer true if the given send node is a call to a method that can be inlined."
 
@@ -3565,7 +3562,7 @@ inlineableSend: aNode in: aCodeGen
 	m _ aCodeGen methodNamed: aNode selector.  "nil if builtin or external function"
 	^(m ~= nil) and: [m isComplete and: [aCodeGen mayInline: m selector]]! !
 
-!JSMethod methodsFor: 'inlining'!
+!SlangJSMethod methodsFor: 'inlining'!
 isFunctional
 	"Answer true if the receiver is a functional method. That is, if it consists of a single return statement of an expression that contains no other returns."
 
@@ -3574,7 +3571,7 @@ isFunctional
 	parseTree statements last expression nodesDo: [ :n | n isReturn ifTrue: [ ^false ]].
 	^true! !
 
-!JSMethod methodsFor: 'inlining' stamp: 'jpb 5/28/2020 17:51:50'!
+!SlangJSMethod methodsFor: 'inlining' stamp: 'jpb 5/28/2020 17:51:50'!
 isSubstitutableNode: aNode
 	"Answer true if the given parameter node is either a constant, a local variable, or a formal parameter of the receiver. Such parameter nodes may be substituted directly into the body of the method during inlining. Note that global variables cannot be subsituted because the inlined method might depend on the exact ordering of side effects to the globals."
 
@@ -3583,7 +3580,7 @@ isSubstitutableNode: aNode
 		[(locals includes: aNode name) or:
 		[args includes: aNode name]]! !
 
-!JSMethod methodsFor: 'inlining' stamp: 'jpb 5/28/2020 18:00:55'!
+!SlangJSMethod methodsFor: 'inlining' stamp: 'jpb 5/28/2020 18:00:55'!
 isSubstitutableNode: aNode intoMethod: targetMeth in: aCodeGen
 	"Answer true if the given parameter node is either a constant, a local variable, or a formal parameter of the receiver. Such parameter nodes may be substituted directly into the body of the method during inlining. Note that global variables cannot be subsituted into methods with possible side effects (i.e., methods that may assign to global variables) because the inlined method might depend on having the value of the global variable captured when it is passed in as an argument."
 
@@ -3614,7 +3611,7 @@ isSubstitutableNode: aNode intoMethod: targetMeth in: aCodeGen
 
 	^ true! !
 
-!JSMethod methodsFor: 'inlining' stamp: 'nk 4/5/2005 20:37'!
+!SlangJSMethod methodsFor: 'inlining' stamp: 'nk 4/5/2005 20:37'!
 statementsListsForInlining
 	"Answer a collection of statement list nodes that are candidates for inlining. Currently, we cannot inline into the argument blocks of and: and or: messages."
 
@@ -3660,7 +3657,7 @@ statementsListsForInlining
 	].
 	^stmtLists! !
 
-!JSMethod methodsFor: 'inlining' stamp: 'jm 12/13/1998 10:07'!
+!SlangJSMethod methodsFor: 'inlining' stamp: 'jm 12/13/1998 10:07'!
 tryToInlineMethodsIn: aCodeGen
 	"Expand any (complete) inline methods called by this method. Set the complete bit when all inlining has been done. Return true if something was inlined."
 
@@ -3709,7 +3706,7 @@ tryToInlineMethodsIn: aCodeGen
 	].
 	^didSomething! !
 
-!JSMethod methodsFor: 'inlining'!
+!SlangJSMethod methodsFor: 'inlining'!
 unusedLabelForInliningInto: targetMethod
 
 	| usedLabels |
@@ -3717,7 +3714,7 @@ unusedLabelForInliningInto: targetMethod
 	usedLabels addAll: targetMethod labels.
 	^self unusedNamePrefixedBy: 'l' avoiding: usedLabels! !
 
-!JSMethod methodsFor: 'primitive compilation' stamp: 'bf 10/5/2014 20:41'!
+!SlangJSMethod methodsFor: 'primitive compilation' stamp: 'bf 10/5/2014 20:41'!
 argConversionExprFor: varName stackIndex: stackIndex 
 	"Return the parse tree for an expression that fetches and converts the 
 	primitive argument at the given stack offset."
@@ -3752,7 +3749,7 @@ argConversionExprFor: varName stackIndex: stackIndex
 	exprList do: [:e | stmtList addAll: (self statementsFor: e varName: varName)].
 	^ stmtList! !
 
-!JSMethod methodsFor: 'primitive compilation' stamp: 'bf 10/3/2014 14:09'!
+!SlangJSMethod methodsFor: 'primitive compilation' stamp: 'bf 10/3/2014 14:09'!
 checkSuccessExpr
 	"Return the parse tree for an expression that aborts the primitive if the successFlag is not true."
 
@@ -3761,7 +3758,7 @@ checkSuccessExpr
 	^ self statementsFor: expr varName: ''
 ! !
 
-!JSMethod methodsFor: 'primitive compilation' stamp: 'jpb 5/21/2020 00:01:59'!
+!SlangJSMethod methodsFor: 'primitive compilation' stamp: 'jpb 5/21/2020 00:01:59'!
 covertToZeroBasedArrayReferences
 	"Replace the index expressions in at: and at:put: messages with (<expr> - 1), since C uses zero-based array indexing."
 	"Note: Up through release 1.31, generated primitives used the convention that array variables pointed to the first element. That meant that Smalltalk one-based index expressions had to have one subtracted to yield a zero-based index. Later, we decided to adjust the base address by -1 once in the primitive prolog rather on every array access. This resulted in a five percent performance increase for the bitmap compress/decompress primitives. This method is retained as documentation and in case we choose to revert the the previous scheme."
@@ -3785,7 +3782,7 @@ covertToZeroBasedArrayReferences
 	].
 ! !
 
-!JSMethod methodsFor: 'primitive compilation' stamp: 'ar 4/4/2006 21:15'!
+!SlangJSMethod methodsFor: 'primitive compilation' stamp: 'ar 4/4/2006 21:15'!
 fetchRcvrExpr
 	"Return the parse tree for an expression that fetches the receiver from the stack."
 
@@ -3794,7 +3791,7 @@ fetchRcvrExpr
 	^ self statementsFor: expr varName: ''
 ! !
 
-!JSMethod methodsFor: 'primitive compilation' stamp: 'jpb 5/21/2020 00:02:22'!
+!SlangJSMethod methodsFor: 'primitive compilation' stamp: 'jpb 5/21/2020 00:02:22'!
 fixUpReturns: argCount postlog: postlog
 	"Replace each return statement in this method with (a) the given postlog, (b) code to pop the receiver and the given number of arguments, and (c) code to push the integer result and return."
 
@@ -3824,7 +3821,7 @@ fixUpReturns: argCount postlog: postlog
 			node setStatements: newStmts asArray]].
 ! !
 
-!JSMethod methodsFor: 'primitive compilation' stamp: 'bf 10/5/2014 20:42'!
+!SlangJSMethod methodsFor: 'primitive compilation' stamp: 'bf 10/5/2014 20:42'!
 instVarGetExprFor: varName offset: instIndex
 	"Return the parse tree for an expression that fetches and converts the value of the instance variable at the given offset."
 
@@ -3860,7 +3857,7 @@ instVarGetExprFor: varName offset: instIndex
 	^ stmtList
 ! !
 
-!JSMethod methodsFor: 'primitive compilation' stamp: 'TPR 3/2/2000 16:13'!
+!SlangJSMethod methodsFor: 'primitive compilation' stamp: 'TPR 3/2/2000 16:13'!
 instVarPutExprFor: varName offset: instIndex
 	"Return the parse tree for an expression that saves the value of the integer instance variable at the given offset."
 
@@ -3872,7 +3869,7 @@ instVarPutExprFor: varName offset: instIndex
 	^ self statementsFor: expr varName: varName
 ! !
 
-!JSMethod methodsFor: 'primitive compilation' stamp: 'TPR 3/2/2000 16:13'!
+!SlangJSMethod methodsFor: 'primitive compilation' stamp: 'TPR 3/2/2000 16:13'!
 popArgsExpr: argCount
 	"Return the parse tree for an expression that pops the given number of arguments from the stack."
 
@@ -3881,7 +3878,7 @@ popArgsExpr: argCount
 	^ self statementsFor: expr varName: ''
 ! !
 
-!JSMethod methodsFor: 'primitive compilation' stamp: 'ar 2/3/2001 17:33'!
+!SlangJSMethod methodsFor: 'primitive compilation' stamp: 'ar 2/3/2001 17:33'!
 preparePrimitiveName
 	"Prepare the selector for this method in translation"
 	| aClass |
@@ -3895,7 +3892,7 @@ preparePrimitiveName
 
 ! !
 
-!JSMethod methodsFor: 'primitive compilation' stamp: 'bf 10/14/2014 15:42'!
+!SlangJSMethod methodsFor: 'primitive compilation' stamp: 'bf 10/14/2014 15:42'!
 preparePrimitivePrologueShared: sharedInstVars assigned: assignedInstVars
 	"Add a prolog and postlog to a primitive method. The prolog copies any instance variables referenced by this primitive method into local variables. The postlog copies values of assigned-to variables back into the instance. The names of the new locals are added to the local variables list.
 
@@ -3960,7 +3957,7 @@ selector == #setInterpreter: ifTrue:[self halt].
 			parseTree setStatements: prolog, parseTree statements, postlog].
 ! !
 
-!JSMethod methodsFor: 'primitive compilation' stamp: 'jpb 5/21/2020 11:34:47'!
+!SlangJSMethod methodsFor: 'primitive compilation' stamp: 'jpb 5/21/2020 11:34:47'!
 replaceSizeMessages
 	"Replace sends of the message 'size' with calls to sizeOfSTArrayFromCPrimitive."
 
@@ -3972,7 +3969,7 @@ replaceSizeMessages
 				arguments: (Array with: n receiver)]].
 ! !
 
-!JSMethod methodsFor: 'primitive compilation' stamp: 'TPR 2/29/2000 18:47'!
+!SlangJSMethod methodsFor: 'primitive compilation' stamp: 'jpb 6/1/2020 12:11:30'!
 statementsFor: sourceText varName: varName
 	"Return the parse tree for the given expression. The result is the statements list of the method parsed from the given source text."
 	"Details: Various variables are declared as locals to avoid Undeclared warnings from the parser."
@@ -3983,29 +3980,29 @@ statementsFor: sourceText varName: varName
 	self printTempsAndVar: varName on: s.
 	s nextPutAll: sourceText.
 	^ ((Compiler new parse: s contents in: Object notifying: nil)
-			asTranslationMethodOfClass: self class) statements
+			asSlangTranslationMethodOfClass: self class) statements
 ! !
 
-!JSMethod methodsFor: 'primitive compilation' stamp: 'bf 10/3/2014 13:35'!
+!SlangJSMethod methodsFor: 'primitive compilation' stamp: 'bf 10/3/2014 13:35'!
 vmNameString
 	"return the string to use as the vm name in code generated for this method"
 	^'interpreterProxy'! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'jpb 5/21/2020 11:39:29'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'jpb 5/21/2020 11:39:29'!
 asInlineNode
 	^SlangTInlineNode new method: self! !
 
-!JSMethod methodsFor: 'transformations'!
+!SlangJSMethod methodsFor: 'transformations'!
 bindClassVariablesIn: constantDictionary
 	"Class variables are used as constants. This method replaces all references to class variables in the body of this method with the corresponding constant looked up in the class pool dictionary of the source class. The source class class variables should be initialized before this method is called."
 
 	parseTree _ parseTree bindVariablesIn: constantDictionary.! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'ar 7/6/2003 20:35'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'ar 7/6/2003 20:35'!
 bindVariableUsesIn: aDictionary
 	parseTree _ parseTree bindVariableUsesIn: aDictionary.! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'jpb 5/21/2020 00:01:36'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'jpb 5/21/2020 00:01:36'!
 buildCaseStmt: aSendNode
 	"Build a case statement node for the given send of dispatchOn:in:."
 	"Note: the first argument is the variable to be dispatched on. The second argument is a constant node holding an array of unary selectors, which will be turned into sends to self."
@@ -4021,7 +4018,7 @@ buildCaseStmt: aSendNode
 		selectors: aSendNode args second value
 		arguments: (aSendNode args copyFrom: 3 to: aSendNode args size)! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'jpb 5/21/2020 00:02:52'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'jpb 5/21/2020 00:02:52'!
 extractDirective: theSelector valueBlock: aBlock default: defaultResult
 	"Find a pragma of the form:
 
@@ -4062,7 +4059,7 @@ extractDirective: theSelector valueBlock: aBlock default: defaultResult
 			 result]
 		ifFalse: [defaultResult]! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'eem 9/20/2008 18:26'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'eem 9/20/2008 18:26'!
 extractExpandCaseDirective
 	"Scan the top-level statements for an inlining directive of the form:
 		self expandCases
@@ -4074,7 +4071,7 @@ extractExpandCaseDirective
 		valueBlock: [:sendNode| true]
 		default: false! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'dtl 9/19/2010 12:19'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'dtl 9/19/2010 12:19'!
 extractExportDirective
 	"Scan the top-level statements for an inlining directive of the form:
 
@@ -4103,7 +4100,7 @@ extractExportDirective
 		default: false
 ! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'eem 11/18/2008 12:44'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'eem 11/18/2008 12:44'!
 extractLabelDirective
 	"Scan the top-level statements for an inlining directive of the form:
 
@@ -4117,7 +4114,7 @@ extractLabelDirective
 		valueBlock: [:sendNode| sendNode args first value ~= false and: [mustAsmLabel _ true. true]]
 		default: true! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'ar 7/7/2003 00:56'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'ar 7/7/2003 00:56'!
 extractSharedCase
 	"Scan the top-level statements for an shared case directive of the form:
 
@@ -4140,7 +4137,7 @@ extractSharedCase
 		args isEmpty ifFalse:[self error: 'Cannot share code sections in methods with arguments'].
 	].! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'dtl 7/4/2012 10:58'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'dtl 7/4/2012 10:58'!
 extractStaticDirective
 	"Scan the top-level statements for an inlining directive of the form:
 
@@ -4158,11 +4155,11 @@ extractStaticDirective
 					ifTrue: [false] "api methods cannot be declared static"
 					ifFalse: [nil]) "undefined, defer to the code generator for default"! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'dtl 1/22/2012 19:38'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'dtl 1/22/2012 19:38'!
 mapReceiversIn: aDictionary
 	parseTree mapReceiversIn: aDictionary.! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'dtl 1/15/2014 21:55'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'dtl 1/15/2014 21:55'!
 prepareMethodIn: aCodeGen
 	"Record sends of builtin operators, map sends of the special selector dispatchOn:in:
 	 with case statement nodes, and map sends of caseOf:[otherwise:] to switch statements.
@@ -4211,7 +4208,7 @@ prepareMethodIn: aCodeGen
 							 (#(caseOf: #caseOf:otherwise:) includes: node selector) ifTrue:
 								[parent replaceNodesIn: (Dictionary newFromPairs: { node. self buildSwitchStmt: node parent: parent })]]]]]! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'jpb 5/28/2020 19:55:58'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'jpb 5/28/2020 19:55:58'!
 recordDeclarations
 	"Record C type declarations of the forms
 
@@ -4267,11 +4264,11 @@ recordDeclarations
 	].
 	parseTree setStatements: newStatements asArray.! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'ikp 9/26/97 14:50'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'ikp 9/26/97 14:50'!
 removeAssertions
 	parseTree removeAssertions! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'jpb 5/28/2020 17:52:10'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'jpb 5/28/2020 17:52:10'!
 removeFinalSelfReturn
 	"The Smalltalk parser automatically adds the statement '^self' to the end of methods without explicit returns. This method removes such statements, since the generated code has no notion of 'self' anyway."
 
@@ -4286,7 +4283,7 @@ removeFinalSelfReturn
 		parseTree setStatements: stmtList.
 	].! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'dtl 8/20/2011 14:28'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'dtl 8/20/2011 14:28'!
 renameSelector: selectorName as: newSelectorName
 	"Rename selectors such that generated code will use the newSelectorName. This
 	is intended to allow methods that may have default implementations in the support
@@ -4304,16 +4301,16 @@ renameSelector: selectorName as: newSelectorName
 				as: newSelectorName ]
 ! !
 
-!JSMethod methodsFor: 'transformations' stamp: 'ar 7/6/2003 21:31'!
+!SlangJSMethod methodsFor: 'transformations' stamp: 'ar 7/6/2003 21:31'!
 replaceNodesIn: map
 	parseTree _ parseTree replaceNodesIn: map.! !
 
-!JSMethod methodsFor: 'JS code generation' stamp: 'bf 10/3/2014 17:33'!
+!SlangJSMethod methodsFor: 'JS code generation' stamp: 'bf 10/3/2014 17:33'!
 beOneBasedArray: varName
 	oneBasedArrays add: varName.
 ! !
 
-!JSMethod methodsFor: 'JS code generation' stamp: 'ikp 6/9/2004 16:15'!
+!SlangJSMethod methodsFor: 'JS code generation' stamp: 'ikp 6/9/2004 16:15'!
 emitInlineOn: aStream level: level generator: aCodeGen
 	"Emit C code for this method onto the given stream. All calls to inlined methods should already have been expanded."
 	self removeUnusedTemps.
@@ -4331,18 +4328,20 @@ emitInlineOn: aStream level: level generator: aCodeGen
 	parseTree emitJSCodeOn: aStream level: level+1 generator: aCodeGen.
 	aStream tab: level; nextPutAll: '}'; cr.! !
 
-!JSMethod methodsFor: 'JS code generation' stamp: 'bf 11/12/2014 00:38'!
+!SlangJSMethod methodsFor: 'JS code generation' stamp: 'jpb 5/31/2020 21:00:07'!
 emitJSCodeOn: aStream generator: aCodeGen
 	"Emit JS code for this method onto the given stream. All calls to inlined methods should already have been expanded."
 	aCodeGen currentMethod: self.
+	
 	aCodeGen pushScope: declarations while: [
 		self emitJSCommentOn: aStream.	"place method comment before function"
 		self emitJSHeaderOn: aStream generator: aCodeGen.
 		(self emitJSSpecialOn:  aStream level: 1 generator: aCodeGen)
 			ifFalse: [parseTree emitJSCodeOn: aStream level: 1 generator: aCodeGen].
-		aStream nextPutAll: '}'; cr]! !
+			
+		aStream nextPutAll: '}'; newLine]! !
 
-!JSMethod methodsFor: 'JS code generation' stamp: 'hg 8/14/2000 16:09'!
+!SlangJSMethod methodsFor: 'JS code generation' stamp: 'hg 8/14/2000 16:09'!
 emitJSCommentOn: aStream
 	"Emit the transferred Smalltalk comments as C comments."
 
@@ -4355,7 +4354,7 @@ emitJSCommentOn: aStream
 				nextPutAll: ' */';
 				cr]]! !
 
-!JSMethod methodsFor: 'JS code generation' stamp: 'bf 10/1/2014 13:34'!
+!SlangJSMethod methodsFor: 'JS code generation' stamp: 'jpb 5/31/2020 20:59:04'!
 emitJSFunctionHeader: aStream generator: aCodeGen
 	"Emit a C function header for this method onto the given stream."
 
@@ -4364,36 +4363,42 @@ emitJSFunctionHeader: aStream generator: aCodeGen
 			[:pragma|
 			aStream nextPutAll: (pragma argumentAt: 1).
 			^self]].
+	
 	self emitJSFunctionHeader: aStream generator: aCodeGen newlineBeforeName: false! !
 
-!JSMethod methodsFor: 'JS code generation' stamp: 'jpb 5/24/2020 08:45:39'!
+!SlangJSMethod methodsFor: 'JS code generation' stamp: 'jpb 5/31/2020 20:33:09'!
 emitJSFunctionHeader: aStream generator: aCodeGen newlineBeforeName: newlineBeforeName "<Boolean>"
 	"Emit a JS function header for this method onto the given stream."
 
 	aStream nextPutAll: 'function'.
-	newlineBeforeName ifTrue: [aStream cr] ifFalse: [aStream space].
+	newlineBeforeName ifTrue: [aStream newLine] ifFalse: [aStream space].
+	
 	(returnType last = $)
 	and: [returnType includesSubString: (aCodeGen jsFunctionNameFor: self selectorForCodeGeneration)]) ifTrue:
 		["Hack fix for e.g. <returnType: 'void (*setInterruptCheckChain(void (*aFunction)(void)))()'>"
 		 ^self].
+	
 	aStream
 		nextPutAll: (aCodeGen jsFunctionNameFor: self selectorForCodeGeneration);
 		nextPut: $(.
+		
 	args
 		do: [:arg | aStream nextPutAll: (aCodeGen returnPrefixFromVariable: arg)]
 		separatedBy: [ aStream nextPutAll: ', ' ].
+		
 	aStream nextPut: $)! !
 
-!JSMethod methodsFor: 'JS code generation' stamp: 'bf 10/7/2014 00:25'!
+!SlangJSMethod methodsFor: 'JS code generation' stamp: 'jpb 5/31/2020 20:59:30'!
 emitJSHeaderOn: aStream generator: aCodeGen
 	"Emit a C function header for this method onto the given stream."
 
-	aStream cr. 
+	aStream newLine. 
 	self emitJSFunctionHeader: aStream generator: aCodeGen.
-	aStream nextPutAll: ' {'; cr.
-	self emitGlobalStructReferenceOn: aStream.
+	aStream nextPutAll: ' {'; newLine.
+
 	locals do: [ :var | | varDecl |
 		aStream nextPutAll: '	var ', (aCodeGen returnPrefixFromVariable: var).
+		
 		varDecl _ declarations at: var asString ifAbsent: [''].
 		(varDecl includes: $=)
 			ifTrue: [ | const |
@@ -4404,77 +4409,65 @@ emitJSHeaderOn: aStream generator: aCodeGen
 						size _ (varDecl copyAfter: $[) copyUpTo: $].
 						size ifEmpty: [self halt].
 						aStream nextPutAll: ' = new Array(', size, ')']].
-		aStream nextPutAll: ';'; cr
+				
+		aStream nextPutAll: ';'; newLine
 	].
+
 	(#(primitiveExtractChannel primitiveCondenseSound) includes: selector)
-		ifTrue: [#(src dst) do: [:v | aStream nextPutAll: '	var _', v, ' = 0;'; cr]].
-	locals isEmpty ifFalse: [ aStream cr ].! !
+		ifTrue: [#(src dst) do: [:v | aStream nextPutAll: '	var _', v, ' = 0;'; newLine]].
+		
+	locals isEmpty ifFalse: [ aStream newLine ].! !
 
-!JSMethod methodsFor: 'JS code generation' stamp: 'bf 10/6/2014 15:42'!
-emitProxyFunctionPrototype: aStream generator: aCodeGen
-	"Emit an indirect C function header for this method onto the given stream."
-
-	| arg |
-	aStream nextPutAll: returnType; space.
-	aStream nextPutAll: '(*', (aCodeGen jsFunctionNameFor: self selectorForCodeGeneration), ')('.
-	args isEmpty ifTrue: [ aStream nextPutAll: 'void' ].
-	1 to: args size do: [ :i |
-		arg _ args at: i.
-		(declarations includesKey: arg) ifTrue: [
-			aStream nextPutAll: (declarations at: arg).
-		] ifFalse: [
-			aStream nextPutAll: 'sqInt ', (args at: i).
-		].
-		i < args size ifTrue: [ aStream nextPutAll: ', ' ].
-	].
-	aStream nextPutAll: ')'.! !
-
-!JSMethod methodsFor: 'JS code generation' stamp: 'bf 10/4/2014 12:22'!
+!SlangJSMethod methodsFor: 'JS code generation' stamp: 'bf 10/4/2014 12:22'!
 isOneBasedArray: varName
 	^oneBasedArrays ifNotNil: [oneBasedArrays includes: varName].
 ! !
 
-!JSMethod methodsFor: 'JS code generation' stamp: 'bf 10/4/2014 12:33'!
+!SlangJSMethod methodsFor: 'JS code generation' stamp: 'bf 10/4/2014 12:33'!
 oneBasedArrays
 	^oneBasedArrays! !
 
-!JSMethod methodsFor: 'JS hacks' stamp: 'jpb 5/21/2020 11:20:12'!
+!SlangJSMethod methodsFor: 'JS hacks' stamp: 'jpb 5/31/2020 21:05:55'!
 emitJSSpecialOn: aStream level: level generator: aCodeGen
 	| expr type |
-	aCodeGen pluginName = 'B2DPlugin' ifFalse: [^false].
+
 	(returnType includes: $*) ifFalse: [^false].
 	parseTree statements first isReturn ifFalse: [^false].
+	
 	expr _ parseTree statements first expression.
 	expr isSend ifFalse: [^false].
 	type _ returnType.
+	
 	expr selector = #coerce:to: ifTrue: [
 		type = expr args second value ifFalse: [self halt].
 		expr _ expr args first.
 	].
+
 	expr selector = #+ ifFalse: [^false].
 	aStream tab: level; nextPutAll: 'return '.
 	
 	self flag: #fixme.
 	"expr emitJSPointerArithmetic: type on: aStream level: level generator: aCodeGen type: type top: true."
-	aStream nextPutAll: ';'; cr. 
+	aStream nextPutAll: ';'; newLine.
+	 
 	^true
 ! !
 
-!JSMethod methodsFor: 'testing'!
+!SlangJSMethod methodsFor: 'testing'!
 hasReturn
 	"Answer true if this method contains a return statement."
 
 	parseTree nodesDo: [ :n | n isReturn ifTrue: [ ^ true ]].
 	^ false! !
 
-!JSMethod methodsFor: 'testing' stamp: 'jpb 5/28/2020 17:45:06'!
+!SlangJSMethod methodsFor: 'testing' stamp: 'jpb 5/28/2020 17:45:06'!
 is: query
 	#Assertion = query
 		ifTrue: [ ^(selector beginsWith: 'assert') or: [selector beginsWith: 'verify'] ].
 		
 	^super is: query! !
 
-!JSMethod methodsFor: 'initialization' stamp: 'jpb 5/21/2020 11:34:40'!
+!SlangJSMethod methodsFor: 'initialization' stamp: 'jpb 5/21/2020 11:34:40'!
 newCascadeTempFor: aTParseNode
 	| varNode |
 	self flag: #fixme.
@@ -4488,7 +4481,7 @@ newCascadeTempFor: aTParseNode
 			put: [:cg| "FIXME: self determineTypeFor: aTParseNode in: cg"]].
 	^varNode! !
 
-!JSMethod methodsFor: 'initialization' stamp: 'dtl 9/19/2010 14:58'!
+!SlangJSMethod methodsFor: 'initialization' stamp: 'jpb 6/1/2020 12:10:44'!
 setSelector: sel definingClass: class args: argList locals: localList block: aBlockNode primitive: aNumber properties: methodProperties comment: aComment
 	"Initialize this method using the given information."
 
@@ -4502,7 +4495,7 @@ setSelector: sel definingClass: class args: argList locals: localList block: aBl
 	primitive _ aNumber.
 	properties _ methodProperties.
 	comment _ aComment.
-	parseTree _ aBlockNode asTranslatorNodeIn: self.
+	parseTree _ aBlockNode asSlangTranslatorNodeIn: self.
 	labels _ OrderedCollection new.
 	complete _ false.  "set to true when all possible inlining has been done"
 	export _ self extractExportDirective.
@@ -4513,7 +4506,7 @@ setSelector: sel definingClass: class args: argList locals: localList block: aBl
 	self recordDeclarations.
 	globalStructureBuildMethodHasFoo _ 0! !
 
-!JSMethod methodsFor: 'initialization' stamp: 'jm 2/12/98 11:55'!
+!SlangJSMethod methodsFor: 'initialization' stamp: 'jm 2/12/98 11:55'!
 setSelector: sel returnType: retType args: argList locals: localList declarations: decls primitive: primNumber parseTree: aNode labels: labelList complete: completeFlag
 	"Initialize this method using the given information. Used for copying."
 
@@ -4527,31 +4520,74 @@ setSelector: sel returnType: retType args: argList locals: localList declaration
 	labels _ labelList.
 	complete _ completeFlag.! !
 
-!JSMethod methodsFor: 'private' stamp: 'TPR 2/29/2000 18:45'!
+!SlangJSMethod methodsFor: 'private' stamp: 'TPR 2/29/2000 18:45'!
 printTempsAndVar: varName on: aStream 
 	"add the required temps and the varname to the stream"
 	aStream nextPutAll: '| rcvr stackPointer successFlag ' , varName , ' |';
 	 cr! !
 
-!JSMethod class methodsFor: 'class initialization' stamp: 'ar 11/18/1999 20:06'!
+!SlangJSMethod class methodsFor: 'class initialization' stamp: 'ar 11/18/1999 20:06'!
 initialize
 	"JSMethod initialize"	
 	CaseStatements _ IdentitySet new: 10.
 	CaseStatements addAll: #(dispatchOn:in: dispatchOn:in:with: dispatchOn:in:with:with:).! !
 
-!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:09:42'!
+!SlangBrowser methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/31/2020 20:40:59'!
+showJSSource: aBoolean
+	aBoolean
+		ifTrue: [ self contentsSymbol: #slangJSource ]
+		ifFalse: [ self contentsSymbol: #source ]! !
+
+!SlangBrowser methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/31/2020 20:40:30'!
+showingJSSource
+	^self contentsSymbol == #slangJSource! !
+
+!SlangBrowser methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/31/2020 20:50:59'!
+showingJSSourceString
+	^ (self showingJSSource 
+		ifTrue:
+			['<yes>']
+		ifFalse:
+			['<no>']), 'JavaScript source'! !
+
+!SlangBrowser methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/31/2020 20:40:52'!
+toggleShowJSSource
+	self showJSSource: self showingJSSource not! !
+
+!SlangBrowser methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/31/2020 20:56:03'!
+translatedJSSource
+	"Returns the C source of the selected class using Slang as generating"
+	 | selectedClass selector codeGenerator translatedSource methodNode |
+	selectedClass _ self selectedClassOrMetaClass.
+	
+	(selectedClass isNil or: [(selector _ self selectedMessageName) isNil]) ifTrue: [^ ''].
+	selectedClass compiledMethodAt: selector ifAbsent: [^ ''].
+	
+	codeGenerator _ SlangJSCodeGenerator new initialize.
+	codeGenerator declareMethodsStatic: false.
+	codeGenerator permitMethodPruning: true.
+	codeGenerator prepareMethodsInlined: false doAssertions: true.
+
+	codeGenerator addClass: selectedClass.
+	methodNode _ codeGenerator methodNamed: selector.
+	translatedSource _ ReadWriteStream on: String new.
+	methodNode emitJSCodeOn: translatedSource generator: codeGenerator.
+	
+	^translatedSource contents! !
+
+!SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:09:42'!
 emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen
 	^self emitJSCodeOn: aStream level: level generator: aCodeGen! !
 
-!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:09:52'!
+!SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:09:52'!
 emitJSCodeAsExpressionOn: aStream level: level generator: aCodeGen
 	^self emitJSCodeOn: aStream level: level generator: aCodeGen! !
 
-!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:10:04'!
+!SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:10:04'!
 emitJSCodeOn: aStream level: lev generator: gen
 	self subclassResponsibility.! !
 
-!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:10:12'!
+!SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:10:12'!
 emitJSCommentOn: aStream level: level
 	"Emit the transferred Smalltalk comments as C comments."
 
@@ -4567,51 +4603,51 @@ emitJSCommentOn: aStream level: level
 				cr].
 		aStream cr]! !
 
-!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:10:20'!
+!SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:10:20'!
 isBitBltPtr
 	^false! !
 
-!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:10:32'!
+!SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:10:32'!
 isConstantNull
 	^false! !
 
-!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:10:41'!
+!SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:10:41'!
 isConstantZero
 	^false! !
 
-!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:10:50'!
+!SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:10:50'!
 isEqualityTest
 	^false! !
 
-!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:10:59'!
+!SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:10:59'!
 isInterpreterProxyConstant
 	^false! !
 
-!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:11:11'!
+!SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:11:11'!
 isLeafOrFunc
 	^self isLeaf! !
 
-!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:11:21'!
+!SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:11:21'!
 isPlusOne
 	^false! !
 
-!SlangTParseNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:11:51'!
+!SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:11:51'!
 isTimesFour
 	^false! !
 
-!SlangTAssignmentNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:03:42'!
+!SlangTAssignmentNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:03:42'!
 emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen
 	aStream nextPut: $(.
 	self emitJSCodeOn: aStream level: level generator: aCodeGen.
 	aStream nextPut: $)! !
 
-!SlangTAssignmentNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:04:11'!
+!SlangTAssignmentNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:04:11'!
 emitJSCodeAsExpressionOn: aStream level: level generator: aCodeGen
 	aStream nextPut: $(.
 	self emitJSCodeOn: aStream level: level generator: aCodeGen.
 	aStream nextPut: $)! !
 
-!SlangTAssignmentNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:04:25'!
+!SlangTAssignmentNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:04:25'!
 emitJSCodeOn: aStream level: level generator: aCodeGen
 	expression isSwitch ifTrue:
 		[^expression emitJSCodeOn: aStream addToEndOfCases: self level: level generator: aCodeGen].
@@ -4632,11 +4668,11 @@ emitJSCodeOn: aStream level: level generator: aCodeGen
 			expression emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen.
 			coerceToInt ifTrue: [aStream nextPutAll: '|0'].]! !
 
-!SlangTAssignmentNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:04:51'!
+!SlangTAssignmentNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:04:51'!
 isFloatIn: aCodeGen
 	^variable isFloatIn: aCodeGen! !
 
-!SlangTCaseStmtNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:05:32'!
+!SlangTCaseStmtNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:05:32'!
 emitJSCodeOn: aStream level: level generator: aCodeGen
 
 	| indent |
@@ -4655,38 +4691,38 @@ emitJSCodeOn: aStream level: level generator: aCodeGen
 	level timesRepeat: [ aStream tab ].
 	aStream nextPutAll: '}'.! !
 
-!SlangTConstantNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:06:03'!
+!SlangTConstantNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:06:03'!
 emitJSCodeOn: aStream level: level generator: aCodeGen
 	"Emit a C literal."
 
 	aStream nextPutAll: (aCodeGen jsLiteralFor: value).! !
 
-!SlangTConstantNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:06:20'!
+!SlangTConstantNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:06:20'!
 isConstantZero
 	^ value = 0! !
 
-!SlangTConstantNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:06:31'!
+!SlangTConstantNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:06:31'!
 isFloatIn: aCodeGen
 	^value isFloat! !
 
-!SlangTDefineNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:07:00'!
+!SlangTDefineNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:07:00'!
 emitJSCodeOn: aStream level: level generator: aCodeGen
 	"Emit a C literal."
 
 	aStream nextPutAll: name.! !
 
-!SlangTGoToNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:07:26'!
+!SlangTGoToNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:07:26'!
 emitJSCodeOn: aStream level: level generator: aCodeGen
 	"Emit a C goto statement."
 
 	aStream nextPutAll: 'goto '.
 	aStream nextPutAll: label.! !
 
-!SlangTInlineNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:08:13'!
+!SlangTInlineNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:08:13'!
 emitJSCodeOn: aStream level: level generator: aCodeGen
 	method emitInlineOn: aStream level: level generator: aCodeGen.! !
 
-!SlangTLabeledCommentNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:08:41'!
+!SlangTLabeledCommentNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:08:41'!
 emitJSCodeOn: aStream level: level generator: aCodeGen
 	"Emit a C comment with optional label."
 
@@ -4695,7 +4731,7 @@ emitJSCodeOn: aStream level: level generator: aCodeGen
 	aStream nextPutAll: comment.
 	aStream nextPutAll: ' */'.! !
 
-!SlangTNotImplementedNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:09:12'!
+!SlangTNotImplementedNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:09:12'!
 emitJSCodeOn: aStream level: level generator: aCodeGen
 	"Emit a comment only"
 
@@ -4706,7 +4742,7 @@ emitJSCodeOn: aStream level: level generator: aCodeGen
 		cr; nextPutAll: ' ***/'; cr
 ! !
 
-!SlangTReturnNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:12:08'!
+!SlangTReturnNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:12:08'!
 emitJSCodeOn: aStream level: level generator: aCodeGen
 
 	(expression isSwitch
@@ -4726,7 +4762,7 @@ emitJSCodeOn: aStream level: level generator: aCodeGen
 		expression emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen
 	].! !
 
-!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:12:30'!
+!SlangTSendNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:12:30'!
 emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen
 	"Emit the receiver in a form that can be passed as an argument."
 
@@ -4737,11 +4773,11 @@ emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen
 			["Otherwise generate the vanilla C function call."
 			 self emitJSCodeAsFunctionCallOn: aStream level: level generator: aCodeGen]]! !
 
-!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:12:40'!
+!SlangTSendNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:12:40'!
 emitJSCodeAsExpressionOn: aStream level: level generator: aCodeGen
 	^self emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen! !
 
-!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:12:48'!
+!SlangTSendNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:12:48'!
 emitJSCodeAsFunctionCallOn: aStream level: level generator: aCodeGen
 
 	"Translate this message send into a JS function call"
@@ -4769,7 +4805,7 @@ emitJSCodeAsFunctionCallOn: aStream level: level generator: aCodeGen
 		separatedBy: [aStream nextPut: $,; space].
 	aStream nextPut: $)! !
 
-!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:13:01'!
+!SlangTSendNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:13:01'!
 emitJSCodeAsPointerDereferenceOn: aStream level: level generator: aCodeGen
 	"If appropriate, translate this message send as a pointer dereference"
 
@@ -4787,7 +4823,7 @@ emitJSCodeAsPointerDereferenceOn: aStream level: level generator: aCodeGen
 	aStream nextPut: $).
 	^true! !
 
-!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:13:11'!
+!SlangTSendNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:13:11'!
 emitJSCodeOn: aStream level: level generator: aCodeGen
 	"Emit the receiver as a statement."
 
@@ -4798,7 +4834,7 @@ emitJSCodeOn: aStream level: level generator: aCodeGen
 			["Otherwise generate the vanilla C function call."
 			 self emitJSCodeAsFunctionCallOn: aStream level: level generator: aCodeGen]]! !
 
-!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:13:27'!
+!SlangTSendNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:13:27'!
 emitJSPointerArithmetic: type on: aStream level: level generator: aGenerator type: cType top: top
 	(selector = #+) ifFalse: [self halt].
 	receiver isVariable
@@ -4811,37 +4847,37 @@ emitJSPointerArithmetic: type on: aStream level: level generator: aGenerator typ
 	aGenerator emitJSExpression: arguments first on: aStream.
 	top ifTrue: [aStream nextPutAll: ')'].! !
 
-!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:13:36'!
+!SlangTSendNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:13:36'!
 isEqualityTest
 	^#(= == ~= ~~) includes: self selector! !
 
-!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:13:45'!
+!SlangTSendNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:13:45'!
 isFloatIn: aCodeGen
 	selector precedence = 2 ifFalse: [^false].
 	^ (receiver isFloatIn: aCodeGen)
 		or: [arguments first isFloatIn: aCodeGen]! !
 
-!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:13:59'!
+!SlangTSendNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:13:59'!
 isInterpreterProxyConstant
 	^#(nilObject trueObject falseObject) includes: self selector! !
 
-!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:14:07'!
+!SlangTSendNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:14:07'!
 isLeafOrFunc
 	selector precedence = 2 ifTrue: [^false].
 	(#(and: or: bitAnd: bitOr: bitXor: bitShift:) includes: selector) ifTrue: [^false].
 	^true! !
 
-!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:14:21'!
+!SlangTSendNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:14:21'!
 isPlusOne
 	^ self selector = #+ and: [self args first isConstant and: [self args first value = 1]]! !
 
-!SlangTSendNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:14:28'!
+!SlangTSendNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:14:28'!
 isTimesFour
 	^self args first isConstant and:
 		[(self selector = #* and: [self args first value = 4])
 		or: [self selector = #<< and: [self args first value = 2]]]! !
 
-!SlangTStmtListNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:15:03'!
+!SlangTStmtListNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:15:03'!
 emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen
 
 	| statementWasComment |
@@ -4856,41 +4892,43 @@ emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen
 			[((self endsWithCloseBracket: aStream)
 			  or: [statementWasComment]) ifFalse: [aStream nextPut: $,]]! !
 
-!SlangTStmtListNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:15:06'!
+!SlangTStmtListNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:15:06'!
 emitJSCodeAsExpressionOn: aStream level: level generator: aCodeGen
 	^self emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen! !
 
-!SlangTStmtListNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:15:19'!
+!SlangTStmtListNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/31/2020 21:05:38'!
 emitJSCodeOn: aStream level: level generator: aCodeGen
 
 	self emitJSCommentOn: aStream level: level.
+	
 	statements do: [:s |
 		s emitJSCommentOn: aStream level: level.
 		aStream tab: level.
 		s emitJSCodeOn: aStream level: level generator: aCodeGen.
+		
 		(((self endsWithCloseBracket: aStream) not
 			and: [(s is: #Comment) not])
 				and: [s requiresCLineTerminator])
 			ifTrue: [aStream nextPut: $;].
-		aStream cr].
+		aStream newLine].
 ! !
 
-!SlangTVariableNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:15:35'!
+!SlangTVariableNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:15:35'!
 emitJSCodeOn: aStream level: level generator: aCodeGen
 
 	name = 'nil'
 		ifTrue: [ aStream nextPutAll: (aCodeGen jsLiteralFor: nil) ]
 		ifFalse: [ aStream nextPutAll: (aCodeGen returnPrefixFromVariable: name) ].! !
 
-!SlangTVariableNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:15:44'!
+!SlangTVariableNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:15:44'!
 isBitBltPtr
 	^#('sourceBits' 'destBits') includes: self name! !
 
-!SlangTVariableNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:15:52'!
+!SlangTVariableNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:15:52'!
 isConstantNull
 	^ name = 'nil'! !
 
-!SlangTVariableNode methodsFor: '*Slang-Javascript' stamp: 'jpb 5/30/2020 12:16:00'!
+!SlangTVariableNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:16:00'!
 isFloatIn: aCodeGen
 	| type |
 	type := aCodeGen typeOfVariable: name.
@@ -4900,5 +4938,5 @@ isFloatIn: aCodeGen
 	(type beginsWithAnyOf: #('double ' 'float ')) ifTrue: [^true].
 	(type beginsWithAnyOf: #('int ' 'unsigned ' 'sqInt ' 'usqInt ' 'var ')) ifTrue: [^false].
 	self halt: 'need to handle ', type! !
-JSCodeGenerator initialize!
-JSMethod initialize!
+SlangJSCodeGenerator initialize!
+SlangJSMethod initialize!

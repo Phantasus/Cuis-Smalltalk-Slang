@@ -1,46 +1,49 @@
-'From Cuis 5.0 [latest update: #4112] on 1 June 2020 at 12:12:04 pm'!
-'Description License: MIT'!
-!provides: 'Slang-Tools-Tests' 1 2!
-SystemOrganization addCategory: #'Slang-Tools-Tests'!
+'From Cuis 5.0 [latest update: #4112] on 1 June 2020 at 12:45:37 pm'!
+'Description Contains the tests for the Slang kernel, which provides the base for the Slang transpilation system and Smalltalk dialect.
+
+License: MIT'!
+!provides: 'Slang-Kernel-Tests' 1 0!
+!requires: 'Slang-Kernel' 1 0 nil!
+SystemOrganization addCategory: #'Slang-Kernel-Tests'!
 
 
-!classDefinition: #SlangParseNodeTest category: #'Slang-Tools-Tests'!
+!classDefinition: #SlangParseNodeTest category: #'Slang-Kernel-Tests'!
 TestCase subclass: #SlangParseNodeTest
 	instanceVariableNames: 'usedClass'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Slang-Tools-Tests'!
-!classDefinition: 'SlangParseNodeTest class' category: #'Slang-Tools-Tests'!
+	category: 'Slang-Kernel-Tests'!
+!classDefinition: 'SlangParseNodeTest class' category: #'Slang-Kernel-Tests'!
 SlangParseNodeTest class
 	instanceVariableNames: ''!
 
-!classDefinition: #SlangSystemServiceTest category: #'Slang-Tools-Tests'!
+!classDefinition: #SlangSystemServiceTest category: #'Slang-Kernel-Tests'!
 TestCase subclass: #SlangSystemServiceTest
 	instanceVariableNames: 'usedClass'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Slang-Tools-Tests'!
-!classDefinition: 'SlangSystemServiceTest class' category: #'Slang-Tools-Tests'!
+	category: 'Slang-Kernel-Tests'!
+!classDefinition: 'SlangSystemServiceTest class' category: #'Slang-Kernel-Tests'!
 SlangSystemServiceTest class
 	instanceVariableNames: ''!
 
-!classDefinition: #SlangTestSupportInterpreter category: #'Slang-Tools-Tests'!
+!classDefinition: #SlangTestSupportInterpreter category: #'Slang-Kernel-Tests'!
 SlangPlugin subclass: #SlangTestSupportInterpreter
 	instanceVariableNames: 'cg inlineFlag primFailCode aVarWithOneReference aVarWithTwoReferences aVariable breakSelector'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Slang-Tools-Tests'!
-!classDefinition: 'SlangTestSupportInterpreter class' category: #'Slang-Tools-Tests'!
+	category: 'Slang-Kernel-Tests'!
+!classDefinition: 'SlangTestSupportInterpreter class' category: #'Slang-Kernel-Tests'!
 SlangTestSupportInterpreter class
 	instanceVariableNames: ''!
 
-!classDefinition: #SlangTestSupportPlugin category: #'Slang-Tools-Tests'!
+!classDefinition: #SlangTestSupportPlugin category: #'Slang-Kernel-Tests'!
 SlangPlugin subclass: #SlangTestSupportPlugin
 	instanceVariableNames: 'cg inlineFlag'
 	classVariableNames: ''
 	poolDictionaries: ''
-	category: 'Slang-Tools-Tests'!
-!classDefinition: 'SlangTestSupportPlugin class' category: #'Slang-Tools-Tests'!
+	category: 'Slang-Kernel-Tests'!
+!classDefinition: 'SlangTestSupportPlugin class' category: #'Slang-Kernel-Tests'!
 SlangTestSupportPlugin class
 	instanceVariableNames: ''!
 

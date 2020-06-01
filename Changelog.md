@@ -4,6 +4,24 @@ This file lists the history of changes made to the repository
 in a more wordy fashion of what this was about as an addition
 to descriptive commit messages.
 
+## Update 0.001f1
+
+Affected versions
+  - Slang-Tools 1.24
+  - Slang-C 1.1
+  - Slang-C-Tests 1.2
+  - Slang-Javascript 1.18
+  - Slang-Kernel 1.0
+  - Slang-Tests 1.0
+  - Slang-Tools 1.4
+  
+Modularizes the Slang packages so that the C specific stuff goes into
+Slang-C, the Tools related stuff is now placed in Tools (like Browser UI)
+and the Basic functionality stuff is put into the Kernel, which has a
+lower version number because it was created afterwards. Earlier the Slang-Tools
+package contained everything.
+
+
 ## Update 0.001e1
 
 Affected versions
