@@ -9,7 +9,25 @@ authors at the end of the file.
 
 # Entries
 
-## 31th May 2020 (jpb)
+## 1st June 2020 (jpb)
+
+I corrected the ordinal numbers in the journal, this particular nuance
+of English is something I don't often use. In the morning I looked up
+at [githut.info](https://githut.info) which languages have the most
+bang for buck in terms of userbase. To make a pragmatic choice on
+which languages are currently used and then generate to these target
+languages, to get a wide reach.
+
+![Githut: Java(1st), Go(2nd), Swift(3rd)](Assets/githut_20200531.png "Three Githut candidates")
+
+Currently it seems if I or anybody invests time in building further
+code generators then it's best (at the time of writing) invested in
+building one for Java and then Swift. As Java is used on Android
+for App development and Swift is used on IOS (take that Apple for
+not allowing interpreter languages back in the beginnings).
+
+
+## 31st May 2020 (jpb)
 
 Today I found the time to finally a little bit adopt the code
 which merged in from the VMMakerJS package, which originally came
@@ -510,7 +528,7 @@ Plugin Template from the opensmalltalks-vm subdirs and tested against
 that and hoped that this interface won't break in the future.
 
 
-## 21th May 2020 (jpb)
+## 21st May 2020 (jpb)
 
 Today I wrote a small [Design document](docs/Design.md) which has
 only the intention of showing what is the broad structure of the
