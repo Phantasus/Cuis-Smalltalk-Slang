@@ -36,6 +36,16 @@ make in combination sense. Maybe the tests should be just put into Slang-Tests
 as when you are testing you are normally using the whole stack. Something
 to ponder.
 
+I threw out the `generateBaseHeaderSize` slang generation methods, really
+why are there special methods for that?! It's also nowehre used in the
+opensmalltalk-vm repository. Also `bytesPerWord` not found, probably
+long gone a long time ago. Other legacy Slang features which go
+out of the door are:
+
+- `preIncrement` and `postIncrement` as these are basically syntax
+  sugar selectors for C and even there it's more safely used
+  in loops but a bad idea outside them. So remove them.
+  
 
 ## 31st May 2020 (jpb)
 

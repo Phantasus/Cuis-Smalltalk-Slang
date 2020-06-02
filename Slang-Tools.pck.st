@@ -1,9 +1,9 @@
-'From Cuis 5.0 [latest update: #4112] on 1 June 2020 at 12:45:38 pm'!
+'From Cuis 5.0 [latest update: #4112] on 1 June 2020 at 3:57:22 pm'!
 'Description Contains tools for dealing with Slang, for example specialized browsers.
 
 License: MIT
 Author: Josef Philip Bernhart'!
-!provides: 'Slang-Tools' 1 24!
+!provides: 'Slang-Tools' 1 25!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-Tools'!
 

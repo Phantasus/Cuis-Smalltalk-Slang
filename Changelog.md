@@ -4,6 +4,24 @@ This file lists the history of changes made to the repository
 in a more wordy fashion of what this was about as an addition
 to descriptive commit messages.
 
+## Update 0.001g1
+
+Affected versions
+  - Slang-Tools 1.25
+  - Slang-C 1.3
+  - Slang-C-Tests 1.2
+  - Slang-Javascript 1.20
+  - Slang-Kernel 1.2
+  - Slang-Kernel-Tests 1.0
+  - Slang-Tools 1.4
+  
+Adds a `SlangConformist` which encapsulates the knowledge of what
+a Slang construct is and what is not. Removes `preIncrement`, `postIncrement`,
+`generateBaseHeaderSize`, `bytesPerWord` as these were not used in
+the codebase or were leaking C abstractions to begin with (`++` and `--`
+are questionable).
+
+
 ## Update 0.001f1
 
 Affected versions
@@ -12,7 +30,7 @@ Affected versions
   - Slang-C-Tests 1.2
   - Slang-Javascript 1.18
   - Slang-Kernel 1.0
-  - Slang-Tests 1.0
+  - Slang-Kernel-Tests 1.0
   - Slang-Tools 1.4
   
 Modularizes the Slang packages so that the C specific stuff goes into

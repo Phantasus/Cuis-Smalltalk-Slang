@@ -1,15 +1,15 @@
-'From Cuis 5.0 [latest update: #4112] on 1 June 2020 at 12:45:34 pm'!
+'From Cuis 5.0 [latest update: #4112] on 2 June 2020 at 7:56:40 am'!
 'Description Converting Slang to JavaScript is achieved by this package.
 
 License: MIT'!
-!provides: 'Slang-Javascript' 1 18!
+!provides: 'Slang-Javascript' 1 20!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-JavaScript'!
 
 
 !classDefinition: #SlangJSCodeGenerator category: #'Slang-JavaScript'!
 SlangCodeGenerator subclass: #SlangJSCodeGenerator
-	instanceVariableNames: 'translationDict inlineList constants variables variableDeclarations scopeStack methods preparedMethodList variablesSetCache headerFiles globalVariableUsage useSymbolicConstants generateDeadCode doNotRemoveMethodList asArgumentTranslationDict receiverDict originClass currentMethod logger declareMethodsStatic permitMethodPruning pools abstractDeclarations uncheckedAbstractMethods cCodeTranslationDict oneBasedArrays typeRepository'
+	instanceVariableNames: 'inlineList variableDeclarations scopeStack preparedMethodList variablesSetCache headerFiles globalVariableUsage generateDeadCode doNotRemoveMethodList asArgumentTranslationDict receiverDict currentMethod logger declareMethodsStatic permitMethodPruning oneBasedArrays typeRepository'
 	classVariableNames: 'IsActive UseRightShiftForDivide'
 	poolDictionaries: ''
 	category: 'Slang-JavaScript'!
@@ -46,55 +46,6 @@ printOn: aStream
 
 	super printOn: aStream.
 	aStream nextPutAll: ' (', selector, ')'.! !
-
-!SlangJSCodeGenerator methodsFor: 'public' stamp: 'TPR 3/2/2000 11:22'!
-addAllClassVarsFor: aClass
-	"Add the class variables for the given class (and its superclasses) to the code base as constants."
-
-	| allClasses |
-	allClasses _ aClass withAllSuperclasses.
-	allClasses do: [:c | self addClassVarsFor: c].
-! !
-
-!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/19/2020 15:59:56'!
-addClass: aClass
-	"Add the variables and methods of the given class to the code base."
-
-	aClass prepareToBeAddedToCodeGenerator: self.
-	self checkClassForNameConflicts: aClass.
-	self addClassVarsFor: aClass.
-	"ikp..."
-	self addPoolVarsFor: aClass.
-	variables addAll: aClass instVarNames.
-	self retainMethods: aClass requiredMethodNames.
-
-	"The identity of the translated class is kept in vmClass for use in identifying the
-	translated source. Unless otherwise overridden, the first class to be added to the
-	code generator will provide this identifier."
-	originClass ifNil: [self vmClass: aClass].
-	'Adding Class ' , aClass name , '...'
-		displayProgressAt: Sensor mousePoint
-		from: 0
-		to: aClass selectors size
-		during:
-			[:bar |
-			 aClass selectors withIndexDo: [:sel :i |
-				bar value: i.
-				self addMethodFor: aClass selector: sel]].
-		
-	aClass declareVarsIn: self! !
-
-!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/21/2020 00:01:05'!
-addClassVarsFor: aClass
-	"Add the class variables for the given class to the code base as constants."
-	| val node |
-	aClass classPool associationsDo: [:assoc | 
-		val _ assoc value.
-		(useSymbolicConstants and:[self isJSLiteral: val])
-			ifTrue:[node _ SlangTDefineNode new setName: assoc key asString value: assoc value]
-			ifFalse:[node _ SlangTConstantNode new setValue: assoc value].
-		constants at: assoc key asString put: node].
-! !
 
 !SlangJSCodeGenerator methodsFor: 'public' stamp: 'ar 2/14/1999 01:08'!
 addHeaderFile: aString
@@ -182,20 +133,6 @@ addMethodsForPrimitives: classAndSelectorList
 		m locals addAll: (m freeVariableReferences difference: sharedInstVars)].
 	! !
 
-!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/21/2020 00:01:15'!
-addPoolVarsFor: aClass 
-	"Add the pool variables for the given class to the code base as constants."
-
-	(aClass sharedPools reject: [:pool| pools includes: pool]) do:
-		[:pool |
-		pools add: pool.
-		pool bindingsDo: [:assoc | | val node |
-			val _ assoc value.
-			node _ (useSymbolicConstants and:[self isJSLiteral: val])
-						ifTrue:[SlangTDefineNode new setName: assoc key asString value: assoc value]
-						ifFalse:[SlangTConstantNode new setValue: assoc value].
-			constants at: assoc key asString put: node]].! !
-
 !SlangJSCodeGenerator methodsFor: 'public' stamp: 'ikp 9/26/97 14:48'!
 codeString
 	"Return a string containing all the C code for the code base. Used for testing."
@@ -229,34 +166,6 @@ globalsAsSet
 !SlangJSCodeGenerator methodsFor: 'public' stamp: 'bf 10/6/2014 23:48'!
 ignoredMethods
 	^#()! !
-
-!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/31/2020 14:23:26'!
-initialize
-	super initialize.
-
-	translationDict _ Dictionary new.
-	inlineList _ Array new.
-	constants _ Dictionary new: 100.
-	
-	variables _ OrderedCollection new: 100.
-	variableDeclarations _ Dictionary new: 100.
-	methods _ Dictionary new: 500.
-
-	typeRepository _ SlangCTypeRepository new.
-	
-	self initializeTranslationDictionary.
-	
-	receiverDict _ Dictionary new.
-	headerFiles _ OrderedCollection new.
-	globalVariableUsage _ Dictionary new.
-	
-	useSymbolicConstants _ true.
-	scopeStack _ OrderedCollection new.
-	pools _ IdentitySet new.
-	
-	abstractDeclarations _ IdentitySet new.
-	uncheckedAbstractMethods _ OrderedCollection new.
-! !
 
 !SlangJSCodeGenerator methodsFor: 'public' stamp: 'JMM 11/28/2002 11:52'!
 isGlobalStructureBuild
@@ -306,46 +215,6 @@ See also #var:type: for simple var decls"
 			self printArray: array on: s.
 			s nextPut: $]])! !
 
-!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/19/2020 15:59:56'!
-vmClass
-	"Answer the interpreter classs if any.  This is nil other than for the core VM."
-	^originClass! !
-
-!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 5/19/2020 15:59:56'!
-vmClass: aClass
-	"Set the interpreter class if any.  This is nil other than for the core VM."
-	originClass _ aClass! !
-
-!SlangJSCodeGenerator methodsFor: 'composition' stamp: 'dtl 1/25/2012 05:18'!
-addClass: aClass selectorPrefix: prefix
-	"Incorporate the methods of aClass, and rename with prefixes reflecting the
-	variable name. This is a simple transformation intended to support MemoryAccess,
-	with renaming to avoid conflict with standard sqMemoryAccess.h macros."
-
-	self addClass: aClass.
-	aClass selectors do: [:sel |
-		self renameSelector: sel
-			as: (prefix, '_', sel) asSymbol].
-! !
-
-!SlangJSCodeGenerator methodsFor: 'composition' stamp: 'dtl 4/11/2012 21:28'!
-addClass: aClass upTo: aSuperclass asInstanceVariable: varName
-	"For an instance variable var in one of the classes that has been added to
-	this code generator, assume that an instance of aClass would normally be
-	assigned to that variable. Arrange for the methods in aClass and all superclasses
-	up to but not including aSuperclass to be incorporated into the generated C source
-	module as if they had been methods in the class with instance variable var.
-	
-	n.b. See #addStructureClass: mechanism in Cog."
-
-	| cls |
-	cls _ aClass.
-	[cls == aSuperclass]
-		whileFalse: [self addClass: cls.
-				self mapVar: varName asInstanceOf: cls to: 'self'.
-				cls _ cls superclass]
-! !
-
 !SlangJSCodeGenerator methodsFor: 'composition' stamp: 'dtl 4/11/2012 18:52'!
 mapVar: instanceVarName asInstanceOf: aClass to: newName
 	"A class that has been added to this code generator has an instance variable
@@ -361,53 +230,6 @@ mapVar: instanceVarName asInstanceOf: aClass to: newName
 		ifAbsent: [ receiverDict at: instanceVarName asString put: newName.
 			variables remove: instanceVarName ifAbsent: [] ]
 ! !
-
-!SlangJSCodeGenerator methodsFor: 'composition' stamp: 'dtl 8/20/2011 14:32'!
-renameSelector: selectorName as: newSelectorName
-	"Rename selectors such that generated code will use the newSelectorName. This
-	is intended to allow methods that may have default implementations in the support
-	code to be renamed for code generation, such that the renamed versions will
-	be referenced rather than the default platform implementations. For example,
-	if #pointerForOop: is implemented in Smalltalk, it may be renamed such that
-	the generated pointerForOop() function will be renamed to avoid conflict with
-	the standard definitions provided in sqMemoryAccess.h."
-
-	(methods includesKey: selectorName)
-		ifFalse: [ self error: 'no such selector: ', selectorName ].
-	methods do: [ :m |
-		m renameSelector: selectorName as: newSelectorName ].
-	methods at: newSelectorName put: (methods at: selectorName).
-	methods removeKey: selectorName
-! !
-
-!SlangJSCodeGenerator methodsFor: 'utilities'!
-addMethod: aJSMethod
-	"Add the given method to the code base."
-
-	(methods includesKey:  aJSMethod selector) ifTrue: [
-		self error: 'Method name conflict: ', aJSMethod selector.
-	].
-	methods at: aJSMethod selector put: aJSMethod.! !
-
-!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/28/2020 17:08:12'!
-addMethodFor: aClass selector: selector
-	"Add the given method to the code base and answer its translation
-	 or nil if it shouldn't be translated."
-
-	| method tmethod |
-	method _ aClass compiledMethodAt: selector.
-	"Not implemented yet: 
-	    method requiresConcreteImplementation ifTrue: [abstractDeclarations add: selector].
-	   method isAbstract ifTrue: [^nil]."
-	
-	(method pragmaAt: #doNotGenerate) ifNotNil: [^nil].
-	
-	tmethod _ self compileToJSMethodSelector: selector in: aClass.
-	tmethod hasDoNotGenerateStatement ifTrue: [^nil].
-	
-	self addMethod: tmethod.
-	
-	^tmethod! !
 
 !SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'eem 2/12/2009 13:44'!
 checkDeleteVariable: aName
@@ -430,8 +252,8 @@ checkForGlobalUsage: vars in: aJSMethod
 					item add: aJSMethod selector]].
 	aJSMethod referencesGlobalStructMakeZero! !
 
-!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 6/1/2020 12:11:30'!
-compileToJSMethodSelector: selector in: aClass
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 6/1/2020 14:50:20'!
+compileToMethodSelector: selector in: aClass
 	"Compile a method to a JSMethod"
 
 	^(systemAdapter parseSelector: selector in: aClass)
@@ -457,7 +279,7 @@ emitBuiltinConstructFor: msgNode on: aStream level: level
 	self perform: action with: msgNode with: aStream with: level.
 	^true! !
 
-!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/20/2020 21:52:16'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 6/1/2020 14:30:52'!
 findCodeForMethod: selector
 	"Answer a string containing the C code for the given method."
 	"Example:
@@ -465,37 +287,12 @@ findCodeForMethod: selector
 			cCodeForMethod: #ifTests)"
 
 	| m s |
-	m _ self methodNamed: selector.
+	m _ self findMethodNamed: selector.
 	m = nil ifTrue: [ self error: 'method not found in code base: ', selector ].
 
 	s _ (ReadWriteStream on: '').
 	m emitJSCodeOn: s generator: self.
 	^ s contents! !
-
-!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'eem 7/19/2013 10:32'!
-isBuiltinSelector: sel
-	"Answer true if the given selector is one of the builtin selectors."
-
-	^(self isKernelSelector: sel) or: [translationDict includesKey: sel]! !
-
-!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/21/2020 11:19:55'!
-isKernelSelector: sel
-	"Answer true if the given selector is one of the kernel selectors that are implemented as macros."
-
-	^(#(error:
-		 oopAt: oopAt:put: oopAtPointer: oopAtPointer:put:
-		 byteAt: byteAt:put: byteAtPointer: byteAtPointer:put:
-		 shortAt: shortAt:put: shortAtPointer: shortAtPointer:put:
-		 intAt: intAt:put: intAtPointer: intAtPointer:put:
-		 longAt: longAt:put: longAtPointer: longAtPointer:put:
-		 longLongAt: longLongAt:put: longLongAtPointer: longLongAtPointer:put:
-		 fetchFloatAt:into: storeFloatAt:from:
-				fetchFloatAtPointer:into: storeFloatAtPointer:from:
-		 fetchSingleFloatAt:into: storeSingleFloatAt:from:
-				fetchSingleFloatAtPointer:into: storeSingleFloatAtPointer:from:
-		 pointerForOop: oopForPointer:
-		 coerce:to: coerceSimple:to:)
-			includes: sel)! !
 
 !SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 5/28/2020 19:09:17'!
 localizeGlobalVariables
@@ -531,12 +328,6 @@ memoryAccessSelectors
 		#shortAtPointer: . #shortAtPointer:put: .
 		#intAtPointer: . #intAtPointer:put: .
 		#longAtPointer: . #longAtPointer:put: }! !
-
-!SlangJSCodeGenerator methodsFor: 'utilities'!
-methodNamed: selector
-	"Answer the method in the code base with the given selector."
-
-	^ methods at: selector ifAbsent: [ nil ]! !
 
 !SlangJSCodeGenerator methodsFor: 'utilities'!
 methodsReferringToGlobal: v
@@ -630,7 +421,7 @@ removeVariable: aName
 			
 	variableDeclarations removeKey: aName ifAbsent: []! !
 
-!SlangJSCodeGenerator methodsFor: 'utilities'!
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 6/1/2020 14:30:52'!
 reportRecursiveMethods
 	"Report in transcript all methods that can call themselves directly or indirectly or via a chain of N intermediate methods."
 
@@ -646,7 +437,7 @@ reportRecursiveMethods
 					Transcript show: m selector, ' is recursive'; cr.
 				] ifFalse: [
 					(visited includes: sel) ifFalse: [
-						called _ self methodNamed: sel.
+						called _ self findMethodNamed: sel.
 						called = nil ifFalse: [ newCalls addAll: called allCalls ].
 					].
 					visited add: sel.
@@ -676,64 +467,6 @@ translationMethodClass
 	"return the class used to produce JS translation methods from MethodNodes"
 	^SlangJSMethod! !
 
-!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'ar 7/17/1999 15:06'!
-unreachableMethods
-	"Return a collection of methods that are never invoked."
-
-	| sent out |
-	sent _ Set new.
-	methods do: [ :m |
-		m export ifTrue:[sent add: m selector].
-		sent addAll: m allCalls.
-	].
-
-	out _ OrderedCollection new.
-	methods keys do: [ :sel |
-		(sent includes: sel) ifFalse: [ out add: sel ].
-	].
-	^ out! !
-
-!SlangJSCodeGenerator methodsFor: 'error notification' stamp: 'dtl 6/17/2012 23:05'!
-checkAbstractMethods
-	"For each method that has been declared abstract, ensure that a concrete
-	implementation has been provided. This check should be performed prior to
-	inlining because methods may be removed during the inlining process."
-
-	| selectors |
-	selectors _ methods keys, self uncheckedAbstractMethods.
-	abstractDeclarations do: [:sel |
-		(selectors includes: sel)
-			ifFalse: [self notify: 'missing implementation for ', sel]]
-! !
-
-!SlangJSCodeGenerator methodsFor: 'error notification' stamp: 'jpb 5/21/2020 11:09:54'!
-checkClassForNameConflicts: aClass
-	"Verify that the given class does not have constant, variable, or method names that conflict with
-	 those of previously added classes. Raise an error if a conflict is found, otherwise just return."
-
-	"check for constant name collisions in class pools"
-	aClass classPool associationsDo:
-		[:assoc |
-		(constants includesKey: assoc key asString) ifTrue:
-			[self error: 'Constant ', assoc key, ' was defined in a previously added class']].
-
-	"and in shared pools"
-	(aClass sharedPools reject: [:pool| pools includes: pool]) do:
-		[:pool |
-		pool bindingsDo:
-			[:assoc |
-			(constants includesKey: assoc key asString) ifTrue:
-				[self error: 'Constant ', assoc key, ' was defined in a previously added class']]].
-
-	"check for method name collisions"
-	aClass selectors do:
-		[:sel |
-		((methods includesKey: sel) and:
-			[ | meth |
-			meth _ aClass compiledMethodAt: sel.
-			meth isAbstract not and: [(meth pragmaAt: #doNotGenerate) isNil]]) ifTrue:
-				[self error: 'Method ', sel, ' was defined in a previously added class.']]! !
-
 !SlangJSCodeGenerator methodsFor: 'error notification'!
 printUnboundCallWarnings
 	"Print a warning message for every unbound method call in the code base."
@@ -758,35 +491,6 @@ printUnboundCallWarnings
 		Transcript show: undefined, ' -- undefined method sent by:'; cr.
 		(undefinedCalls at: undefined) do: [ :caller |
 			Transcript tab; show: caller; cr.
-		].
-	].! !
-
-!SlangJSCodeGenerator methodsFor: 'error notification'!
-printUnboundVariableReferenceWarnings
-	"Print a warning message for every unbound variable reference in the code base."
-
-	| undefinedRefs globalVars knownVars |
-	undefinedRefs _ Dictionary new.
-	globalVars _ Set new: 100.
-	globalVars addAll: variables.
-	methods do: [ :m |
-		knownVars _ globalVars copy.
-		m args do: [ :var | knownVars add: var ].
-		m locals do: [ :var | knownVars add: var ].
-		m freeVariableReferences do: [ :varName |
-			(knownVars includes: varName) ifFalse: [
-				(undefinedRefs includesKey: varName)
-					ifTrue: [ (undefinedRefs at: varName) add: m selector ]
-					ifFalse: [ undefinedRefs at: varName put: (OrderedCollection with: m selector) ].
-			].
-		].
-	].
-
-	Transcript cr.
-	undefinedRefs keys asSortedCollection do: [ :var |
-		Transcript show: var, ' -- undefined variable used in:'; cr.
-		(undefinedRefs at: var) do: [ :sel |
-			Transcript tab; show: sel; cr.
 		].
 	].! !
 
@@ -927,18 +631,18 @@ doInlining: inlineFlag
 		ifTrue: [self pruneUnreachableMethods]
 ! !
 
-!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'dtl 6/21/2008 12:54'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 6/1/2020 14:30:52'!
 inlineCaseStatementBranchesInMethodNamed: selector localizingVars: varsList 
 	"Inline case statement branches in the method with the given name."
-	(self methodNamed: selector)
+	(self findMethodNamed: selector)
 		ifNotNilDo: [:m | m inlineCaseStatementBranchesIn: self localizingVars: varsList]! !
 
-!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'ar 7/8/2003 11:27'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 6/1/2020 14:30:52'!
 inlineDispatchesInMethodNamed: selector localizingVars: varsList
 	"Inline dispatches (case statements) in the method with the given name."
 
 	| m varString |
-	m _ self methodNamed: selector.
+	m _ self findMethodNamed: selector.
 	m = nil ifFalse: [
 		m inlineCaseStatementBranchesIn: self localizingVars: varsList.
 		m parseTree nodesDo: [ :n |
@@ -1060,14 +764,14 @@ removeAssertions
 		
 	methods _ newMethods.! !
 
-!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'dtl 6/21/2008 09:21'!
+!SlangJSCodeGenerator methodsFor: 'inlining' stamp: 'jpb 6/1/2020 14:30:52'!
 removeMethodsReferingToGlobals: varList except: methodNames
 	"Remove any methods (presumably inlined) that still contain references to the given obsolete global variables."
 
 	| varListAsStrings mVars |
 	varListAsStrings _ varList collect: [ :sym | sym asString ].
 		(methods keys copyWithoutAll: methodNames) do: [ :sel |
-			mVars _ (self methodNamed: sel) freeVariableReferences asSet.
+			mVars _ (self findMethodNamed: sel) freeVariableReferences asSet.
 			(mVars includesAnyOf: varListAsStrings)
 				ifTrue: [methods removeKey: sel ifAbsent: []]]
 ! !
@@ -1132,16 +836,6 @@ permitMethodPruning
 permitMethodPruning: aBoolean
 	"If false, pruning unreferenced methods will be disabled"
 	permitMethodPruning _ aBoolean! !
-
-!SlangJSCodeGenerator methodsFor: 'accessing' stamp: 'dtl 6/17/2012 23:01'!
-uncheckedAbstractMethods
-	"Answer the selectors for methods that should not be checked to ensure existence
-	of concrete implementations, such as methods that are generated directly by the
-	code generator itself."
-
-	^uncheckedAbstractMethods
-
-! !
 
 !SlangJSCodeGenerator methodsFor: 'accessing' stamp: 'ar 7/8/2003 11:23'!
 useSymbolicConstants
@@ -1494,14 +1188,6 @@ generateAtPut: msgNode on: aStream indent: level
 	self emitJSExpression: putExpr on: aStream! !
 
 !SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
-generateBaseHeaderSize: msgNode on: aStream indent: level
-	"Generate the JS code for this message onto the given stream."
-self halt.
-	aStream nextPutAll: 'BASE_HEADER_SIZE'
-
-! !
-
-!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
 generateBetweenAnd: msgNode on: aStream indent: level
 	"Generate the JS code for the between:and: message onto the given stream."
 
@@ -1585,13 +1271,6 @@ generateBitXor: msgNode on: aStream indent: level
 	self emitJSExpression: msgNode receiver on: aStream.
 	aStream nextPutAll: ' ^ '.
 	self emitJSExpression: msgNode args first on: aStream.! !
-
-!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:27'!
-generateBytesPerWord: msgNode on: aStream indent: level
-	"Generate the JS code for this message onto the given stream."
-self halt.
-	aStream nextPutAll: 'BYTES_PER_WORD'
-! !
 
 !SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 11/12/2014 17:43'!
 generateCCoercion: msgNode on: aStream indent: level
@@ -1903,27 +1582,6 @@ generateIsNil: msgNode on: aStream indent: level
 	self emitJSExpression: msgNode receiver on: aStream.
 ! !
 
-!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 11/3/2014 12:27'!
-generateJSCodeForCcode: cCode on: aStream indent: level
-	cCode = '' ifTrue: [^self].
-	aStream nextPutAll: (cCodeTranslationDict at: cCode ifAbsent: [
-		(#('sqrt' 'sin' 'cos' 'tan' 'atan' 'atan2' 'log' 'exp' 'min' 'max' 'floor') anySatisfy: [:fn | fn,'(*)' match: cCode])
-			ifTrue: ['Math.', cCode] ifFalse: [
-		('opTable[*] = (void *)*' match: cCode)
-			ifTrue: [cCode copyReplaceAll: '(void *)' with: ''] ifFalse: [
-		('fn(*Handle, &*Pitch, *)' match: cCode)
-			ifTrue: [(cCode copyReplaceAll: '&' with: 'function(p){') copyReplaceAll: 'Pitch' with: 'Pitch = p}'] ifFalse: [
-		(' ((*)querySurfaceFn)*(handle, &destWidth, &destHeight, &destDepth, &destMSB)' match: cCode)
-			ifTrue: [ 'querySurfaceFn(handle, function(w, h, d, m){destWidth = w; destHeight = h; destDepth = d; destMSB = m; })'] ifFalse: [
-		(' ((*)querySurfaceFn)*(handle, &sourceWidth, &sourceHeight, &sourceDepth, &sourceMSB)' match: cCode)
-			ifTrue: [ 'querySurfaceFn(handle, function(w, h, d, m){sourceWidth = w; sourceHeight = h; sourceDepth = d; sourceMSB = m; })'] ifFalse: [
-		(#('fn(destHandle, affectedL, affectedT, affectedR-affectedL, affectedB-affectedT)',
-			'fn(sourceHandle, 0, 0, 0, 0)') includes: cCode)
-			ifTrue: [cCode] ifFalse: [
-		"See initializeCTranslationDictionary"
-		self error: 'C: ' , cCode]]]]]]])
-! !
-
 !SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:38'!
 generateLessThan: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
@@ -2082,33 +1740,6 @@ generatePointerPlus: msgNode type: type on: aStream indent: level
 	(#('B2DPlugin' 'GeniePlugin') includes: self pluginName) ifFalse: [self halt].
 	msgNode emitJSPointerArithmetic: type on: aStream level: level generator: self type: type top: true.
 	^true
-! !
-
-!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/28/2020 17:50:57'!
-generatePreDecrement: msgNode on: aStream indent: level
-	"Generate the JS code for this message onto the given stream."
-
-	| varNode |
-	varNode _ msgNode receiver.
-	(varNode is: #Variable)
-		ifFalse: [ self error: 'preDecrement can only be applied to variables' ].
-		
-	self checkNonPointer: varNode op: '--'.
-	aStream nextPutAll: '--'.
-	aStream nextPutAll: (self returnPrefixFromVariable: varNode name).
-! !
-
-!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/28/2020 17:51:08'!
-generatePreIncrement: msgNode on: aStream indent: level
-	"Generate the JS code for this message onto the given stream."
-
-	| varNode |
-	varNode _ msgNode receiver.
-	(varNode is: #Variable)
-		ifFalse: [ self error: 'preIncrement can only be applied to variables' ].
-	aStream nextPutAll: '++'.
-	self checkNonPointer: varNode op: '++'.
-	aStream nextPutAll: (self returnPrefixFromVariable: varNode name).
 ! !
 
 !SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:42'!
@@ -2424,171 +2055,6 @@ generateWhileTrueLoop: msgNode on: aStream indent: level
 	level timesRepeat: [ aStream tab ].
 	aStream nextPutAll: '}'.! !
 
-!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/27/2020 21:57:28'!
-initializeTranslationDictionary 
-	"Initialize the dictionary mapping message names to actions for JS code generation."
-
-	| pairs |
-	translationDict _ Dictionary new: 200.
-	pairs _ #(
-	#&				#generateAnd:on:indent:
-	#|				#generateOr:on:indent:
-	#and:			#generateSequentialAnd:on:indent:
-	#or:			#generateSequentialOr:on:indent:
-	#not			#generateNot:on:indent:
-
-	#+				#generatePlus:on:indent:
-	#-				#generateMinus:on:indent:
-	#negated		#generateNegated:on:indent:
-	#abs			#generateMath:on:indent:
-	#sqrt			#generateMath:on:indent:
-	#sin			#generateMath:on:indent:
-	#cos			#generateMath:on:indent:
-	#tan			#generateMath:on:indent:
-	#atan			#generateMath:on:indent:
-	#exp			#generateMath:on:indent:
-	#log			#generateMath:on:indent:
-	#*				#generateTimes:on:indent:
-	#/				#generateDivide:on:indent:
-	#//				#generateDivide:on:indent:
-	#\\				#generateModulo:on:indent:
-	#<<			#generateShiftLeft:on:indent:
-	#>>			#generateShiftRight:on:indent:
-	#min:			#generateMin:on:indent:
-	#max:			#generateMax:on:indent:
-	#between:and:	#generateBetweenAnd:on:indent:
-
-	#bitAnd:		#generateBitAnd:on:indent:
-	#bitOr:			#generateBitOr:on:indent:
-	#bitXor:		#generateBitXor:on:indent:
-	#bitShift:		#generateBitShift:on:indent:
-	#signedBitShift:	#generateSignedBitShift:on:indent:
-	#bitInvert32		#generateBitInvert32:on:indent:
-	#bitClear:			#generateBitClear:on:indent:
-
-	#<				#generateLessThan:on:indent:
-	#<=			#generateLessThanOrEqual:on:indent:
-	#=				#generateEqual:on:indent:
-	#>				#generateGreaterThan:on:indent:
-	#>=			#generateGreaterThanOrEqual:on:indent:
-	#~=			#generateNotEqual:on:indent:
-	#==			#generateEqual:on:indent:
-	#~~			#generateNotEqual:on:indent:
-	#isNil			#generateIsNil:on:indent:
-	#notNil			#generateNotNil:on:indent:
-
-	#whileTrue: 	#generateWhileTrue:on:indent:
-	#whileFalse:	#generateWhileFalse:on:indent:
-	#whileTrue 		#generateDoWhileTrue:on:indent:
-	#whileFalse		#generateDoWhileFalse:on:indent:
-	#to:do:			#generateToDo:on:indent:
-	#to:by:do:		#generateToByDo:on:indent:
-	#repeat 		#generateRepeat:on:indent:
-
-	#ifTrue:			#generateIfTrue:on:indent:
-	#ifFalse:		#generateIfFalse:on:indent:
-	#ifTrue:ifFalse:	#generateIfTrueIfFalse:on:indent:
-	#ifFalse:ifTrue:	#generateIfFalseIfTrue:on:indent:
-
-	#at:			#generateAt:on:indent:
-	#at:put:			#generateAtPut:on:indent:
-	#basicAt:		#generateAt:on:indent:
-	#basicAt:put:	#generateAtPut:on:indent:
-
-	#integerValueOf:			#generateIntegerValueOf:on:indent:
-	#integerObjectOf:			#generateIntegerObjectOf:on:indent:
-	#isIntegerObject: 			#generateIsIntegerObject:on:indent:
-	#cPreprocessorDirective:	#generateInlineCPreprocessorDirective:on:indent:
-
-	#coerce:to:				#generateCCoercion:on:indent:
-	#coerceSimple:to:			#generateCCoercion:on:indent:
-	#addressOf:				#generateAddressOf:on:indent:
-	#signedIntFromLong			#generateSignedIntFromLong:on:indent:
-	#signedIntToLong			#generateSignedIntToLong:on:indent:
-	#signedIntFromShort		#generateSignedIntFromShort:on:indent:
-	#signedIntToShort			#generateSignedIntToShort:on:indent:
-	#preIncrement				#generatePreIncrement:on:indent:
-	#preDecrement				#generatePreDecrement:on:indent:
-	#inline:						#generateInlineDirective:on:indent:
-	#asFloat					#generateAsFloat:on:indent:
-	#asInteger					#generateAsInteger:on:indent:
-	#asUnsignedInteger			#generateAsUnsignedInteger:on:indent:
-	#asSymbol					#generateAsSymbol:on:indent:
-	#anyMask:					#generateBitAnd:on:indent:
-	#raisedTo:					#generateRaisedTo:on:indent:
-	#touch:						#generateTouch:on:indent:
-	#bytesPerWord		#generateBytesPerWord:on:indent:
-	#baseHeaderSize		#generateBaseHeaderSize:on:indent:
-
-	#sharedCodeNamed:inCase:		#generateSharedCodeDirective:on:indent:
-
-	#perform:							#generatePerform:on:indent:
-	#perform:with:						#generatePerform:on:indent:
-	#perform:with:with:					#generatePerform:on:indent:
-	#perform:with:with:with:				#generatePerform:on:indent:
-	#perform:with:with:with:with:		#generatePerform:on:indent:
-	#perform:with:with:with:with:with:	#generatePerform:on:indent:
-
-	#shouldNotImplement				#generateSmalltalkMetaError:on:indent:
-	#shouldBeImplemented				#generateSmalltalkMetaError:on:indent:
-
-	"optimized interpreterProxy calls"
-	#firstIndexableField:				#generateFirstIndexableField:on:indent:
-	#slotSizeOf:						#generateSlotSizeOf:on:indent:
-	#stSizeOf:							#generateSlotSizeOf:on:indent:
-	#byteSizeOfBytes:					#generateByteSizeOf:on:indent:
-	#byteSizeOf:						#generateByteSizeOf:on:indent:
-	#fetchClassOf:						#generateFetchClassOf:on:indent:
-	#superclassOf:						#generateSuperclassOf:on:indent:
-	#instanceSizeOf:					#generateInstanceSizeOf:on:indent:
-	#is:KindOf: 							#generateIsKindOf:on:indent:
-	#isFloatObject:						#generateIsFloatObject:on:indent:
-	#cDigitCopyFrom:to:len:				#generateCDigitCopy:on:indent:
-	#sizeOfSTArrayFromCPrimitive:		#generateSizeOfSTArrayFromCPrimitive:on:indent:
-	#asciiValue							#generateIdentityUnary:on:indent:
-	#primitiveFail						#generateInterpreterProxyCall:on:indent:
-	#intAtPointer:						#generateIntAtPointer:on:indent:
-	#byteAtPointer:						#generateByteAtPointer:on:indent:
-	#oopForPointer:					#generateOopForPointer:on:indent:
-	#long32At:							#generateLong32At:on:indent:
-	#srcLongAt:						#generateSrcLongAt:on:indent:
-	#dstLongAt:						#generateDstLongAt:on:indent:
-	#dstLongAt:put:					#generateDstLongAtPut:on:indent:
-	).
-
-	1 to: pairs size by: 2 do: [:i |
-		translationDict at: (pairs at: i) put: (pairs at: i + 1)].
-
-	pairs _ #(
-	#ifTrue:				#generateIfTrueAsArgument:on:indent:	
-	#ifFalse:			#generateIfFalseAsArgument:on:indent:
-	#ifTrue:ifFalse:		#generateIfTrueIfFalseAsArgument:on:indent:
-	#ifFalse:ifTrue:		#generateIfFalseIfTrueAsArgument:on:indent:
-	).
-
-	asArgumentTranslationDict _ Dictionary new: 8.
-	1 to: pairs size by: 2 do: [:i |
-		asArgumentTranslationDict at: (pairs at: i) put: (pairs at: i + 1)].
-
-	cCodeTranslationDict _ Dictionary new: 8.
-	pairs _ #(
-		'fprintf(stderr, "\n%s: %s", moduleName, s)'					'console.log(moduleName + ": " + s)'
-		'interpreterProxy->majorVersion() == VM_PROXY_MAJOR'	'interpreterProxy.majorVersion() == VM_PROXY_MAJOR'
-		'interpreterProxy->minorVersion() >= VM_PROXY_MINOR'	'interpreterProxy.minorVersion() >= VM_PROXY_MINOR'
-		'rand()'														'Math.random()'
-		'*src++'													'src[_src++]' 	
-		'*dst++ = max'												'dst[_dst++] = max'
-		'src++'		 												'_src++'
-		'*dst++ = *src; src += 2'									'dst[_dst++] = src[_src]; _src += 2'
-		'tX'															'tX'
-		'tY'															'tY'
-		'((sqInt (*)(sqInt, sqInt, sqInt))copyBitsFn)(x0, x1, yValue)'	'copyBitsFn(x0, x1, yValue)'
-		'((sqInt (*)(sqInt))loadBBFn)(bbObj)'							'loadBBFn(bbObj)'
-	).
-	1 to: pairs size by: 2 do: [:i |
-		cCodeTranslationDict at: (pairs at: i) put: (pairs at: i + 1)].
-! !
-
 !SlangJSCodeGenerator methodsFor: 'JS hacks' stamp: 'bf 10/6/2014 01:43'!
 generateByteAtPointer: msgNode on: aStream indent: level
 	msgNode args first asString = 'sourcePtr + charIndex - 1'
@@ -2834,6 +2300,84 @@ oneBasedArrays: aBoolean
 	oneBasedArrays = aBoolean ifFalse: [
 		self halt: 'mixed one-based and zero-based array access'].
 	^aBoolean! !
+
+!SlangJSCodeGenerator methodsFor: 'initialization' stamp: 'jpb 6/1/2020 14:08:39'!
+initialize
+	super initialize.
+
+	translationDict _ Dictionary new.
+	inlineList _ Array new.
+	
+	variableDeclarations _ Dictionary new: 100.
+	typeRepository _ SlangCTypeRepository new.
+	
+	self initializeTranslationDictionary.
+	
+	receiverDict _ Dictionary new.
+	headerFiles _ OrderedCollection new.
+	globalVariableUsage _ Dictionary new.
+	
+	scopeStack _ OrderedCollection new.
+	abstractDeclarations _ IdentitySet new.
+	uncheckedAbstractMethods _ OrderedCollection new.
+! !
+
+!SlangJSCodeGenerator methodsFor: 'initialization' stamp: 'jpb 6/1/2020 23:14:12'!
+initializeTranslationDictionary 
+	"Initialize the dictionary mapping message names to actions for JS code generation."
+
+	| pairs |
+	super initializeTranslationDictionary.
+
+	pairs _ #(
+	#abs			#generateMath:on:indent:
+	#sqrt			#generateMath:on:indent:
+	#sin			#generateMath:on:indent:
+	#cos			#generateMath:on:indent:
+	#tan			#generateMath:on:indent:
+	#atan			#generateMath:on:indent:
+	#exp			#generateMath:on:indent:
+	#log			#generateMath:on:indent:
+
+	"optimized interpreterProxy calls"
+	#firstIndexableField:				#generateFirstIndexableField:on:indent:
+	#slotSizeOf:						#generateSlotSizeOf:on:indent:
+	#stSizeOf:							#generateSlotSizeOf:on:indent:
+	#byteSizeOfBytes:					#generateByteSizeOf:on:indent:
+	#byteSizeOf:						#generateByteSizeOf:on:indent:
+	#fetchClassOf:						#generateFetchClassOf:on:indent:
+	#superclassOf:						#generateSuperclassOf:on:indent:
+	#instanceSizeOf:					#generateInstanceSizeOf:on:indent:
+	#is:KindOf: 							#generateIsKindOf:on:indent:
+	#isFloatObject:						#generateIsFloatObject:on:indent:
+	#cDigitCopyFrom:to:len:				#generateCDigitCopy:on:indent:
+	#sizeOfSTArrayFromCPrimitive:		#generateSizeOfSTArrayFromCPrimitive:on:indent:
+	#asciiValue							#generateIdentityUnary:on:indent:
+	#primitiveFail						#generateInterpreterProxyCall:on:indent:
+	#intAtPointer:						#generateIntAtPointer:on:indent:
+	#byteAtPointer:						#generateByteAtPointer:on:indent:
+	#oopForPointer:					#generateOopForPointer:on:indent:
+	#long32At:							#generateLong32At:on:indent:
+	#srcLongAt:						#generateSrcLongAt:on:indent:
+	#dstLongAt:						#generateDstLongAt:on:indent:
+	#dstLongAt:put:					#generateDstLongAtPut:on:indent:
+	).
+
+	1 to: pairs size by: 2 do: [:i |
+		translationDict at: (pairs at: i) put: (pairs at: i + 1)].
+
+	pairs _ #(
+	#ifTrue:				#generateIfTrueAsArgument:on:indent:	
+	#ifFalse:			#generateIfFalseAsArgument:on:indent:
+	#ifTrue:ifFalse:		#generateIfTrueIfFalseAsArgument:on:indent:
+	#ifFalse:ifTrue:		#generateIfFalseIfTrueAsArgument:on:indent:
+	).
+
+	asArgumentTranslationDict _ Dictionary new: 8.
+	1 to: pairs size by: 2 do: [:i |
+		asArgumentTranslationDict at: (pairs at: i) put: (pairs at: i + 1)].
+
+! !
 
 !SlangJSCodeGenerator class methodsFor: 'preferences' stamp: 'bf 10/14/2014 13:39'!
 beActiveDuring: aBlock
@@ -3393,7 +2937,7 @@ exitVar: exitVar label: exitLabel
 	].
 	^labelUsed! !
 
-!SlangJSMethod methodsFor: 'inlining' stamp: 'jpb 5/21/2020 11:39:14'!
+!SlangJSMethod methodsFor: 'inlining' stamp: 'jpb 6/1/2020 14:30:52'!
 inlineCaseStatementBranchesIn: aCodeGen localizingVars: varsList
 
 	| stmt sel meth newStatements maxTemp usedVars exitLabel v |
@@ -3404,7 +2948,7 @@ inlineCaseStatementBranchesIn: aCodeGen localizingVars: varsList
 				stmt _ stmtNode statements first.
 				stmt isSend ifTrue: [
 					sel _ stmt selector.
-					meth _ aCodeGen methodNamed: sel.
+					meth _ aCodeGen findMethodNamed: sel.
 					"Note, original version of this method tested for #hasNoCCode. Removed
 					the test to permit inlining methods that may contain automatically
 					generated C code for type conversions. -dtl"
@@ -3476,7 +3020,7 @@ inlineCodeOrNilForStatement: aNode in: aCodeGen
 	].
 	^nil! !
 
-!SlangJSMethod methodsFor: 'inlining' stamp: 'dtl 6/3/2010 00:31'!
+!SlangJSMethod methodsFor: 'inlining' stamp: 'jpb 6/1/2020 14:30:52'!
 inlineFunctionCall: aSendNode in: aCodeGen
 	"Answer the body of the called function, substituting the actual parameters for the formal argument variables in the method body."
 	"Assume caller has established that:
@@ -3485,7 +3029,7 @@ inlineFunctionCall: aSendNode in: aCodeGen
 
 	| sel meth substitutionDict |
 	sel _ aSendNode selector.
-	meth _ (aCodeGen methodNamed: sel) copy.
+	meth _ (aCodeGen findMethodNamed: sel) copy.
 	meth renameVarsForInliningInto: self in: aCodeGen.
 	meth renameLabelsForInliningInto: self.
 	self addVarsDeclarationsAndLabelsOf: meth.
@@ -3497,13 +3041,13 @@ inlineFunctionCall: aSendNode in: aCodeGen
 	meth parseTree bindVariablesIn: substitutionDict.
 	^ meth statements first expression! !
 
-!SlangJSMethod methodsFor: 'inlining' stamp: 'jpb 5/21/2020 11:33:23'!
+!SlangJSMethod methodsFor: 'inlining' stamp: 'jpb 6/1/2020 14:30:52'!
 inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in: aCodeGen
 	"Answer a collection of statments to replace the given send. directReturn indicates that the send is the expression of a return statement, so returns can be left in the body of the inlined method. If exitVar is nil, the value returned by the send is not used; thus, returns need not assign to the output variable."
 
 	| sel meth exitLabel labelUsed inlineStmts |
 	sel _ aSendNode selector.
-	meth _ (aCodeGen methodNamed: sel) copy.
+	meth _ (aCodeGen findMethodNamed: sel) copy.
 	meth renameVarsForInliningInto: self in: aCodeGen.
 	meth renameLabelsForInliningInto: self.
 	self addVarsDeclarationsAndLabelsOf: meth.
@@ -3539,13 +3083,13 @@ inlineSend: aSendNode directReturn: directReturn exitVar: exitVar in: aCodeGen
 	].
 	^inlineStmts! !
 
-!SlangJSMethod methodsFor: 'inlining'!
+!SlangJSMethod methodsFor: 'inlining' stamp: 'jpb 6/1/2020 14:30:52'!
 inlineableFunctionCall: aNode in: aCodeGen
 	"Answer true if the given send node is a call to a 'functional' method--a method whose body is a single return statement of some expression and whose actual parameters can all be directly substituted."
 
 	| m |
 	aNode isSend ifFalse: [ ^false ].
-	m _ aCodeGen methodNamed: aNode selector.  "nil if builtin or external function"
+	m _ aCodeGen findMethodNamed: aNode selector.  "nil if builtin or external function"
 	((m ~= nil) and: [m isFunctional and: [aCodeGen mayInline: m selector]]) ifTrue: [
 		aNode args do: [ :a | (self isSubstitutableNode: a intoMethod: m in: aCodeGen) ifFalse: [ ^false ]].
 		^true
@@ -3553,13 +3097,13 @@ inlineableFunctionCall: aNode in: aCodeGen
 		^false
 	].! !
 
-!SlangJSMethod methodsFor: 'inlining'!
+!SlangJSMethod methodsFor: 'inlining' stamp: 'jpb 6/1/2020 14:30:52'!
 inlineableSend: aNode in: aCodeGen
 	"Answer true if the given send node is a call to a method that can be inlined."
 
 	| m |
 	aNode isSend ifFalse: [ ^false ].
-	m _ aCodeGen methodNamed: aNode selector.  "nil if builtin or external function"
+	m _ aCodeGen findMethodNamed: aNode selector.  "nil if builtin or external function"
 	^(m ~= nil) and: [m isComplete and: [aCodeGen mayInline: m selector]]! !
 
 !SlangJSMethod methodsFor: 'inlining'!
@@ -4554,7 +4098,7 @@ showingJSSourceString
 toggleShowJSSource
 	self showJSSource: self showingJSSource not! !
 
-!SlangBrowser methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/31/2020 20:56:03'!
+!SlangBrowser methodsFor: '*Slang-JavaScript' stamp: 'jpb 6/1/2020 14:30:52'!
 translatedJSSource
 	"Returns the C source of the selected class using Slang as generating"
 	 | selectedClass selector codeGenerator translatedSource methodNode |
@@ -4569,7 +4113,7 @@ translatedJSSource
 	codeGenerator prepareMethodsInlined: false doAssertions: true.
 
 	codeGenerator addClass: selectedClass.
-	methodNode _ codeGenerator methodNamed: selector.
+	methodNode _ codeGenerator findMethodNamed: selector.
 	translatedSource _ ReadWriteStream on: String new.
 	methodNode emitJSCodeOn: translatedSource generator: codeGenerator.
 	
