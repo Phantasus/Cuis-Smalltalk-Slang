@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4112] on 2 June 2020 at 7:56:40 am'!
+'From Cuis 5.0 [latest update: #4112] on 4 June 2020 at 8:14:10 am'!
 'Description Converting Slang to JavaScript is achieved by this package.
 
 License: MIT'!
-!provides: 'Slang-Javascript' 1 20!
+!provides: 'Slang-Javascript' 1 21!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-JavaScript'!
 
@@ -252,8 +252,8 @@ checkForGlobalUsage: vars in: aJSMethod
 					item add: aJSMethod selector]].
 	aJSMethod referencesGlobalStructMakeZero! !
 
-!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 6/1/2020 14:50:20'!
-compileToMethodSelector: selector in: aClass
+!SlangJSCodeGenerator methodsFor: 'utilities' stamp: 'jpb 6/2/2020 22:37:00'!
+compileToTMethodSelector: selector in: aClass
 	"Compile a method to a JSMethod"
 
 	^(systemAdapter parseSelector: selector in: aClass)
@@ -847,24 +847,9 @@ useSymbolicConstants: aBool
 	"Indicate whether we should generate symbolic constants instead of their actual values"
 	useSymbolicConstants _ aBool! !
 
-!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/29/2020 20:56:05'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 6/3/2020 16:13:10'!
 emitExportsOn: aStream
-	"Store all the exported primitives in a form to be used by the internal named prim system"
-	aStream nextPutAll:'
-
-void* vm_exports[][3] = {'.
-	self exportedPrimitiveNames do:[:primName|
-		aStream newLine;
-			nextPutAll:'	{"", "'; 
-			nextPutAll: primName; 
-			nextPutAll:'", (void*)'; 
-			nextPutAll: primName;
-			nextPutAll:'},'.
-	].
-	aStream nextPutAll:'
-	{NULL, NULL, NULL}
-};
-'.! !
+	"Store all the exported primitives in a form to be used by the internal named prim system"! !
 
 !SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/26/2020 21:53:46'!
 emitJSCodeOn: aStream 
@@ -1133,10 +1118,10 @@ generateAsSymbol: msgNode on: aStream indent: level
 
 	aStream nextPutAll: (self jsFunctionNameFor: msgNode receiver nameOrValue)! !
 
-!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:26'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 6/2/2020 23:56:03'!
 generateAsUnsignedInteger: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
-self halt.
+
 	aStream nextPutAll:'((usqInt)'.
 	self emitJSExpression: msgNode receiver on: aStream.
 	aStream nextPut: $)! !
@@ -2378,6 +2363,10 @@ initializeTranslationDictionary
 		asArgumentTranslationDict at: (pairs at: i) put: (pairs at: i + 1)].
 
 ! !
+
+!SlangJSCodeGenerator methodsFor: 'as yet unclassified' stamp: 'jpb 6/2/2020 22:35:04'!
+originClass: aClass 
+	originClass _ aClass! !
 
 !SlangJSCodeGenerator class methodsFor: 'preferences' stamp: 'bf 10/14/2014 13:39'!
 beActiveDuring: aBlock

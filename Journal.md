@@ -9,6 +9,23 @@ authors at the end of the file.
 
 # Entries
 
+## 3rd June 2020 (jpb)
+
+Today I removed the `vm_exports` and `builtinfo` outputs, which
+add the buildinformation or the different exported functions to
+the generated module file. I think that should be differently done,
+still I have no exact clue about it. But outputing something which
+then needs at a different place a hardcoded `#include <stddef.h>` to
+work with `gcc` is an opportunity for removal. I don't have the
+nerves for this kind of annoyance.
+
+Also I made per default the methods not `static` as in the first
+step the `SlangCCodeGenerator` emits normal C code and for containing
+most of the Smalltalk semantic methods are per default public, that
+means in the context of C that they are visible to the outside world.
+Luckily I didn't need to delete code for this, just change the defaults.
+
+
 ## 1st June 2020 (jpb)
 
 I corrected the ordinal numbers in the journal, this particular nuance

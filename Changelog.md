@@ -4,6 +4,24 @@ This file lists the history of changes made to the repository
 in a more wordy fashion of what this was about as an addition
 to descriptive commit messages.
 
+## Update 0.001h1
+
+Affected versions
+  - Slang-Tools 1.25
+  - Slang-C 1.4
+  - Slang-C-Tests 1.2
+  - Slang-Javascript 1.21
+  - Slang-Kernel 1.3
+  - Slang-Kernel-Tests 1.0
+  - Slang-Tools 1.25
+  
+Sets default to non-`static` methods (so public). Removes
+generation of `vm_exports` and builtinfo generation. Also
+adds escaping of Strings so that they can be stored into
+C strings. Replaces the usage of a dumb `ReadWriteStream`
+for all the C code generation codes and uses instead a
+wrapped stream in `SlangCLanguageWriter`.
+
 ## Update 0.001g1
 
 Affected versions

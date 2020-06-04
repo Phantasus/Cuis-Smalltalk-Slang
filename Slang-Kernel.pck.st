@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4112] on 2 June 2020 at 7:56:42 am'!
+'From Cuis 5.0 [latest update: #4112] on 4 June 2020 at 8:14:11 am'!
 'Description Contains the fundamental basic infrastructure for Slang, without any tools or language specific translation mechanisms. With just the Kernel you can''t build a plugin, you need the specific translation packages.
 
 License: MIT'!
-!provides: 'Slang-Kernel' 1 2!
+!provides: 'Slang-Kernel' 1 3!
 !requires: 'Cuis-Base' 50 4112 nil!
 SystemOrganization addCategory: #'Slang-Kernel-Tests'!
 SystemOrganization addCategory: #'Slang-Kernel'!
@@ -1184,8 +1184,8 @@ checkClassForNameConflicts: aClass
 			"meth isAbstract" false not and: [(meth pragmaAt: #doNotGenerate) isNil]]) ifTrue:
 				[self error: 'Method ', sel, ' was defined in a previously added class.']]! !
 
-!SlangCodeGenerator methodsFor: 'method queries' stamp: 'jpb 6/1/2020 14:51:05'!
-compileToMethodSelector: selector in: aClass
+!SlangCodeGenerator methodsFor: 'method queries' stamp: 'jpb 6/2/2020 22:37:00'!
+compileToTMethodSelector: selector in: aClass
 	"Compile a method to a Translation Method"
 
 	self subclassResponsibility ! !
@@ -3540,7 +3540,7 @@ emitCFunctionPrototype: aStream generator: aCodeGen
 			^self]].
 	self emitCFunctionPrototype: aStream generator: aCodeGen newlineBeforeName: false! !
 
-!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 5/30/2020 17:02:36'!
+!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 6/3/2020 00:06:26'!
 emitCFunctionPrototype: aStream generator: aCodeGen newlineBeforeName: newlineBeforeName "<Boolean>"
 	"Emit a C function header for this method onto the given stream."
 	| defaultDeclaration |
@@ -3548,9 +3548,10 @@ emitCFunctionPrototype: aStream generator: aCodeGen newlineBeforeName: newlineBe
 	defaultDeclaration _ aCodeGen findDefaultVariableDeclarationString.
 
 	export 
-		ifTrue:[aStream nextPutAll: 'EXPORT('; nextPutAll: returnType; nextPut: $)]
-		ifFalse:[(self isStaticIn: aCodeGen) ifTrue:[aStream nextPutAll: 'static '].
-				aStream nextPutAll: returnType].
+		ifTrue: [aStream nextPutAll: 'EXPORT('; nextPutAll: returnType; nextPut: $)]
+		ifFalse: [
+			(self isStaticIn: aCodeGen) ifTrue: [aStream nextPutAll: 'static '].
+			aStream nextPutAll: returnType].
 			
 	newlineBeforeName ifTrue: [aStream newLine] ifFalse: [aStream space].
 	
@@ -3620,28 +3621,33 @@ newCascadeTempFor: aTParseNode
 			put: [:cg| self determineTypeFor: aTParseNode in: cg]].
 	^varNode! !
 
-!SlangTMethod methodsFor: 'initialization' stamp: 'jpb 6/1/2020 12:10:44'!
+!SlangTMethod methodsFor: 'initialization' stamp: 'jpb 6/3/2020 00:01:37'!
 setSelector: sel definingClass: class args: argList locals: localList block: aBlockNode primitive: aNumber properties: methodProperties comment: aComment
 	"Initialize this method using the given information."
 
 	selector _ sel.
 	definingClass _ class.
-	returnType _ #sqInt. 	 "assume return type is long for now"
+	returnType _ #int. 	 "assume return type is long for now"
+	
 	args _ argList asOrderedCollection collect: [:arg | arg key].
 	locals _ (localList asSortedCollection: [:a :b| a key < b key]) collect: [:arg | arg key].
 	declarations _ Dictionary new.
+	
 	"self addTypeForSelf." "<- Cog feature to be added later"
 	primitive _ aNumber.
 	properties _ methodProperties.
 	comment _ aComment.
 	parseTree _ aBlockNode asSlangTranslatorNodeIn: self.
+	
 	labels _ OrderedCollection new.
 	complete _ false.  "set to true when all possible inlining has been done"
 	export _ self extractExportDirective.
 	static _ self extractStaticDirective.
+	
 	canAsmLabel _ self extractLabelDirective.
 	self extractSharedCase.
 	self removeFinalSelfReturn.	"must preceed recordDeclarations because this may set returnType"
+	
 	self recordDeclarations.
 	globalStructureBuildMethodHasFoo _ 0! !
 

@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4112] on 2 June 2020 at 7:56:38 am'!
+'From Cuis 5.0 [latest update: #4112] on 4 June 2020 at 8:14:08 am'!
 'Description Package for the Slang code generation to C. 
 
 License: MIT'!
-!provides: 'Slang-C' 1 3!
+!provides: 'Slang-C' 1 4!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-C-Tests'!
 SystemOrganization addCategory: #'Slang-C'!
@@ -50,7 +50,7 @@ SlangCTypeRepositoryTest class
 
 !classDefinition: #SlangCLanguageWriter category: #'Slang-C'!
 SlangObject subclass: #SlangCLanguageWriter
-	instanceVariableNames: 'stream tools'
+	instanceVariableNames: 'stream charsOnLine tabChar lfChar crChar spaceChar otherUnescapedChars'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Slang-C'!
@@ -647,10 +647,59 @@ nextPutCommentEnd
 nextPutCommentStart
 	self nextPutAll: '/* '.! !
 
-!SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 5/19/2020 18:09:23'!
+!SlangCLanguageWriter methodsFor: 'writing comments' stamp: 'jpb 6/2/2020 21:50:24'!
+nextPutSectionComment: header
+	stream nextPutAll: '/*** ' , header , ' ***/'; newLine.! !
+
+!SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 6/3/2020 15:54:42'!
+emitEscapedChar: char on: stringStream
+	"Finds an escaped version of the given string and emits it on the given stream. When no presentation was found just emit the character"
+	
+	tabChar = char ifTrue: [ stringStream nextPutAll: '\t'. ^self ].
+	lfChar = char ifTrue: [ stringStream nextPutAll: '\n'. ^self ].
+	crChar = char ifTrue: [ stringStream nextPutAll: '\r'. ^self ].
+	
+	$" = char ifTrue: [ stringStream nextPutAll: '\"'. ^self ].
+	$' = char ifTrue: [ stringStream nextPutAll: '\'''. ^self ].
+	$? = char ifTrue: [ stringStream nextPutAll: '\?'. ^self ].
+	$\ = char ifTrue: [ stringStream nextPutAll: '\\'. ^self ].
+	(otherUnescapedChars includes: char) ifTrue: [ stringStream nextPut: char. ^self ].
+	
+	7 = char asciiValue ifTrue: [ stringStream nextPutAll: '\a'. ^self ].
+	8 = char asciiValue ifTrue: [ stringStream nextPutAll: '\b'. ^self].
+				
+	spaceChar = char ifTrue: [ stringStream nextPut: spaceChar. ^self ].
+	char isAlphaNumeric ifTrue: [ stringStream nextPut: char. ^self].
+	
+	char numericValue <= 255 ifTrue: [ |hexString|
+		hexString _ char numericValue printStringBase: 16 length: 2 padded: true.
+		stringStream nextPutAll: '\x' , hexString. ^self]! !
+
+!SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 6/3/2020 07:40:00'!
+escapeString: aString 
+	^String streamContents: [:stringStream | 
+		aString do: [:char | self emitEscapedChar: char on: stringStream ].
+	]! !
+
+!SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 6/3/2020 16:01:59'!
 nextPutString: newString
+	| stringSize |
+	stringSize _ newString size.
+	
 	self nextPutStringStart.
-	self nextPutAll: newString.
+	charsOnLine > 77 ifTrue: [ self nextPut: $\. self newLine ].
+	
+	(1 to: stringSize by: 78) do: [:sliceStart |
+		| sliceSize |
+		sliceSize _  (stringSize - sliceStart).
+		sliceSize > 78 ifTrue: [ sliceSize _ 78 ].
+		sliceSize _ sliceSize - charsOnLine.
+		
+		self nextPutAll: (self escapeString: (newString copyFrom: sliceStart count: sliceSize)).
+		
+		(sliceStart + sliceSize) >= stringSize
+			ifFalse: [ self nextPut: $\. self newLine ].
+	].
 	self nextPutStringEnd.! !
 
 !SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 5/19/2020 18:08:52'!
@@ -682,25 +731,36 @@ nextPutInteger: aNumber
 			ifTrue: [stream nextPut: $U]
 			ifFalse: [stream nextPut: $L]]! !
 
-!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 5/19/2020 17:56:22'!
+!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 6/3/2020 00:17:26'!
 newLine
-	stream newLine! !
+	stream newLine.
+	charsOnLine _ 0! !
 
-!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 5/19/2020 22:27:30'!
+!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 6/3/2020 00:17:37'!
 nextPut: aChar
-	stream nextPut: aChar! !
+	stream nextPut: aChar.
+	charsOnLine _ charsOnLine + 1.! !
 
-!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 5/19/2020 17:56:12'!
+!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 6/3/2020 00:17:50'!
 nextPutAll: aString
-	stream nextPutAll: aString! !
+	stream nextPutAll: aString.
+	charsOnLine _ charsOnLine + aString size! !
 
 !SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 5/19/2020 17:49:38'!
 setStream: newStream
 	stream _ newStream! !
 
-!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 5/19/2020 22:27:44'!
+!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 6/3/2020 00:18:20'!
 space
-	stream nextPut: Character space! !
+	self nextPut: `Character space`! !
+
+!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 6/3/2020 07:46:45'!
+tab
+	self nextPut: tabChar! !
+
+!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 6/3/2020 00:16:29'!
+tab: amount
+	amount timesRepeat: [ self tab ]! !
 
 !SlangCLanguageWriter methodsFor: 'writing macros' stamp: 'jpb 5/20/2020 21:36:15'!
 nextPutConstantNamed: constantName value: constantValue 
@@ -709,10 +769,28 @@ nextPutConstantNamed: constantName value: constantValue
 	self space.
 	self nextPutAll: constantValue asString.! !
 
-!SlangCLanguageWriter methodsFor: 'initialization' stamp: 'jpb 5/20/2020 19:52:14'!
+!SlangCLanguageWriter methodsFor: 'initialization' stamp: 'jpb 6/3/2020 08:30:38'!
 initialize
 	stream _ nil.
-! !
+	charsOnLine _ 0.
+	
+	tabChar _ Character tab.
+	lfChar _ Character lf.
+	crChar _ Character cr.
+	spaceChar _ Character space.
+	otherUnescapedChars _ #($!! $# $$ $% $& $( $) $* $+ $- $_ $, $. $/ $: $; $< $= $> $@ $[ $] $^ $`)! !
+
+!SlangCLanguageWriter methodsFor: 'stream control' stamp: 'jpb 6/2/2020 21:22:15'!
+next
+	^stream next! !
+
+!SlangCLanguageWriter methodsFor: 'stream control' stamp: 'jpb 6/2/2020 21:21:17'!
+position
+	^stream position! !
+
+!SlangCLanguageWriter methodsFor: 'stream control' stamp: 'jpb 6/2/2020 21:21:55'!
+position: aSmallInteger 
+	stream position: aSmallInteger ! !
 
 !SlangCLanguageWriter methodsFor: 'as yet unclassified' stamp: 'jpb 5/24/2020 16:20:01'!
 nextPutInclude: aString 
@@ -1213,12 +1291,11 @@ currentMethod
 currentMethod: aTMethod
 	currentMethod _ aTMethod! !
 
-!SlangCCodeGenerator methodsFor: 'accessing' stamp: 'dtl 8/21/2011 17:25'!
+!SlangCCodeGenerator methodsFor: 'accessing' stamp: 'jpb 6/3/2020 17:02:51'!
 declareMethodsStatic
-	"If true generated methods will be declared static. Default is true,
-	appropriate for plugins."
+	"If true generated methods will be declared static. "
 	^ declareMethodsStatic
-		ifNil: [declareMethodsStatic _ true]! !
+		ifNil: [declareMethodsStatic _ false]! !
 
 !SlangCCodeGenerator methodsFor: 'accessing' stamp: 'dtl 8/21/2011 17:26'!
 declareMethodsStatic: aBoolean
@@ -1236,24 +1313,26 @@ permitMethodPruning: aBoolean
 	"If false, pruning unreferenced methods will be disabled"
 	permitMethodPruning _ aBoolean! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/26/2020 21:54:53'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 6/2/2020 21:19:10'!
 emitCCodeOn: aStream 
 	"Emit C code for all methods in the code base onto the given stream. All inlined method calls should already have been expanded."
+	| writer |
+	writer _ SlangCLanguageWriter on: aStream.
 
-	self emitCHeaderOn: aStream.
-	self emitCTypesOn: aStream.
-	self emitCConstantsOn: aStream.
-	self emitCFunctionPrototypes: preparedMethodList on: aStream.
-	self emitCVariablesOn: aStream.
+	self emitCHeaderOn: writer.
+	self emitCTypesOn: writer.
+	self emitCConstantsOn: writer.
+	self emitCFunctionPrototypes: preparedMethodList on: writer.
+	self emitCVariablesOn: writer.
 	
 	systemAdapter
 		showProgressIn: preparedMethodList 
 		label: 'Writing Translated Code ...'
 		do: [:bar :m :i |
 		bar value: i.
-		m emitCCodeOn: aStream generator: self ].
+		m emitCCodeOn: writer generator: self ].
 	
-	self emitExportsOn: aStream.
+	self emitExportsOn: writer.
 ! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/26/2020 21:54:53'!
@@ -1263,7 +1342,7 @@ emitCCodeOn: aStream doInlining: inlineFlag doAssertions: assertionFlag
 	self prepareMethodsInlined: inlineFlag doAssertions: assertionFlag.
 	^ self emitCCodeOn: aStream ! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/30/2020 16:38:56'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 6/2/2020 21:50:58'!
 emitCConstantsOn: aStream
 	"Store the global variable declarations on the given stream."
 	| unused constList node |
@@ -1275,7 +1354,7 @@ emitCConstantsOn: aStream
 	constList _ constants keys reject: [ :any | unused includes: any].
 	
 	constList size > 0 ifTrue: [
-		self emitCSectionHeader: 'Constants' on: aStream.
+		aStream nextPutSectionComment: 'Constants'.
 	].
 		
 	constList asSortedCollection do: [ :varName |
@@ -1319,24 +1398,18 @@ emitCFunctionPrototypes: methodList on: aStream
 emitCFunctionPrototypesSectionHeaderOn: aStream
 	aStream nextPutAll: '/*** Function Prototypes ***/'; newLine.! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/29/2020 20:49:51'!
-emitCHeaderOn: aStream
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 6/2/2020 21:26:05'!
+emitCHeaderOn: languageWriter
 	"Write a C file header onto the given stream."
 
-	aStream nextPutAll: '/* '.
-	aStream nextPutAll: headerNotice.
-	aStream nextPutAll: ' */'; newLine;
-		nextPutAll: (self fileHeaderVersionStampForSourceClass: originClass);
+	languageWriter nextPutComment: headerNotice. 
+	languageWriter nextPutAll: (self fileHeaderVersionStampForSourceClass: originClass);
 		newLine; newLine.
 
 	"Additional header files"
-	self emitHeaderFilesOn: aStream.
+	self emitHeaderFilesOn: languageWriter.
 
-	aStream newLine.! !
-
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/30/2020 16:39:23'!
-emitCSectionHeader: header on: aStream
-	aStream nextPutAll: '/*** ' , header , ' ***/'; newLine.! !
+	languageWriter newLine.! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'dtl 11/9/2006 06:42'!
 emitCTestBlock: aBlockNode on: aStream
@@ -1374,26 +1447,11 @@ emitCVariablesSectionHeaderOn: aStream
 	aStream nextPutAll: '/*** Variables ***/'; newLine.
 	! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/29/2020 20:56:12'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 6/3/2020 16:13:00'!
 emitExportsOn: aStream
-	"Store all the exported primitives in a form to be used by the internal named prim system"
-	aStream nextPutAll:'
+	"Store all the exported primitives in a form to be used by the internal named prim system"! !
 
-void* vm_exports[][3] = {'.
-	self exportedPrimitiveNames do:[:primName|
-		aStream newLine;
-			nextPutAll:'	{"", "'; 
-			nextPutAll: primName; 
-			nextPutAll:'", (void*)'; 
-			nextPutAll: primName;
-			nextPutAll:'},'.
-	].
-	aStream nextPutAll:'
-	{NULL, NULL, NULL}
-};
-'.! !
-
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/30/2020 16:02:36'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 6/2/2020 21:48:31'!
 emitHeaderFilesOn: aStream
 	"Write a header files onto the given stream. A special hack allows use of 
 	#ifdef THING
@@ -1404,38 +1462,17 @@ emitHeaderFilesOn: aStream
 	"Additional header files"
 	headerFiles do:[:hdr|
 		hdr first ~= $# ifTrue:
-			[aStream nextPutAll: '#include '].
-		aStream nextPutAll: hdr; newLine].
+			[aStream nextPutLocalInclude: hdr].
+		aStream newLine].
 ! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/19/2020 21:14:54'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 6/3/2020 16:12:17'!
 fileHeaderVersionStampForSourceClass: sourceClass
 	"Answer a suitable version stamp to include in the header."
-	| exportBuildInfo slangDescription sourceDescription |
-	[exportBuildInfo _ self findExportBuildInfoByClass: sourceClass ]
-		on: MessageNotUnderstood
-		do: [:ex| ex resume: false].
+	| slangDescription sourceDescription |
 		
-	[slangDescription _ systemAdapter findSlangDescriptionBy: self class.
-	 sourceClass ifNotNil: [sourceDescription _ systemAdapter findSourceDescriptionBy: sourceClass]]
-		on: Error
-		do: [:ex| | now |
-			now _ systemAdapter findGeneratedAtString.
-			^String streamContents:
-				[:s| | writer |
-				writer _ SlangCLanguageWriter on: s.
-				writer nextPutCommentStart.
-				writer nextPutAll: 'Automatically generated from Squeak on '.
-				writer nextPutAll: now.
-				writer nextPutCommentEnd.
-				writer newLine; newLine.
-				writer nextPutAll: 'static char __buildInfo[] = "Generated on '.
-				writer nextPutAll: now.
-				writer nextPutAll: '. Compiled on "'.
-				writer nextPutAll: '__DATE__ ;'; newLine.
-				exportBuildInfo ifNotNil:
-					[s nextPutAll: exportBuildInfo; newLine].
-				s newLine]].
+	slangDescription _ systemAdapter findSlangDescriptionBy: self class.
+	sourceClass ifNotNil: [sourceDescription _ systemAdapter findSourceDescriptionBy: sourceClass].
 		
 	^String streamContents:
 		[:s| | writer |
@@ -1449,15 +1486,7 @@ fileHeaderVersionStampForSourceClass: sourceClass
 			writer nextPutAll: '   from' ; newLine.
 			writer nextPutAll: '	'.
 			writer nextPutAll: sourceDescription ].
-		writer newLine; nextPutCommentEnd; newLine.
-		
-		sourceDescription ifNotNil:
-			[writer nextPutAll: 'static char __buildInfo[] = "'.
-			 writer nextPutAll: sourceDescription.
-			 writer nextPutAll: ' " __DATE__ ;'; newLine.
-			exportBuildInfo ifNotNil:
-				[writer nextPutAll: exportBuildInfo; newLine].
-			writer newLine]]! !
+		writer newLine; nextPutCommentEnd; newLine.]! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/19/2020 22:45:26'!
 findFunctionNameFor: aSelector
@@ -2654,7 +2683,7 @@ generateTimes: msgNode on: aStream indent: level
 	aStream nextPutAll: ' * '.
 	self emitCExpression: msgNode args first on: aStream.! !
 
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'eem 3/30/2013 13:55'!
+!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 6/2/2020 21:23:14'!
 generateToByDo: msgNode on: aStream indent: level
 	"Generate the C code for this message onto the given stream."
 	"N.B. MessageNode>>asTranslatorNodeIn: adds the limit var as a hidden fourth argument."
@@ -2662,27 +2691,36 @@ generateToByDo: msgNode on: aStream indent: level
 	blockExpr _ msgNode args third.
 	blockExpr args size = 1 ifFalse:
 		[self error: 'wrong number of block arguments'].
+
 	iterationVar _ blockExpr args first.
 	limitExpr _ msgNode args first.
+	
 	aStream nextPutAll: 'for (', iterationVar, ' = '.
 	self emitCExpression: msgNode receiver on: aStream.
+	
 	mayHaveSideEffects _ msgNode args size = 4. "See TMethod>>prepareMethodIn:"
 	mayHaveSideEffects ifTrue:
 		[limitVar _ msgNode args last.
 		 aStream nextPutAll: ', ', limitVar name, ' = '.
 		 self emitCExpression: limitExpr on: aStream.
 		 limitExpr _ limitVar].
+	
 	aStream nextPutAll: '; ', iterationVar.
 	negative _ ((step _ msgNode args at: 2) isConstant and: [step value < 0])
 				or: [step isSend and: [step selector == #negated
 					and: [step receiver isConstant and: [step receiver value >= 0]]]].
+			
 	aStream nextPutAll: (negative ifTrue: [' >= '] ifFalse: [' <= ']).
+	
 	self emitCExpression: limitExpr on: aStream.
 	aStream nextPutAll: '; ', iterationVar, ' += '.
+	
 	self emitCExpression: step on: aStream.
-	aStream nextPutAll: ') {'; cr.
+	aStream nextPutAll: ') {'; newLine.
+	
 	blockExpr emitCCodeOn: aStream level: level + 1 generator: self.
 	aStream tab: level.
+	
 	aStream nextPut: $}! !
 
 !SlangCCodeGenerator methodsFor: 'C translation'!
@@ -2731,25 +2769,30 @@ generateValue: aTSendNode on: aStream indent: level
 	 the same block will be renamed with different labels."
 	currentMethod labels: newLabels! !
 
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 5/26/2020 21:11:42'!
+!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 6/3/2020 00:04:45'!
 generateValueAsArgument: aTSendNode on: aStream indent: level
 	"Reduce [:formal ... :formalN| body ] value: actual ... value: actualN
 	 to body with formals substituted for by actuals."
 	| substitution substitutionDict newLabels |
 	self assert: aTSendNode receiver isStmtList.
 	self assert: aTSendNode receiver args size = aTSendNode args size.
+	
 	substitution _ aTSendNode receiver copy.
 	substitution renameLabelsForInliningInto: currentMethod.
 	substitutionDict _ Dictionary new: aTSendNode args size * 2.
+	
 	aTSendNode receiver args with: aTSendNode args do:
 		[ :argName :exprNode |
 		substitutionDict at: argName put: exprNode].
+	
 	substitution
 		bindVariablesIn: substitutionDict;
 		emitCCodeAsArgumentOn: aStream level: level generator: self.
+		
 	newLabels _ Set withAll: currentMethod labels.
 	substitution nodesDo:
 		[:node| (node is: #Label) ifTrue: [node label ifNotNil: [:label| newLabels add: label]]].
+		
 	"now add the new labels so that a subsequent inline of
 	 the same block will be renamed with different labels."
 	currentMethod labels: newLabels! !
