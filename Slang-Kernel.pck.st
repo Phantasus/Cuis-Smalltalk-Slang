@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4112] on 4 June 2020 at 8:14:11 am'!
+'From Cuis 5.0 [latest update: #4112] on 6 June 2020 at 3:39:52 pm'!
 'Description Contains the fundamental basic infrastructure for Slang, without any tools or language specific translation mechanisms. With just the Kernel you can''t build a plugin, you need the specific translation packages.
 
 License: MIT'!
-!provides: 'Slang-Kernel' 1 3!
+!provides: 'Slang-Kernel' 1 5!
 !requires: 'Cuis-Base' 50 4112 nil!
 SystemOrganization addCategory: #'Slang-Kernel-Tests'!
 SystemOrganization addCategory: #'Slang-Kernel'!
@@ -96,16 +96,6 @@ SlangObject subclass: #SlangConformist
 	category: 'Slang-Kernel'!
 !classDefinition: 'SlangConformist class' category: #'Slang-Kernel'!
 SlangConformist class
-	instanceVariableNames: ''!
-
-!classDefinition: #SlangLineStream category: #'Slang-Kernel'!
-SlangObject subclass: #SlangLineStream
-	instanceVariableNames: ''
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Slang-Kernel'!
-!classDefinition: 'SlangLineStream class' category: #'Slang-Kernel'!
-SlangLineStream class
 	instanceVariableNames: ''!
 
 !classDefinition: #SlangPragmatizer category: #'Slang-Kernel'!
@@ -288,6 +278,16 @@ SlangTParseNode subclass: #SlangTVariableNode
 SlangTVariableNode class
 	instanceVariableNames: ''!
 
+!classDefinition: #SlangWriter category: #'Slang-Kernel'!
+SlangObject subclass: #SlangWriter
+	instanceVariableNames: 'stream charsOnLine'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-Kernel'!
+!classDefinition: 'SlangWriter class' category: #'Slang-Kernel'!
+SlangWriter class
+	instanceVariableNames: ''!
+
 
 !SlangModule commentStamp: '<historical>' prior: 0!
 This class represents the baseclass for Slang based objects. This means that the smalltalk used within the object is reduced and can be used for generating external code like C!
@@ -320,9 +320,6 @@ Represents a superclass of all possible code generators, which take in slang and
 !SlangConformist commentStamp: '<historical>' prior: 0!
 Conforms to what Slang is and knows about it.!
 
-!SlangLineStream commentStamp: '<historical>' prior: 0!
-Represents an output stream which puts out every input out as a new line!
-
 !SlangPragmatizer commentStamp: 'dtl 9/25/2010 18:26' prior: 0!
 Pragmatizer is a utility for converting message send directives (such as 'self inline: true') to their corresponding pragma implementations (<inline: true>) in method source.
 
@@ -347,6 +344,9 @@ A TNotImplementedNode is a translation node for a parse node that cannot be tran
 I implement a Smalltalk
 	foo caseOf: { [IntegerConstant | GlobalVariable] -> [expr] }
 statement converting it into a C switch statement.  I make some effort to discover identical right-hand-side cases.!
+
+!SlangWriter commentStamp: '<historical>' prior: 0!
+A specialized stream writer for Slang!
 
 !SlangTMethod methodsFor: 'accessing' stamp: 'hg 8/14/2000 15:57'!
 comment: aComment
@@ -904,19 +904,6 @@ callMethodTwiceWithSendInLoopLimit
 methodWithIntegerResult
 	"Translates to nonsense, but use this to illustrate the point"
 	^(Random new next * 100) asInteger! !
-
-!SlangTestSupportPlugin methodsFor: 'loop limits' stamp: 'dtl 2/18/2014 20:15'!
-methodWithLoopLimitThatIsNotModified: arrayObj
-
-	0 to: 10 do: [:i | self storePointerUnchecked: i ofObject: arrayObj withValue: 0]
-! !
-
-!SlangTestSupportPlugin methodsFor: 'loop limits' stamp: 'dtl 4/4/2013 23:39'!
-methodWithLoopLimitThatMightBeModified: arrayObj
-
-	0 to: (self lengthOf: arrayObj) do:
-	[:i | self storePointerUnchecked: i ofObject: arrayObj withValue: nil]
-! !
 
 !SlangTestSupportPlugin methodsFor: 'export declaration' stamp: 'dtl 9/19/2010 12:29'!
 declareExportFalseByMethod
@@ -1725,17 +1712,18 @@ newConvertToPragmaStamp: oldStamp
 	^ newStamp
 ! !
 
-!SlangPragmatizer methodsFor: 'convert sends to pragmas' stamp: 'dtl 9/25/2010 18:05'!
+!SlangPragmatizer methodsFor: 'convert sends to pragmas' stamp: 'jpb 6/6/2020 14:26:07'!
 newPragmatizedSourceFrom: source nodes: pragmaNodes nodeRanges: ranges
 
 	^ String streamContents: [:str|
 		str nextPutAll: (source copyFrom: 1 to: ranges first - 6).
 		pragmaNodes
-			do: [:node| | pragma args |
+			do: [:node|
 				str nextPut: $<.
 				str nextPutAll: (node asString allButFirst: 6) allButLast.
 				str nextPut: $>]
-			separatedBy: [str crtab: 1].
+			separatedBy: [str newLine; tab: 1].
+			
 		str nextPutAll: (source copyFrom: ((ranges last + 1 <= source size
 										   and: [(source at: ranges last + 1) = $.])
 											ifTrue: [ranges last + 2]
@@ -1901,12 +1889,12 @@ parseSelector: selector in: aClass
 		parse:  (aClass sourceCodeAt: selector)
            class: aClass.! !
 
-!SlangSystemAdapter methodsFor: 'files' stamp: 'jpb 5/20/2020 22:34:32'!
+!SlangSystemAdapter methodsFor: 'files' stamp: 'jpb 6/6/2020 13:34:57'!
 openNewFileNamed: fileName
 	"Opens the given fileName, when it existis overwrite it"
 	| fileStream |
 	
-	fileStream _ SlangLineStream on: fileName asFileEntry forceWriteStream.
+	fileStream _ SlangWriter on: fileName asFileEntry forceWriteStream.
 	fileStream ifNil: [Error signal: 'Could not open C code file: ', fileName].
 	
 	^fileStream.! !
@@ -3493,9 +3481,9 @@ is: query
 		
 	^super is: query! !
 
-!SlangTMethod methodsFor: 'testing' stamp: 'eem 2/11/2009 21:20'!
+!SlangTMethod methodsFor: 'testing' stamp: 'jpb 6/6/2020 14:24:33'!
 isStructAccessor
-	^[definingClass isAccessor: selector]
+	^[definingClass is: #Accessor: selector]
 		on: MessageNotUnderstood
 		do: [:ex| false]! !
 
@@ -3590,15 +3578,15 @@ emitCHeaderOn: aStream generator: aCodeGen
 	].
 	locals isEmpty ifFalse: [ aStream newLine ].! !
 
-!SlangTMethod methodsFor: 'C code generation' stamp: 'ikp 6/9/2004 16:15'!
+!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 6/6/2020 14:24:22'!
 emitInlineOn: aStream level: level generator: aCodeGen
 	"Emit C code for this method onto the given stream. All calls to inlined methods should already have been expanded."
 	self removeUnusedTemps.
 	sharedLabel ifNotNil:[
-		aStream crtab: level-1; nextPutAll: sharedLabel; nextPutAll:':'.
-		aStream crtab: level.
+		aStream newLine; tab: level-1; nextPutAll: sharedLabel; nextPutAll:':'.
+		aStream newLine; tab: level.
 		aStream nextPutAll: '/* '; nextPutAll: selector; nextPutAll: ' */'.
-		aStream crtab: level.
+		aStream newLine; tab: level.
 	].
 	aStream nextPutAll:'{'; cr.
 	locals do: [ :var |
@@ -4336,22 +4324,22 @@ nodesDo: aBlock unless: cautionaryBlock
 	cases do: [ :c | c nodesDo: aBlock  unless: cautionaryBlock].
 	aBlock value: self! !
 
-!SlangTCaseStmtNode methodsFor: 'printing'!
+!SlangTCaseStmtNode methodsFor: 'printing' stamp: 'jpb 6/6/2020 14:29:12'!
 printOn: aStream level: level
 
-	aStream crtab: level.
+	aStream newLine; tab: level.
 	aStream nextPutAll: 'select '.
 	expression printOn: aStream level: level.
 	aStream nextPutAll: ' in'.
 	1 to: cases size do: [ :i |
 		(firsts at: i) to: (lasts at: i) do: [ :caseIndex |
-			aStream crtab: level.
+			aStream newLine; tab: level.
 			aStream nextPutAll: 'case ', caseIndex printString, ':'.
 		].
-		aStream crtab: level + 1.
+		aStream newLine; tab: level + 1.
 		(cases at: i) printOn: aStream level: level + 1.
 	].
-	aStream crtab: level.
+	aStream newLine; tab: level.
 	aStream nextPutAll: 'end select'.! !
 
 !SlangTConstantNode methodsFor: 'accessing' stamp: 'acg 12/17/1999 07:19'!
@@ -5311,10 +5299,10 @@ nodesDo: aBlock unless: cautionaryBlock
 	otherwiseOrNil ifNotNil:
 		[otherwiseOrNil nodesDo: aBlock unless: cautionaryBlock]! !
 
-!SlangTSwitchStmtNode methodsFor: 'printing' stamp: 'eem 2/10/2009 19:17'!
+!SlangTSwitchStmtNode methodsFor: 'printing' stamp: 'jpb 6/6/2020 14:26:50'!
 printOn: aStream level: level
 
-	aStream crtab: level.
+	aStream newLine; tab: level.
 	aStream nextPutAll: 'switch ('.
 	expression printOn: aStream level: level.
 	aStream nextPutAll: ') {'.
@@ -5324,13 +5312,13 @@ printOn: aStream level: level
 		  labels do:
 			[:label|
 			 aStream
-				crtab: level;
+				newLine; tab: level;
 				nextPutAll: 'case '.
 			label printOn: aStream level: level + 1.
 			aStream nextPut: $:].
-		  aStream crtab: level + 1.
+		  aStream newLine; tab: level + 1.
 		  case printOn: aStream level: level + 1.
-		  aStream crtab: level + 1; nextPutAll: 'break;']
+		  aStream newLine; tab: level + 1; nextPutAll: 'break;']
 			valueWithArguments: tuple].
 	otherwiseOrNil ifNotNil:
 		[aStream
@@ -5409,6 +5397,58 @@ nodesDo: aBlock parent: parent
 printOn: aStream level: level
 
 	aStream nextPutAll: name.! !
+
+!SlangWriter methodsFor: 'stream control' stamp: 'jpb 6/6/2020 13:38:36'!
+position
+	^stream position! !
+
+!SlangWriter methodsFor: 'stream control' stamp: 'jpb 6/6/2020 13:38:43'!
+position: aSmallInteger 
+	stream position: aSmallInteger ! !
+
+!SlangWriter methodsFor: 'stream control' stamp: 'jpb 6/6/2020 13:39:20'!
+setStream: newStream
+	stream _ newStream! !
+
+!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 13:38:58'!
+newLine
+	stream newLine.
+	charsOnLine _ 0! !
+
+!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 13:39:05'!
+nextPut: aChar
+	stream nextPut: aChar.
+	charsOnLine _ charsOnLine + 1.! !
+
+!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 13:39:13'!
+nextPutAll: aString
+	stream nextPutAll: aString.
+	charsOnLine _ charsOnLine + aString size! !
+
+!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 13:39:26'!
+space
+	self nextPut: `Character space`! !
+
+!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 13:39:38'!
+tab
+	self nextPut: `Character tab`! !
+
+!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 13:39:45'!
+tab: amount
+	amount timesRepeat: [ self tab ]! !
+
+!SlangWriter methodsFor: 'initialization' stamp: 'jpb 6/6/2020 13:38:00'!
+initialize
+	stream _ nil.
+	charsOnLine _ 0.! !
+
+!SlangWriter methodsFor: 'reading' stamp: 'jpb 6/6/2020 13:38:26'!
+next
+	^stream next! !
+
+!SlangWriter class methodsFor: 'instance creation' stamp: 'jpb 6/6/2020 13:36:58'!
+on: aStream
+	^ self new setStream: aStream.! !
 
 !AssignmentNode methodsFor: '*Slang-Kernel' stamp: 'jpb 6/1/2020 12:10:44'!
 asSlangTranslatorNodeIn: aSlangTMethod 

@@ -4,6 +4,21 @@ This file lists the history of changes made to the repository
 in a more wordy fashion of what this was about as an addition
 to descriptive commit messages.
 
+## Update 0.001i1
+
+Affected versions
+  - Slang-Tools 1.25
+  - Slang-C 1.6
+  - Slang-C-Tests 1.2
+  - Slang-Javascript 1.23
+  - Slang-Kernel 1.5
+  - Slang-Kernel-Tests 1.0
+  - Slang-Tools 1.25
+
+Removes unimplemented messages. And adds the `SlangWriter`,
+replaces also calls to `crtab` with `newLine; tab`.
+
+
 ## Update 0.001h1
 
 Affected versions

@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4112] on 4 June 2020 at 8:14:08 am'!
+'From Cuis 5.0 [latest update: #4112] on 6 June 2020 at 3:39:49 pm'!
 'Description Package for the Slang code generation to C. 
 
 License: MIT'!
-!provides: 'Slang-C' 1 4!
+!provides: 'Slang-C' 1 6!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-C-Tests'!
 SystemOrganization addCategory: #'Slang-C'!
@@ -48,16 +48,6 @@ TestCase subclass: #SlangCTypeRepositoryTest
 SlangCTypeRepositoryTest class
 	instanceVariableNames: ''!
 
-!classDefinition: #SlangCLanguageWriter category: #'Slang-C'!
-SlangObject subclass: #SlangCLanguageWriter
-	instanceVariableNames: 'stream charsOnLine tabChar lfChar crChar spaceChar otherUnescapedChars'
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Slang-C'!
-!classDefinition: 'SlangCLanguageWriter class' category: #'Slang-C'!
-SlangCLanguageWriter class
-	instanceVariableNames: ''!
-
 !classDefinition: #SlangCTypeRepository category: #'Slang-C'!
 SlangObject subclass: #SlangCTypeRepository
 	instanceVariableNames: 'structTypes'
@@ -78,6 +68,16 @@ SlangCodeGenerator subclass: #SlangCCodeGenerator
 SlangCCodeGenerator class
 	instanceVariableNames: ''!
 
+!classDefinition: #SlangCLanguageWriter category: #'Slang-C'!
+SlangWriter subclass: #SlangCLanguageWriter
+	instanceVariableNames: 'tabChar lfChar crChar spaceChar otherUnescapedChars'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-C'!
+!classDefinition: 'SlangCLanguageWriter class' category: #'Slang-C'!
+SlangCLanguageWriter class
+	instanceVariableNames: ''!
+
 
 !SlangCCodeGeneratorTest commentStamp: '<historical>' prior: 0!
 I test the generic C code generator!
@@ -86,15 +86,15 @@ I test the generic C code generator!
 The SlangTest tests verify code generation and inlining.
 !
 
-!SlangCLanguageWriter commentStamp: '<historical>' prior: 0!
-This class represents a specialized writer for writing to a stream C constructs.!
-
 !SlangCTypeRepository commentStamp: '<historical>' prior: 0!
 Contains information of stored types in a C module, can be used globally or locally. Used in the SlangCCodeGenerator subclasses.!
 
 !SlangCCodeGenerator commentStamp: 'tpr 5/2/2003 14:30' prior: 0!
 This class oversees the translation of a subset of Smalltalk to C, allowing the comforts of Smalltalk during development and the efficiency and portability of C for the resulting interpreter.  
 See VMMaker for more useful info!
+
+!SlangCLanguageWriter commentStamp: '<historical>' prior: 0!
+This class represents a specialized writer for writing to a stream C constructs.!
 
 !SlangCCodeGeneratorTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/19/2020 16:01:41'!
 setUp
@@ -630,216 +630,6 @@ testIsTypedPointerToStruct
 	self deny: (repository isTypedPointerToStruct: nil).
 	self deny: (repository isTypedPointerToStruct: 'char *').
 	! !
-
-!SlangCLanguageWriter methodsFor: 'writing comments' stamp: 'jpb 5/19/2020 17:55:16'!
-nextPutComment: commentString
-	"Writes out a long C comment /* ...  */"
-	self nextPutCommentStart.
-	self nextPutAll: commentString.
-	self nextPutCommentEnd.
-	self newLine.! !
-
-!SlangCLanguageWriter methodsFor: 'writing comments' stamp: 'jpb 5/19/2020 17:55:51'!
-nextPutCommentEnd
-	self nextPutAll: ' */'.! !
-
-!SlangCLanguageWriter methodsFor: 'writing comments' stamp: 'jpb 5/19/2020 17:55:36'!
-nextPutCommentStart
-	self nextPutAll: '/* '.! !
-
-!SlangCLanguageWriter methodsFor: 'writing comments' stamp: 'jpb 6/2/2020 21:50:24'!
-nextPutSectionComment: header
-	stream nextPutAll: '/*** ' , header , ' ***/'; newLine.! !
-
-!SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 6/3/2020 15:54:42'!
-emitEscapedChar: char on: stringStream
-	"Finds an escaped version of the given string and emits it on the given stream. When no presentation was found just emit the character"
-	
-	tabChar = char ifTrue: [ stringStream nextPutAll: '\t'. ^self ].
-	lfChar = char ifTrue: [ stringStream nextPutAll: '\n'. ^self ].
-	crChar = char ifTrue: [ stringStream nextPutAll: '\r'. ^self ].
-	
-	$" = char ifTrue: [ stringStream nextPutAll: '\"'. ^self ].
-	$' = char ifTrue: [ stringStream nextPutAll: '\'''. ^self ].
-	$? = char ifTrue: [ stringStream nextPutAll: '\?'. ^self ].
-	$\ = char ifTrue: [ stringStream nextPutAll: '\\'. ^self ].
-	(otherUnescapedChars includes: char) ifTrue: [ stringStream nextPut: char. ^self ].
-	
-	7 = char asciiValue ifTrue: [ stringStream nextPutAll: '\a'. ^self ].
-	8 = char asciiValue ifTrue: [ stringStream nextPutAll: '\b'. ^self].
-				
-	spaceChar = char ifTrue: [ stringStream nextPut: spaceChar. ^self ].
-	char isAlphaNumeric ifTrue: [ stringStream nextPut: char. ^self].
-	
-	char numericValue <= 255 ifTrue: [ |hexString|
-		hexString _ char numericValue printStringBase: 16 length: 2 padded: true.
-		stringStream nextPutAll: '\x' , hexString. ^self]! !
-
-!SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 6/3/2020 07:40:00'!
-escapeString: aString 
-	^String streamContents: [:stringStream | 
-		aString do: [:char | self emitEscapedChar: char on: stringStream ].
-	]! !
-
-!SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 6/3/2020 16:01:59'!
-nextPutString: newString
-	| stringSize |
-	stringSize _ newString size.
-	
-	self nextPutStringStart.
-	charsOnLine > 77 ifTrue: [ self nextPut: $\. self newLine ].
-	
-	(1 to: stringSize by: 78) do: [:sliceStart |
-		| sliceSize |
-		sliceSize _  (stringSize - sliceStart).
-		sliceSize > 78 ifTrue: [ sliceSize _ 78 ].
-		sliceSize _ sliceSize - charsOnLine.
-		
-		self nextPutAll: (self escapeString: (newString copyFrom: sliceStart count: sliceSize)).
-		
-		(sliceStart + sliceSize) >= stringSize
-			ifFalse: [ self nextPut: $\. self newLine ].
-	].
-	self nextPutStringEnd.! !
-
-!SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 5/19/2020 18:08:52'!
-nextPutStringEnd
-	self nextPut: $".! !
-
-!SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 5/19/2020 18:08:45'!
-nextPutStringStart
-	self nextPut: $".! !
-
-!SlangCLanguageWriter methodsFor: 'writing arrays' stamp: 'jpb 5/19/2020 22:29:04'!
-nextPutArray: array
-	| first |
-	first _ true.
-	1 to: array size do:
-		[:i |
-			first 
-				ifTrue: [first _ false]
-				ifFalse: [stream nextPutAll: ', '].
-			i \\ 16 = 1 ifTrue: [stream newLine].
-		
-			self nextPutInteger: (array at: i)]! !
-
-!SlangCLanguageWriter methodsFor: 'writing arrays' stamp: 'jpb 5/19/2020 22:29:51'!
-nextPutInteger: aNumber
-	stream print: aNumber.
-	(aNumber between: -2147483648 and: 2147483647)
-		ifFalse: [(aNumber between: 2147483648 and: 4294967295)
-			ifTrue: [stream nextPut: $U]
-			ifFalse: [stream nextPut: $L]]! !
-
-!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 6/3/2020 00:17:26'!
-newLine
-	stream newLine.
-	charsOnLine _ 0! !
-
-!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 6/3/2020 00:17:37'!
-nextPut: aChar
-	stream nextPut: aChar.
-	charsOnLine _ charsOnLine + 1.! !
-
-!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 6/3/2020 00:17:50'!
-nextPutAll: aString
-	stream nextPutAll: aString.
-	charsOnLine _ charsOnLine + aString size! !
-
-!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 5/19/2020 17:49:38'!
-setStream: newStream
-	stream _ newStream! !
-
-!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 6/3/2020 00:18:20'!
-space
-	self nextPut: `Character space`! !
-
-!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 6/3/2020 07:46:45'!
-tab
-	self nextPut: tabChar! !
-
-!SlangCLanguageWriter methodsFor: 'printing' stamp: 'jpb 6/3/2020 00:16:29'!
-tab: amount
-	amount timesRepeat: [ self tab ]! !
-
-!SlangCLanguageWriter methodsFor: 'writing macros' stamp: 'jpb 5/20/2020 21:36:15'!
-nextPutConstantNamed: constantName value: constantValue 
-	self nextPutAll: '#define '.
-	self nextPutAll: constantName asString.
-	self space.
-	self nextPutAll: constantValue asString.! !
-
-!SlangCLanguageWriter methodsFor: 'initialization' stamp: 'jpb 6/3/2020 08:30:38'!
-initialize
-	stream _ nil.
-	charsOnLine _ 0.
-	
-	tabChar _ Character tab.
-	lfChar _ Character lf.
-	crChar _ Character cr.
-	spaceChar _ Character space.
-	otherUnescapedChars _ #($!! $# $$ $% $& $( $) $* $+ $- $_ $, $. $/ $: $; $< $= $> $@ $[ $] $^ $`)! !
-
-!SlangCLanguageWriter methodsFor: 'stream control' stamp: 'jpb 6/2/2020 21:22:15'!
-next
-	^stream next! !
-
-!SlangCLanguageWriter methodsFor: 'stream control' stamp: 'jpb 6/2/2020 21:21:17'!
-position
-	^stream position! !
-
-!SlangCLanguageWriter methodsFor: 'stream control' stamp: 'jpb 6/2/2020 21:21:55'!
-position: aSmallInteger 
-	stream position: aSmallInteger ! !
-
-!SlangCLanguageWriter methodsFor: 'as yet unclassified' stamp: 'jpb 5/24/2020 16:20:01'!
-nextPutInclude: aString 
-	"Puts a standard include into the stream. So a include directive which searches only in standard locations for headers"
-	self nextPutAll: '#include ' , '<' , aString , '.h>'! !
-
-!SlangCLanguageWriter methodsFor: 'as yet unclassified' stamp: 'jpb 5/24/2020 16:21:40'!
-nextPutLocalInclude: aString 
-	"Puts a local #include into the stream. So a include directive which searches first in the current directory and then tries to find other places"
-	self nextPutAll: '#include ' , '"' , aString , '.h"'! !
-
-!SlangCLanguageWriter class methodsFor: 'instance creation' stamp: 'jpb 5/19/2020 17:50:07'!
-on: aStream
-	^ self new setStream: aStream.! !
-
-!SlangCLanguageWriter class methodsFor: 'target language helpers' stamp: 'jpb 5/20/2020 21:34:39'!
-findIntegerLiteral: anObject
-	"Returns an appropriate representation of the given object as a C integer literal"
-	| printString |
-	
-	printString _ (anObject > 0
-						and: [(anObject >> anObject lowBit + 1) isPowerOfTwo
-						and: [(anObject highBit = anObject lowBit and: [anObject > 65536])
-						or: [anObject highBit - anObject lowBit >= 4]]])
-								ifTrue: ['0x', (anObject printStringBase: 16)]
-								ifFalse: [anObject printString].
-
-	^printString , (self findIntegerLiteralSuffixFor: anObject)! !
-
-!SlangCLanguageWriter class methodsFor: 'target language helpers' stamp: 'jpb 5/20/2020 19:10:55'!
-findIntegerLiteralSuffixFor: anObject
-	"Returns the appropriate C integer suffix for representing a typed integer suffix"
-	
-	anObject > 16rFFFFFFFF ifTrue: [^self unsignedLongLongSuffix ].
-	anObject < 16r7FFFFFFF ifFalse: [^self unsignedIntegerSuffix ].
-	
-	^''! !
-
-!SlangCLanguageWriter class methodsFor: 'target language helpers' stamp: 'jpb 5/20/2020 17:25:14'!
-unsignedIntegerSuffix
-	"Answer the suffix that should be appended to unsigned integer literals in generated code."
-
-	^ 'U'! !
-
-!SlangCLanguageWriter class methodsFor: 'target language helpers' stamp: 'jpb 5/20/2020 17:25:31'!
-unsignedLongLongSuffix
-	"Answer the suffix that should be appended to unsigned integer literals in generated code."
-
-	^'ULL'! !
 
 !SlangCTypeRepository methodsFor: 'as yet unclassified' stamp: 'jpb 5/21/2020 10:50:36'!
 findBaseTypeForType: typeName
@@ -2254,7 +2044,7 @@ generateIfFalse: msgNode on: aStream indent: level
 			const ifFalse:
 				[msgNode args first emitCCodeOn: aStream level: level generator: self]]! !
 
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: ' 2/7/08 14:57'!
+!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 6/6/2020 14:23:01'!
 generateIfFalseAsArgument: msgNode on: aStream indent: level
 	"Generate the C code for this message onto the given stream."
 
@@ -2262,9 +2052,9 @@ generateIfFalseAsArgument: msgNode on: aStream indent: level
 		ifNil:
 			[aStream nextPutAll: '(!!('.
 			 msgNode receiver emitCCodeAsArgumentOn: aStream level: 0 generator: self.
-			aStream nextPut: $); crtab: level + 1; nextPut: $?; space.
+			aStream nextPut: $); newLine; tab: level + 1; nextPut: $?; space.
 			msgNode args last emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-			aStream crtab: level + 1; nextPutAll: ': 0)']
+			aStream newLine; tab: level + 1; nextPutAll: ': 0)']
 		ifNotNil:
 			[:const|
 			const ifFalse:
@@ -2288,7 +2078,7 @@ generateIfFalseIfTrue: msgNode on: aStream indent: level
 			 (const ifTrue: [msgNode args last] ifFalse: [msgNode args first])
 				emitCCodeOn: aStream level: level generator: self]! !
 
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: ' 2/7/08 14:57'!
+!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 6/6/2020 14:23:10'!
 generateIfFalseIfTrueAsArgument: msgNode on: aStream indent: level
 	"Generate the C code for this message onto the given stream."
 
@@ -2296,9 +2086,9 @@ generateIfFalseIfTrueAsArgument: msgNode on: aStream indent: level
 		ifNil:
 			[aStream nextPut: $(.
 			msgNode receiver emitCCodeAsArgumentOn: aStream level: level generator: self.
-			aStream crtab: level + 1; nextPut: $?; space.
+			aStream newLine; tab: level + 1; nextPut: $?; space.
 			msgNode args last emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-			aStream crtab: level + 1; nextPut: $:; space.
+			aStream newLine; tab: level + 1; nextPut: $:; space.
 			msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
 			aStream nextPut: $)]
 		ifNotNil:
@@ -2325,7 +2115,7 @@ generateIfTrue: msgNode on: aStream indent: level
 			const ifTrue:
 				[msgNode args first emitCCodeOn: aStream level: level generator: self]]! !
 
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: ' 2/7/08 14:57'!
+!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 6/6/2020 14:22:50'!
 generateIfTrueAsArgument: msgNode on: aStream indent: level
 	"Generate the C code for this message onto the given stream."
 
@@ -2333,9 +2123,9 @@ generateIfTrueAsArgument: msgNode on: aStream indent: level
 		ifNil:
 			[aStream nextPut: $(.
 			 msgNode receiver emitCCodeAsArgumentOn: aStream level: level generator: self.
-			 aStream crtab: level + 1; nextPut: $?; space.
+			 aStream newLine; tab: level + 1; nextPut: $?; space.
 			 msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-			 aStream crtab: level + 1; nextPutAll: ': 0)']
+			 aStream newLine; tab: level + 1; nextPutAll: ': 0)']
 		ifNotNil:
 			[:const|
 			const ifTrue:
@@ -2359,7 +2149,7 @@ generateIfTrueIfFalse: msgNode on: aStream indent: level
 			(const ifTrue: [msgNode args first] ifFalse: [msgNode args last])
 				emitCCodeOn: aStream level: level generator: self]! !
 
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: ' 2/7/08 14:57'!
+!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 6/6/2020 14:23:25'!
 generateIfTrueIfFalseAsArgument: msgNode on: aStream indent: level
 	"Generate the C code for this message onto the given stream."
 
@@ -2367,9 +2157,9 @@ generateIfTrueIfFalseAsArgument: msgNode on: aStream indent: level
 		ifNil:
 			[aStream nextPut: $(.
 			msgNode receiver emitCCodeAsArgumentOn: aStream level: level generator: self.
-			aStream crtab: level + 1; nextPut: $?; space.
+			aStream newLine; tab: level + 1; nextPut: $?; space.
 			msgNode args first emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
-			aStream crtab: level + 1; nextPut: $:; space.
+			aStream newLine; tab: level + 1; nextPut: $:; space.
 			msgNode args last emitCCodeAsArgumentOn: aStream level: level + 2 generator: self.
 			aStream nextPut: $)]
 		ifNotNil:
@@ -2928,6 +2718,169 @@ initialize
 		"Note: The Kernighan and Ritchie 2nd Edition C manual, p. 49, leaves the semantics of right-shifting a negative number open to the discretion of the compiler implementor. However, it strongly suggests that most compilers should generate an arithmetic right shift (i.e., shifting in the sign bit), which is the same as dividing by a power of two. If your compiler does not generate or simulate an arithmetic shift, then make this class variable false and re-translate."
 ! !
 
+!SlangCLanguageWriter methodsFor: 'writing comments' stamp: 'jpb 5/19/2020 17:55:16'!
+nextPutComment: commentString
+	"Writes out a long C comment /* ...  */"
+	self nextPutCommentStart.
+	self nextPutAll: commentString.
+	self nextPutCommentEnd.
+	self newLine.! !
+
+!SlangCLanguageWriter methodsFor: 'writing comments' stamp: 'jpb 5/19/2020 17:55:51'!
+nextPutCommentEnd
+	self nextPutAll: ' */'.! !
+
+!SlangCLanguageWriter methodsFor: 'writing comments' stamp: 'jpb 5/19/2020 17:55:36'!
+nextPutCommentStart
+	self nextPutAll: '/* '.! !
+
+!SlangCLanguageWriter methodsFor: 'writing comments' stamp: 'jpb 6/2/2020 21:50:24'!
+nextPutSectionComment: header
+	stream nextPutAll: '/*** ' , header , ' ***/'; newLine.! !
+
+!SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 6/3/2020 15:54:42'!
+emitEscapedChar: char on: stringStream
+	"Finds an escaped version of the given string and emits it on the given stream. When no presentation was found just emit the character"
+	
+	tabChar = char ifTrue: [ stringStream nextPutAll: '\t'. ^self ].
+	lfChar = char ifTrue: [ stringStream nextPutAll: '\n'. ^self ].
+	crChar = char ifTrue: [ stringStream nextPutAll: '\r'. ^self ].
+	
+	$" = char ifTrue: [ stringStream nextPutAll: '\"'. ^self ].
+	$' = char ifTrue: [ stringStream nextPutAll: '\'''. ^self ].
+	$? = char ifTrue: [ stringStream nextPutAll: '\?'. ^self ].
+	$\ = char ifTrue: [ stringStream nextPutAll: '\\'. ^self ].
+	(otherUnescapedChars includes: char) ifTrue: [ stringStream nextPut: char. ^self ].
+	
+	7 = char asciiValue ifTrue: [ stringStream nextPutAll: '\a'. ^self ].
+	8 = char asciiValue ifTrue: [ stringStream nextPutAll: '\b'. ^self].
+				
+	spaceChar = char ifTrue: [ stringStream nextPut: spaceChar. ^self ].
+	char isAlphaNumeric ifTrue: [ stringStream nextPut: char. ^self].
+	
+	char numericValue <= 255 ifTrue: [ |hexString|
+		hexString _ char numericValue printStringBase: 16 length: 2 padded: true.
+		stringStream nextPutAll: '\x' , hexString. ^self]! !
+
+!SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 6/3/2020 07:40:00'!
+escapeString: aString 
+	^String streamContents: [:stringStream | 
+		aString do: [:char | self emitEscapedChar: char on: stringStream ].
+	]! !
+
+!SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 6/3/2020 16:01:59'!
+nextPutString: newString
+	| stringSize |
+	stringSize _ newString size.
+	
+	self nextPutStringStart.
+	charsOnLine > 77 ifTrue: [ self nextPut: $\. self newLine ].
+	
+	(1 to: stringSize by: 78) do: [:sliceStart |
+		| sliceSize |
+		sliceSize _  (stringSize - sliceStart).
+		sliceSize > 78 ifTrue: [ sliceSize _ 78 ].
+		sliceSize _ sliceSize - charsOnLine.
+		
+		self nextPutAll: (self escapeString: (newString copyFrom: sliceStart count: sliceSize)).
+		
+		(sliceStart + sliceSize) >= stringSize
+			ifFalse: [ self nextPut: $\. self newLine ].
+	].
+	self nextPutStringEnd.! !
+
+!SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 5/19/2020 18:08:52'!
+nextPutStringEnd
+	self nextPut: $".! !
+
+!SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 5/19/2020 18:08:45'!
+nextPutStringStart
+	self nextPut: $".! !
+
+!SlangCLanguageWriter methodsFor: 'writing arrays' stamp: 'jpb 5/19/2020 22:29:04'!
+nextPutArray: array
+	| first |
+	first _ true.
+	1 to: array size do:
+		[:i |
+			first 
+				ifTrue: [first _ false]
+				ifFalse: [stream nextPutAll: ', '].
+			i \\ 16 = 1 ifTrue: [stream newLine].
+		
+			self nextPutInteger: (array at: i)]! !
+
+!SlangCLanguageWriter methodsFor: 'writing arrays' stamp: 'jpb 5/19/2020 22:29:51'!
+nextPutInteger: aNumber
+	stream print: aNumber.
+	(aNumber between: -2147483648 and: 2147483647)
+		ifFalse: [(aNumber between: 2147483648 and: 4294967295)
+			ifTrue: [stream nextPut: $U]
+			ifFalse: [stream nextPut: $L]]! !
+
+!SlangCLanguageWriter methodsFor: 'writing macros' stamp: 'jpb 5/20/2020 21:36:15'!
+nextPutConstantNamed: constantName value: constantValue 
+	self nextPutAll: '#define '.
+	self nextPutAll: constantName asString.
+	self space.
+	self nextPutAll: constantValue asString.! !
+
+!SlangCLanguageWriter methodsFor: 'writing macros' stamp: 'jpb 5/24/2020 16:20:01'!
+nextPutInclude: aString 
+	"Puts a standard include into the stream. So a include directive which searches only in standard locations for headers"
+	self nextPutAll: '#include ' , '<' , aString , '.h>'! !
+
+!SlangCLanguageWriter methodsFor: 'writing macros' stamp: 'jpb 5/24/2020 16:21:40'!
+nextPutLocalInclude: aString 
+	"Puts a local #include into the stream. So a include directive which searches first in the current directory and then tries to find other places"
+	self nextPutAll: '#include ' , '"' , aString , '.h"'! !
+
+!SlangCLanguageWriter methodsFor: 'initialization' stamp: 'jpb 6/3/2020 08:30:38'!
+initialize
+	stream _ nil.
+	charsOnLine _ 0.
+	
+	tabChar _ Character tab.
+	lfChar _ Character lf.
+	crChar _ Character cr.
+	spaceChar _ Character space.
+	otherUnescapedChars _ #($!! $# $$ $% $& $( $) $* $+ $- $_ $, $. $/ $: $; $< $= $> $@ $[ $] $^ $`)! !
+
+!SlangCLanguageWriter class methodsFor: 'target language helpers' stamp: 'jpb 5/20/2020 21:34:39'!
+findIntegerLiteral: anObject
+	"Returns an appropriate representation of the given object as a C integer literal"
+	| printString |
+	
+	printString _ (anObject > 0
+						and: [(anObject >> anObject lowBit + 1) isPowerOfTwo
+						and: [(anObject highBit = anObject lowBit and: [anObject > 65536])
+						or: [anObject highBit - anObject lowBit >= 4]]])
+								ifTrue: ['0x', (anObject printStringBase: 16)]
+								ifFalse: [anObject printString].
+
+	^printString , (self findIntegerLiteralSuffixFor: anObject)! !
+
+!SlangCLanguageWriter class methodsFor: 'target language helpers' stamp: 'jpb 5/20/2020 19:10:55'!
+findIntegerLiteralSuffixFor: anObject
+	"Returns the appropriate C integer suffix for representing a typed integer suffix"
+	
+	anObject > 16rFFFFFFFF ifTrue: [^self unsignedLongLongSuffix ].
+	anObject < 16r7FFFFFFF ifFalse: [^self unsignedIntegerSuffix ].
+	
+	^''! !
+
+!SlangCLanguageWriter class methodsFor: 'target language helpers' stamp: 'jpb 5/20/2020 17:25:14'!
+unsignedIntegerSuffix
+	"Answer the suffix that should be appended to unsigned integer literals in generated code."
+
+	^ 'U'! !
+
+!SlangCLanguageWriter class methodsFor: 'target language helpers' stamp: 'jpb 5/20/2020 17:25:31'!
+unsignedLongLongSuffix
+	"Answer the suffix that should be appended to unsigned integer literals in generated code."
+
+	^'ULL'! !
+
 !SlangBrowser methodsFor: '*Slang-C' stamp: 'jpb 5/30/2020 21:57:41'!
 showCSource: aBoolean
 	aBoolean
@@ -3324,42 +3277,43 @@ emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen
 		ifNil: [aStream nextPutAll: 'error("Case not found and no otherwise clause"), 0'].
 	aStream next: n - 1 put: $)! !
 
-!SlangTSwitchStmtNode methodsFor: '*Slang-C' stamp: 'jpb 5/13/2020 22:40:33'!
+!SlangTSwitchStmtNode methodsFor: '*Slang-C' stamp: 'jpb 6/6/2020 14:28:07'!
 emitCCodeOn: aStream addToEndOfCases: aNodeOrNil level: level generator: aCodeGen
 
-	aStream crtab: level.
+	aStream newLine; tab: level.
 	aStream nextPutAll: 'switch ('.
 	expression emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen.
 	aStream nextPutAll: ') {'.
+	
 	cases do:
 		[:tuple|
 		 [:labels :case|
 		  labels do:
 			[:label|
 			 aStream
-				crtab: level;
+				newLine; tab: level;
 				nextPutAll: 'case '.
 			label emitCCodeAsArgumentOn: aStream level: level + 1 generator: aCodeGen.
 			aStream nextPut: $:].
-		  aStream crtab: level + 1.
+		  aStream newLine; tab: level + 1.
 		  case emitCCodeOn: aStream prependToEnd: aNodeOrNil level: level + 1 generator: aCodeGen]
 			valueWithArguments: tuple.
 		  (aNodeOrNil notNil and: [aNodeOrNil isReturn]) ifFalse:
-			[aStream crtab: level + 1; nextPutAll: 'break;']].
+			[aStream newLine; tab: level + 1; nextPutAll: 'break;']].
 	aStream
-		crtab: level;
+		newLine; tab: level;
 		nextPutAll: 'default:';
-		crtab: level + 1.
+		newLine; tab: level + 1.
 	otherwiseOrNil
 		ifNotNil: [otherwiseOrNil emitCCodeOn: aStream prependToEnd: aNodeOrNil level: level + 1 generator: aCodeGen]
 		ifNil: [aStream nextPutAll: 'error("Case not found and no otherwise clause");'.
 			   aNodeOrNil ifNotNil:
-				[aStream crtab: level + 1.
+				[aStream newLine; tab: level + 1.
 				 (aNodeOrNil copy setExpression: (SlangTConstantNode new setValue: -1))
 					emitCCodeOn: aStream level: level generator: aCodeGen.
 				 aStream nextPut: $;]].
 	aStream
-		crtab: level;
+		newLine; tab: level;
 		nextPut: $}! !
 
 !SlangTSwitchStmtNode methodsFor: '*Slang-C' stamp: 'jpb 5/29/2020 21:01:56'!
