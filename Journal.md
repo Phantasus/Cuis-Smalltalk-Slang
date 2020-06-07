@@ -9,6 +9,11 @@ authors at the end of the file.
 
 # Entries
 
+## 7th June 2020 (jpb)
+
+Yesterday at 14:00 UTC was a Cuis Meetup using Jitsi. There I showed
+a little bit the work I currently did.
+
 ## 3rd June 2020 (jpb)
 
 Today I removed the `vm_exports` and `builtinfo` outputs, which

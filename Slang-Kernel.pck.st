@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4112] on 6 June 2020 at 3:39:52 pm'!
+'From Cuis 5.0 [latest update: #4112] on 6 June 2020 at 11:35:02 pm'!
 'Description Contains the fundamental basic infrastructure for Slang, without any tools or language specific translation mechanisms. With just the Kernel you can''t build a plugin, you need the specific translation packages.
 
 License: MIT'!
-!provides: 'Slang-Kernel' 1 5!
+!provides: 'Slang-Kernel' 1 8!
 !requires: 'Cuis-Base' 50 4112 nil!
 SystemOrganization addCategory: #'Slang-Kernel-Tests'!
 SystemOrganization addCategory: #'Slang-Kernel'!
@@ -280,7 +280,7 @@ SlangTVariableNode class
 
 !classDefinition: #SlangWriter category: #'Slang-Kernel'!
 SlangObject subclass: #SlangWriter
-	instanceVariableNames: 'stream charsOnLine'
+	instanceVariableNames: 'stream charsOnLine useAutoIndent indentLevel'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Slang-Kernel'!
@@ -3487,7 +3487,7 @@ isStructAccessor
 		on: MessageNotUnderstood
 		do: [:ex| false]! !
 
-!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 5/29/2020 21:07:03'!
+!SlangTMethod methodsFor: 'C code generation' stamp: 'jpb 6/6/2020 19:10:16'!
 emitCCodeOn: aStream generator: aCodeGen
 	"Emit C code for this method onto the given stream. All calls to inlined methods should already have been expanded."
 
@@ -3498,8 +3498,10 @@ emitCCodeOn: aStream generator: aCodeGen
 	parseTree emitCCodeOn: aStream level: 1 generator: aCodeGen.
 	
 	"Ensure code is POSIX compliant"
-	(self returnType = #void or: [self endsWithReturn])
-		 ifFalse: [aStream tab: 1; nextPutAll: 'return null;'; newLine].
+	(self returnType = #void or: [self endsWithReturn]) ifFalse: [
+		aStream indent.
+		aStream nextPutReturn: (aCodeGen findDefaultReturnTypeBy: self returnType).
+		aStream newLine ].
 	
 	aStream nextPutAll: '}'; newLine.! !
 
@@ -5005,7 +5007,7 @@ copyTree
 		setArguments: arguments copy
 		statements: (statements collect: [ :s | s copyTree ])! !
 
-!SlangTStmtListNode methodsFor: 'as yet unclassified' stamp: 'jpb 5/29/2020 21:00:09'!
+!SlangTStmtListNode methodsFor: 'as yet unclassified' stamp: 'jpb 6/6/2020 18:51:21'!
 emitCCodeOn: aStream level: level generator: aCodeGen
 
 	self emitCCommentOn: aStream level: level.
@@ -5398,6 +5400,30 @@ printOn: aStream level: level
 
 	aStream nextPutAll: name.! !
 
+!SlangWriter methodsFor: 'stream control' stamp: 'jpb 6/6/2020 23:00:04'!
+autoIndentBy: levels
+	"Sets automatic indentation level"
+	indentLevel _ levels! !
+
+!SlangWriter methodsFor: 'stream control' stamp: 'jpb 6/6/2020 22:53:43'!
+close
+	self flush.
+	stream close.! !
+
+!SlangWriter methodsFor: 'stream control' stamp: 'jpb 6/6/2020 22:59:30'!
+disableAutoIndent
+	"Disables the automaitc indentation mechanism for newLines"
+	useAutoIndent _ false! !
+
+!SlangWriter methodsFor: 'stream control' stamp: 'jpb 6/6/2020 22:59:44'!
+enableAutoIndent
+	"Enables automatic indentation of next lines"
+	useAutoIndent _ true! !
+
+!SlangWriter methodsFor: 'stream control' stamp: 'jpb 6/6/2020 22:53:27'!
+flush
+	stream flush! !
+
 !SlangWriter methodsFor: 'stream control' stamp: 'jpb 6/6/2020 13:38:36'!
 position
 	^stream position! !
@@ -5410,37 +5436,66 @@ position: aSmallInteger
 setStream: newStream
 	stream _ newStream! !
 
+!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 19:16:35'!
+indent
+	"Indent in the stream one level down"
+	self tab! !
+
+!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 23:34:08'!
+indent: level
+	"Indent the output stream by the amount of given levels"
+	
+	self space: (level * 2).! !
+
 !SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 13:38:58'!
 newLine
 	stream newLine.
 	charsOnLine _ 0! !
 
-!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 13:39:05'!
+!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 23:32:57'!
 nextPut: aChar
+	(charsOnLine = 0) & useAutoIndent
+		ifTrue: [ self indent: indentLevel ].
+	
 	stream nextPut: aChar.
 	charsOnLine _ charsOnLine + 1.! !
 
-!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 13:39:13'!
+!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 23:32:44'!
 nextPutAll: aString
+	(charsOnLine = 0) & useAutoIndent
+		ifTrue: [  self indent: indentLevel ].
+	
 	stream nextPutAll: aString.
-	charsOnLine _ charsOnLine + aString size! !
+	charsOnLine _ charsOnLine + aString size.! !
 
-!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 13:39:26'!
+!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 23:06:47'!
+nextPutLine: lineString
+	self nextPutAll: lineString ; newLine.! !
+
+!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 23:34:55'!
 space
-	self nextPut: `Character space`! !
+	stream nextPut: `Character space`.
+	charsOnLine _ charsOnLine + 1.! !
 
-!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 13:39:38'!
+!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 23:27:35'!
+space: level
+	level timesRepeat: [ self space ].! !
+
+!SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 23:34:42'!
 tab
-	self nextPut: `Character tab`! !
+	stream nextPut: `Character tab`.
+	charsOnLine _ charsOnLine + 1.! !
 
 !SlangWriter methodsFor: 'printing' stamp: 'jpb 6/6/2020 13:39:45'!
 tab: amount
 	amount timesRepeat: [ self tab ]! !
 
-!SlangWriter methodsFor: 'initialization' stamp: 'jpb 6/6/2020 13:38:00'!
+!SlangWriter methodsFor: 'initialization' stamp: 'jpb 6/6/2020 23:03:38'!
 initialize
 	stream _ nil.
-	charsOnLine _ 0.! !
+	charsOnLine _ 0.
+	indentLevel _ 1.
+	useAutoIndent _ false! !
 
 !SlangWriter methodsFor: 'reading' stamp: 'jpb 6/6/2020 13:38:26'!
 next

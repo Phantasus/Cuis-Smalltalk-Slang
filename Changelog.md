@@ -4,6 +4,26 @@ This file lists the history of changes made to the repository
 in a more wordy fashion of what this was about as an addition
 to descriptive commit messages.
 
+## Update 0.001j1
+
+Affected versions
+  - Slang-Tools 1.25
+  - Slang-C 1.11
+  - Slang-C-Tests 1.2
+  - Slang-Javascript 1.24
+  - Slang-Kernel 1.8
+  - Slang-Kernel-Tests 1.0
+  - Slang-Tools 1.25
+  
+Adds to `SlangWriter` auto indentation for better indentation of
+source code. Adds `SlangOSVMHeaderBuilder` for generating plugin
+header files. I still need a way of finding out the size of `int`
+on the platform so that it works with `sqInt`. Maybe generating
+a program which generates a program so that `sizeof(int)` works
+at generating the source code. As I have notice that `#if (sizeof(int) == 8)`
+doesn't work in C. One behaviour I wasn't expecting.
+
+
 ## Update 0.001i1
 
 Affected versions

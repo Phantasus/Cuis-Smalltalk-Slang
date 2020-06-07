@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4112] on 6 June 2020 at 3:39:49 pm'!
+'From Cuis 5.0 [latest update: #4112] on 7 June 2020 at 11:37:53 am'!
 'Description Package for the Slang code generation to C. 
 
 License: MIT'!
-!provides: 'Slang-C' 1 6!
+!provides: 'Slang-C' 1 11!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-C-Tests'!
 SystemOrganization addCategory: #'Slang-C'!
@@ -58,6 +58,16 @@ SlangObject subclass: #SlangCTypeRepository
 SlangCTypeRepository class
 	instanceVariableNames: ''!
 
+!classDefinition: #SlangOSVMHeaderBuilder category: #'Slang-C'!
+SlangObject subclass: #SlangOSVMHeaderBuilder
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-C'!
+!classDefinition: 'SlangOSVMHeaderBuilder class' category: #'Slang-C'!
+SlangOSVMHeaderBuilder class
+	instanceVariableNames: ''!
+
 !classDefinition: #SlangCCodeGenerator category: #'Slang-C'!
 SlangCodeGenerator subclass: #SlangCCodeGenerator
 	instanceVariableNames: 'inlineList variableDeclarations scopeStack apiMethods preparedMethodList variablesSetCache headerFiles globalVariableUsage doNotRemoveMethodList asArgumentTranslationDict receiverDict currentMethod declareMethodsStatic permitMethodPruning selectorTranslations inlineReturnTypes headerNotice versionString typeRepository'
@@ -88,6 +98,9 @@ The SlangTest tests verify code generation and inlining.
 
 !SlangCTypeRepository commentStamp: '<historical>' prior: 0!
 Contains information of stored types in a C module, can be used globally or locally. Used in the SlangCCodeGenerator subclasses.!
+
+!SlangOSVMHeaderBuilder commentStamp: '<historical>' prior: 0!
+This class is a builder for Opensmalltalk-VM plugin header files.!
 
 !SlangCCodeGenerator commentStamp: 'tpr 5/2/2003 14:30' prior: 0!
 This class oversees the translation of a subset of Smalltalk to C, allowing the comforts of Smalltalk during development and the efficiency and portability of C for the resulting interpreter.  
@@ -636,6 +649,13 @@ findBaseTypeForType: typeName
 	"Returns the base type for the given type. For example 'int' if it's a subtype of int"
 	^nil! !
 
+!SlangCTypeRepository methodsFor: 'as yet unclassified' stamp: 'jpb 6/6/2020 19:25:30'!
+findDefaultReturnTypeBy: aSymbol
+	"Returns a literal for the given return when no explicit return has happened in a C function"
+	#int = aSymbol ifTrue: [ ^0 ].
+	
+	self error: 'unknown default return type for ' , aSymbol.! !
+
 !SlangCTypeRepository methodsFor: 'as yet unclassified' stamp: 'jpb 5/30/2020 16:35:46'!
 findDefaultVariableDeclarationString
 	^'int '! !
@@ -681,6 +701,238 @@ isTypeStruct: typeName
 isTypedPointerToStruct: typeName
 	"Returns true if the given typeName represents a type which is a pointer to a struct"
 	^false! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 23:01:45'!
+emitHeaderOn: writer
+	writer nextPutLine: '#ifndef OSVM_PLUGIN_H'.
+	writer nextPutLine: '#define OSVM_PLUGIN_H'.
+	writer enableAutoIndent.
+	
+	self emitTypedefsOn: writer.
+	writer newLine.
+	self emitInterpreterProxyStructOn: writer.
+	
+	writer disableAutoIndent.
+	writer nextPutLine: '#endif'! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:37:17'!
+emitInstanceCreatersOn: writer 
+	| lines |
+	writer nextPutComment: 'InterpreterProxy methodsFor: ''instance creation'''.
+
+	lines _ #(
+		'sqInt (*clone)(sqInt oop);'
+		'sqInt (*instantiateClassindexableSize)(sqInt classPointer, sqInt size);'
+		'sqInt (*makePointwithxValueyValue)(sqInt xValue, sqInt yValue);'
+		'sqInt (*popRemappableOop)(void);'
+		'sqInt (*pushRemappableOop)(sqInt oop);'
+	).
+	
+	lines do: [:line | writer nextPutLine: line ].
+	writer newLine.! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 23:28:55'!
+emitInterpreterProxyStructOn: writer
+	writer nextPutLine: 'typedef struct VirtualMachine {'.
+	writer autoIndentBy: 2.
+
+	self emitVersionGettersOn: writer.
+	self emitStackAccessorsOn: writer.
+	self emitObjectAccessorsOn: writer.
+	self emitObjectTestersOn: writer.
+	self emitObjectConvertersOn: writer.
+	self emitSpecialObjectsOn: writer.
+	self emitSpecialClassesOn: writer.
+	self emitInstanceCreatersOn: writer.
+	self emitOtherHelpersOn: writer.
+
+	writer autoIndentBy: 1.
+	writer nextPutLine: '} VirtualMachine;'.! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:37:41'!
+emitObjectAccessorsOn: writer
+	| lines |
+	writer nextPutComment: 'InterpreterProxy methodsFor: ''object access'''.
+	lines _ #(
+		'sqInt  (*argumentCountOf)(sqInt methodPointer);'
+		'void  *(*arrayValueOf)(sqInt oop);'
+		'sqInt  (*byteSizeOf)(sqInt oop);'
+		'void  *(*fetchArrayofObject)(sqInt fieldIndex, sqInt objectPointer);'
+		'sqInt  (*fetchClassOf)(sqInt oop);'
+		'double (*fetchFloatofObject)(sqInt fieldIndex, sqInt objectPointer);'
+		'sqInt  (*fetchIntegerofObject)(sqInt fieldIndex, sqInt objectPointer);'
+		'sqInt  (*fetchPointerofObject)(sqInt fieldIndex, sqInt oop);'
+		'sqInt  (*obsoleteDontUseThisFetchWordofObject)(sqInt fieldFieldIndex, sqInt oop);'
+		'void  *(*firstFixedField)(sqInt oop);'
+		'void  *(*firstIndexableField)(sqInt oop);'
+		'sqInt  (*literalofMethod)(sqInt offset, sqInt methodPointer);'
+		'sqInt  (*literalCountOf)(sqInt methodPointer);'
+		'sqInt  (*methodArgumentCount)(void);'
+		'sqInt  (*methodPrimitiveIndex)(void);'
+		'sqInt  (*primitiveIndexOf)(sqInt methodPointer);'
+		'sqInt  (*sizeOfSTArrayFromCPrimitive)(void *cPtr);'
+		'sqInt  (*slotSizeOf)(sqInt oop);'
+		'sqInt  (*stObjectat)(sqInt array, sqInt fieldIndex);'
+		'sqInt  (*stObjectatput)(sqInt array, sqInt fieldIndex, sqInt value);'
+		'sqInt  (*stSizeOf)(sqInt oop);'
+		'sqInt  (*storeIntegerofObjectwithValue)(sqInt fieldIndex, sqInt oop, sqInt integer);'
+		'sqInt  (*storePointerofObjectwithValue)(sqInt fieldIndex, sqInt oop, sqInt valuePointer);'
+	).
+	lines do: [:line | writer nextPutLine: line ].
+	writer newLine.! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:38:01'!
+emitObjectConvertersOn: writer
+	| lines |
+	
+	writer nextPutComment: 'InterpreterProxy methodsFor: ''converting'''.
+
+	lines _ #(
+		'sqInt  (*booleanValueOf)(sqInt obj);'
+		'sqInt  (*checkedIntegerValueOf)(sqInt intOop);'
+		'sqInt  (*floatObjectOf)(double aFloat);'
+		'double (*floatValueOf)(sqInt oop);'
+		'sqInt  (*integerObjectOf)(sqInt value);'
+		'sqInt  (*integerValueOf)(sqInt oop);'
+		'sqInt  (*positive32BitIntegerFor)(unsigned int integerValue);'
+		'usqInt (*positive32BitValueOf)(sqInt oop);'
+	).
+	
+	lines do: [:line | writer nextPutLine: line ].
+	writer newLine.! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:40:14'!
+emitObjectTestersOn: writer
+	| lines |
+	writer nextPutComment: 'InterpreterProxy methodsFor: ''testing'''.
+	
+	lines _ #(
+		'sqInt (*isKindOf)(sqInt oop, char *aString);'
+		'sqInt (*isMemberOf)(sqInt oop, char *aString);'
+		'sqInt (*isBytes)(sqInt oop);'
+		'sqInt (*isFloatObject)(sqInt oop);'
+		'sqInt (*isIndexable)(sqInt oop);'
+		'sqInt (*isIntegerObject)(sqInt oop);'
+		'sqInt (*isIntegerValue)(sqInt intValue);'
+		'sqInt (*isPointers)(sqInt oop);'
+		'sqInt (*isWeak)(sqInt oop);'
+		'sqInt (*isWords)(sqInt oop);'
+		'sqInt (*isWordsOrBytes)(sqInt oop);'
+	).
+	lines do: [:line | writer nextPutLine: line ].
+	writer newLine.! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:38:14'!
+emitOtherHelpersOn: writer
+	| lines |
+	writer nextPutComment: 'InterpreterProxy methodsFor: ''other'''.
+
+	lines _ #(
+		'sqInt (*becomewith)(sqInt array1, sqInt array2);'
+		'sqInt (*byteSwapped)(sqInt w);'
+		'sqInt (*failed)(void);'
+		'sqInt (*fullDisplayUpdate)(void);'
+		'void (*fullGC)(void);'
+		'void (*incrementalGC)(void);'
+		'sqInt (*primitiveFail)(void);'
+		'sqInt (*showDisplayBitsLeftTopRightBottom)(sqInt aForm, sqInt l, sqInt t, sqInt r, sqInt b);'
+		'sqInt (*signalSemaphoreWithIndex)(sqInt semaIndex);'
+		'sqInt (*success)(sqInt aBoolean);'
+		'sqInt (*superclassOf)(sqInt classPointer);'
+	).
+	lines do: [:line| writer nextPutLine: line].
+	writer newLine.! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:28:13'!
+emitSpecialClassesOn: writer
+	| lines |
+	writer nextPutComment: 'InterpreterProxy methodsFor: ''special classes'''.
+
+	lines _ #(
+		'sqInt (*classArray)(void);'
+		'sqInt (*classBitmap)(void);'
+		'sqInt (*classByteArray)(void);'
+		'sqInt (*classCharacter)(void);'
+		'sqInt (*classFloat)(void);'
+		'sqInt (*classLargePositiveInteger)(void);'
+		'sqInt (*classPoint)(void);'
+		'sqInt (*classSemaphore)(void);'
+		'sqInt (*classSmallInteger)(void);'
+		'sqInt (*classString)(void);'
+	).
+	lines do: [:line | writer nextPutLine: line ].
+	writer newLine! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:26:02'!
+emitSpecialObjectsOn: writer
+	| lines |
+	writer nextPutComment: 'InterpreterProxy methodsFor: ''special objects'''. 
+
+	lines _ #(
+		'sqInt (*characterTable)(void);'
+		'sqInt (*displayObject)(void);'
+		'sqInt (*falseObject)(void);'
+		'sqInt (*nilObject)(void);'
+		'sqInt (*trueObject)(void);'
+	).
+	lines do: [:line | writer nextPutLine: line ].
+	writer newLine.! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/7/2020 11:37:45'!
+emitSqIntTypedefsOn: writer
+	"for 32bit images"
+	"writer nextPutLine: 'typedef int sqInt;'."
+	"writer nextPutLine: 'typedef unsigned int usqInt;'."
+	
+	"for 64bit"
+	writer nextPutLine: 'typedef long sqInt;'.
+	writer nextPutLine: 'typedef unsigned long usqInt;'.
+	
+	"writer nextPutLine: 'typedef long long sqInt;'."
+	"writer nextPutLine: 'typedef unsigned long long usqInt;'."
+	! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:39:45'!
+emitStackAccessorsOn: writer
+	| lines |
+	writer nextPutComment: 'InterpreterProxy methodsFor: ''stack access'''.
+	lines _ #(
+		'sqInt  (*pop)(sqInt nItems);'
+		'sqInt  (*popthenPush)(sqInt nItems, sqInt oop);'
+		'sqInt  (*push)(sqInt object);'
+	 	'sqInt  (*pushBool)(sqInt trueOrFalse);'
+	 	'sqInt  (*pushFloat)(double f);'
+	 	'sqInt  (*pushInteger)(sqInt integerValue);'
+	 	'double (*stackFloatValue)(sqInt offset);'
+	 	'sqInt  (*stackIntegerValue)(sqInt offset);'
+	 	'sqInt  (*stackObjectValue)(sqInt offset);'
+	 	'sqInt  (*stackValue)(sqInt offset);'
+	).
+	lines do: [:line | writer nextPutLine: line ].
+	writer newLine! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 23:46:32'!
+emitTypedefsOn: writer
+	self emitSqIntTypedefsOn: writer.
+	writer newLine.
+	writer nextPutLine: 'typedef sqInt (*CompilerHook)(void);'.
+	writer newLine.
+! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 21:40:23'!
+emitVersionGettersOn: writer
+	writer nextPutAll: 'sqInt (*minorVersion)(void);'; newLine.
+	writer nextPutAll: 'sqInt (*majorVersion)(void);'; newLine.
+! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'as yet unclassified' stamp: 'jpb 6/6/2020 20:11:23'!
+findInterpreterProxyVersion
+	"Only implemented for VMs which can generate 1:1 the interpreterProxy interface, which is only possible of a VM which inherits from the opensmalltalk-vm"
+	^{Smalltalk vmParameterAt: 70. Smalltalk vmParameterAt: 71}! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'as yet unclassified' stamp: 'jpb 6/6/2020 20:12:34'!
+findOoPointerSize
+	^Smalltalk vmParameterAt: 40! !
 
 !SlangCCodeGenerator methodsFor: 'public' stamp: 'ar 2/14/1999 01:08'!
 addHeaderFile: aString
@@ -1726,6 +1978,10 @@ extractTypeFor: aVariable fromDeclaration: aVariableDeclaration
 	 or initializations etc"
 	^typeRepository findTypeFor: aVariable fromDeclaration: aVariableDeclaration! !
 
+!SlangCCodeGenerator methodsFor: 'C types lookup' stamp: 'jpb 6/6/2020 19:11:12'!
+findDefaultReturnTypeBy: aSymbol 
+	^typeRepository findDefaultReturnTypeBy: aSymbol! !
+
 !SlangCCodeGenerator methodsFor: 'C types lookup' stamp: 'jpb 5/30/2020 16:51:12'!
 findDefaultReturnTypeDeclarationString
 	"Returns the C type declaration string when no return type for functions was defined"
@@ -2131,17 +2387,17 @@ generateIfTrueAsArgument: msgNode on: aStream indent: level
 			const ifTrue:
 				[msgNode args first emitCCodeAsArgumentOn: aStream level: level generator: self]]! !
 
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'dtl 10/24/2010 16:14'!
+!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 6/6/2020 19:14:59'!
 generateIfTrueIfFalse: msgNode on: aStream indent: level
 	"Generate the C code for this message onto the given stream."
-
+	
 	(self nilOrBooleanConstantReceiverOf: msgNode)
 		ifNil:
 			[aStream nextPutAll: 'if ('.
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-			aStream nextPutAll: ') {'; cr.
+			aStream nextPutAll: ') {'; newLine.
 			msgNode args first emitCCodeOn: aStream level: level + 1 generator: self.
-			aStream tab: level; nextPut: $}; nextPutAll: ' else {'; cr.
+			aStream tab: level; nextPut: $}; nextPutAll: ' else {'; newLine.
 			msgNode args last emitCCodeOn: aStream level: level + 1 generator: self.
 			aStream tab: level; nextPut: $}]
 		ifNotNil:
@@ -2835,16 +3091,19 @@ nextPutLocalInclude: aString
 	"Puts a local #include into the stream. So a include directive which searches first in the current directory and then tries to find other places"
 	self nextPutAll: '#include ' , '"' , aString , '.h"'! !
 
-!SlangCLanguageWriter methodsFor: 'initialization' stamp: 'jpb 6/3/2020 08:30:38'!
+!SlangCLanguageWriter methodsFor: 'initialization' stamp: 'jpb 6/6/2020 23:04:30'!
 initialize
-	stream _ nil.
-	charsOnLine _ 0.
+	super initialize.
 	
 	tabChar _ Character tab.
 	lfChar _ Character lf.
 	crChar _ Character cr.
 	spaceChar _ Character space.
 	otherUnescapedChars _ #($!! $# $$ $% $& $( $) $* $+ $- $_ $, $. $/ $: $; $< $= $> $@ $[ $] $^ $`)! !
+
+!SlangCLanguageWriter methodsFor: 'as yet unclassified' stamp: 'jpb 6/6/2020 19:14:33'!
+nextPutReturn: aTypeMapping 
+	self nextPutAll: 'return ' , aTypeMapping asString , ';'! !
 
 !SlangCLanguageWriter class methodsFor: 'target language helpers' stamp: 'jpb 5/20/2020 21:34:39'!
 findIntegerLiteral: anObject

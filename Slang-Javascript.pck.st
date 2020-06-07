@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4112] on 6 June 2020 at 3:39:51 pm'!
+'From Cuis 5.0 [latest update: #4112] on 6 June 2020 at 11:24:54 pm'!
 'Description Converting Slang to JavaScript is achieved by this package.
 
 License: MIT'!
-!provides: 'Slang-Javascript' 1 23!
+!provides: 'Slang-Javascript' 1 24!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-JavaScript'!
 
@@ -862,22 +862,25 @@ useSymbolicConstants: aBool
 emitExportsOn: aStream
 	"Store all the exported primitives in a form to be used by the internal named prim system"! !
 
-!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/26/2020 21:53:46'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 6/6/2020 18:35:34'!
 emitJSCodeOn: aStream 
 	"Emit C code for all methods in the code base onto the given stream. All inlined method calls should already have been expanded."
+	| slangWriter |
+	
+	slangWriter _ SlangWriter on: aStream.
 
-	self emitJSHeaderOn: aStream.
-	self emitJSTypesOn: aStream.
-	self emitJSConstantsOn: aStream.
-	self emitJSVariablesOn: aStream.
+	self emitJSHeaderOn: slangWriter.
+	self emitJSTypesOn: slangWriter.
+	self emitJSConstantsOn: slangWriter.
+	self emitJSVariablesOn: slangWriter.
 
 	systemAdapter
 		showProgressIn: preparedMethodList 
 		label: 'Emitting Javascript Code'
 		do:  [ :progress :m :i | "bar value: i."
-			m emitJSCodeOn: aStream generator: self].
+			m emitJSCodeOn: slangWriter generator: self].
 		
-	self emitExportsOn: aStream.
+	self emitExportsOn: slangWriter.
 ! !
 
 !SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 5/26/2020 21:53:46'!
@@ -1503,7 +1506,7 @@ generateIfTrueAsArgument: msgNode on: aStream indent: level
 			const ifTrue:
 				[msgNode args first emitJSCodeAsArgumentOn: aStream level: level generator: self]]! !
 
-!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:29'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 6/6/2020 18:35:52'!
 generateIfTrueIfFalse: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
@@ -1511,9 +1514,9 @@ generateIfTrueIfFalse: msgNode on: aStream indent: level
 		ifNil:
 			[aStream nextPutAll: 'if ('.
 			msgNode receiver emitJSCodeAsExpressionOn: aStream level: level generator: self.
-			aStream nextPutAll: ') {'; cr.
+			aStream nextPutAll: ') {'; newLine.
 			msgNode args first emitJSCodeOn: aStream level: level + 1 generator: self.
-			aStream tab: level; nextPut: $}; nextPutAll: ' else {'; cr.
+			aStream tab: level; nextPut: $}; nextPutAll: ' else {'; newLine.
 			msgNode args last emitJSCodeOn: aStream level: level + 1 generator: self.
 			aStream tab: level; nextPut: $}]
 		ifNotNil:
