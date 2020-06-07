@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4112] on 1 June 2020 at 12:45:31 pm'!
+'From Cuis 5.0 [latest update: #4112] on 7 June 2020 at 7:17:36 pm'!
 'Description This package contains the tests for the Slang-C package which contains the Slang to C translation.
 
 License: MIT'!
-!provides: 'Slang-C-Tests' 1 2!
+!provides: 'Slang-C-Tests' 1 3!
 !requires: 'Slang-C' 1 0 nil!
 SystemOrganization addCategory: #'Slang-C-Tests'!
 
@@ -98,6 +98,35 @@ testWritingLocalIncludes
 	
 	writer nextPutLocalInclude: 'foo'.
 	self assert: '#include "foo.h"' equals: buffer contents.! !
+
+!SlangCLanguageWriterTest methodsFor: 'as yet unclassified' stamp: 'jpb 6/7/2020 19:01:01'!
+testWritingStatements
+	| writer buffer |
+	buffer _ '' writeStream.
+	writer _ usedClass on: buffer.
+	
+	writer nextPutStatement: 'foo'.
+	self assert: ( 'foo;' , String newLineString) equals: buffer contents.! !
+
+!SlangCLanguageWriterTest methodsFor: 'as yet unclassified' stamp: 'jpb 6/7/2020 19:00:32'!
+testWritingStatementsWithIndentation
+	| writer buffer |
+	buffer _ '' writeStream.
+	writer _ usedClass on: buffer.
+
+	writer enableAutoIndent.
+	
+	writer nextPutStatement: 'foo'.
+	self assert: ('  foo;' , String newLineString ) equals: buffer contents.! !
+
+!SlangCLanguageWriterTest methodsFor: 'as yet unclassified' stamp: 'jpb 6/7/2020 19:14:25'!
+testWritingStrings
+	| writer buffer |
+	buffer _ '' writeStream.
+	writer _ usedClass on: buffer.
+
+	writer nextPutString: 'Hello World'.
+	self assert: ('"Hello World"' ) equals: buffer contents.! !
 
 !SlangCTest methodsFor: 'running' stamp: 'dtl 3/18/2013 18:48'!
 setUp

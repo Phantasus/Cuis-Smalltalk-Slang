@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4112] on 7 June 2020 at 4:06:27 pm'!
+'From Cuis 5.0 [latest update: #4112] on 7 June 2020 at 7:17:33 pm'!
 'Description Package for the Slang code generation to C. 
 
 License: MIT'!
-!provides: 'Slang-C' 1 12!
+!provides: 'Slang-C' 1 13!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-C-Tests'!
 SystemOrganization addCategory: #'Slang-C'!
@@ -152,6 +152,35 @@ testWritingLocalIncludes
 	
 	writer nextPutLocalInclude: 'foo'.
 	self assert: '#include "foo.h"' equals: buffer contents.! !
+
+!SlangCLanguageWriterTest methodsFor: 'as yet unclassified' stamp: 'jpb 6/7/2020 19:01:01'!
+testWritingStatements
+	| writer buffer |
+	buffer _ '' writeStream.
+	writer _ usedClass on: buffer.
+	
+	writer nextPutStatement: 'foo'.
+	self assert: ( 'foo;' , String newLineString) equals: buffer contents.! !
+
+!SlangCLanguageWriterTest methodsFor: 'as yet unclassified' stamp: 'jpb 6/7/2020 19:00:32'!
+testWritingStatementsWithIndentation
+	| writer buffer |
+	buffer _ '' writeStream.
+	writer _ usedClass on: buffer.
+
+	writer enableAutoIndent.
+	
+	writer nextPutStatement: 'foo'.
+	self assert: ('  foo;' , String newLineString ) equals: buffer contents.! !
+
+!SlangCLanguageWriterTest methodsFor: 'as yet unclassified' stamp: 'jpb 6/7/2020 19:14:25'!
+testWritingStrings
+	| writer buffer |
+	buffer _ '' writeStream.
+	writer _ usedClass on: buffer.
+
+	writer nextPutString: 'Hello World'.
+	self assert: ('"Hello World"' ) equals: buffer contents.! !
 
 !SlangCTest methodsFor: 'running' stamp: 'dtl 3/18/2013 18:48'!
 setUp
@@ -878,10 +907,10 @@ emitSpecialObjectsOn: writer
 	lines do: [:line | writer nextPutLine: line ].
 	writer newLine.! !
 
-!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/7/2020 15:52:12'!
+!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/7/2020 17:56:47'!
 emitSqIntTypedefsOn: writer
 	| wordSize |
-	wordSize _ Smalltalk wordSize.
+	wordSize _ self findWordSize..
 
 	"Here we use GCC macros for generating the types https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html#Common-Predefined-Macros"
 
@@ -938,9 +967,15 @@ findInterpreterProxyVersion
 	"Only implemented for VMs which can generate 1:1 the interpreterProxy interface, which is only possible of a VM which inherits from the opensmalltalk-vm"
 	^{Smalltalk vmParameterAt: 70. Smalltalk vmParameterAt: 71}! !
 
-!SlangOSVMHeaderBuilder methodsFor: 'as yet unclassified' stamp: 'jpb 6/6/2020 20:12:34'!
+!SlangOSVMHeaderBuilder methodsFor: 'as yet unclassified' stamp: 'jpb 6/7/2020 18:49:04'!
 findOoPointerSize
+	"Returns the size in bytes of the commonly used object oriented pointer (OOP) size used in the VM"
 	^Smalltalk vmParameterAt: 40! !
+
+!SlangOSVMHeaderBuilder methodsFor: 'as yet unclassified' stamp: 'jpb 6/7/2020 18:49:24'!
+findWordSize
+	"Returns the word size within the VM"
+	^ Smalltalk wordSize! !
 
 !SlangCCodeGenerator methodsFor: 'public' stamp: 'ar 2/14/1999 01:08'!
 addHeaderFile: aString
@@ -3109,9 +3144,14 @@ initialize
 	spaceChar _ Character space.
 	otherUnescapedChars _ #($!! $# $$ $% $& $( $) $* $+ $- $_ $, $. $/ $: $; $< $= $> $@ $[ $] $^ $`)! !
 
-!SlangCLanguageWriter methodsFor: 'as yet unclassified' stamp: 'jpb 6/6/2020 19:14:33'!
+!SlangCLanguageWriter methodsFor: 'writing statements' stamp: 'jpb 6/7/2020 18:47:13'!
 nextPutReturn: aTypeMapping 
-	self nextPutAll: 'return ' , aTypeMapping asString , ';'! !
+	self nextPutStatement: 'return ' , aTypeMapping asString.! !
+
+!SlangCLanguageWriter methodsFor: 'writing statements' stamp: 'jpb 6/7/2020 18:46:32'!
+nextPutStatement: statementString
+	"Writes out a long C comment /* ...  */"
+	self nextPutLine: statementString , ';'.! !
 
 !SlangCLanguageWriter class methodsFor: 'target language helpers' stamp: 'jpb 5/20/2020 21:34:39'!
 findIntegerLiteral: anObject
