@@ -4,6 +4,14 @@ This file lists the history of changes made to the repository
 in a more wordy fashion of what this was about as an addition
 to descriptive commit messages.
 
+## Update 0.001j2
+
+Affected versions
+  - Slang-C 1.12
+
+Adds OpenSmalltalk VM header generation using the predefined
+standard GCC macros `__SIZEOF_INT`, etc.
+
 ## Update 0.001j1
 
 Affected versions
@@ -14,7 +22,7 @@ Affected versions
   - Slang-Kernel 1.8
   - Slang-Kernel-Tests 1.0
   - Slang-Tools 1.25
-  
+
 Adds to `SlangWriter` auto indentation for better indentation of
 source code. Adds `SlangOSVMHeaderBuilder` for generating plugin
 header files. I still need a way of finding out the size of `int`

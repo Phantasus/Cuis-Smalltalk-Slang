@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4112] on 7 June 2020 at 11:37:53 am'!
+'From Cuis 5.0 [latest update: #4112] on 7 June 2020 at 4:06:27 pm'!
 'Description Package for the Slang code generation to C. 
 
 License: MIT'!
-!provides: 'Slang-C' 1 11!
+!provides: 'Slang-C' 1 12!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-C-Tests'!
 SystemOrganization addCategory: #'Slang-C'!
@@ -878,19 +878,27 @@ emitSpecialObjectsOn: writer
 	lines do: [:line | writer nextPutLine: line ].
 	writer newLine.! !
 
-!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/7/2020 11:37:45'!
+!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/7/2020 15:52:12'!
 emitSqIntTypedefsOn: writer
+	| wordSize |
+	wordSize _ Smalltalk wordSize.
+
+	"Here we use GCC macros for generating the types https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html#Common-Predefined-Macros"
+
 	"for 32bit images"
-	"writer nextPutLine: 'typedef int sqInt;'."
-	"writer nextPutLine: 'typedef unsigned int usqInt;'."
+	writer nextPutLine: '#if (__SIZEOF_INT__ == ' , wordSize asString , ')'.
+	writer nextPutLine: 'typedef int sqInt;'.
+	writer nextPutLine: 'typedef unsigned int usqInt;'.
 	
 	"for 64bit"
+	writer nextPutLine: '#elif (__SIZEOF_LONG__ == ', wordSize asString , ')'.
 	writer nextPutLine: 'typedef long sqInt;'.
 	writer nextPutLine: 'typedef unsigned long usqInt;'.
 	
-	"writer nextPutLine: 'typedef long long sqInt;'."
-	"writer nextPutLine: 'typedef unsigned long long usqInt;'."
-	! !
+	writer nextPutLine: '#elif (__SIZEOF_LONG_LONG__ == ' , wordSize asString , ')'.
+	writer nextPutLine: 'typedef long long sqInt;'.
+	writer nextPutLine: 'typedef unsigned long long usqInt;'.
+	writer nextPutLine: '#endif'! !
 
 !SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:39:45'!
 emitStackAccessorsOn: writer
