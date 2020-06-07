@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4112] on 6 June 2020 at 11:35:02 pm'!
+'From Cuis 5.0 [latest update: #4191] on 7 June 2020 at 8:48:36 pm'!
 'Description Contains the fundamental basic infrastructure for Slang, without any tools or language specific translation mechanisms. With just the Kernel you can''t build a plugin, you need the specific translation packages.
 
 License: MIT'!
-!provides: 'Slang-Kernel' 1 8!
+!provides: 'Slang-Kernel' 1 10!
 !requires: 'Cuis-Base' 50 4112 nil!
 SystemOrganization addCategory: #'Slang-Kernel-Tests'!
 SystemOrganization addCategory: #'Slang-Kernel'!
@@ -429,12 +429,12 @@ testFindClassDescriptionForClass
 	
 	self assert: expected equals: (service findClassDescriptionByClass: usedClass)! !
 
-!SlangSystemServiceTest methodsFor: 'as yet unclassified' stamp: 'jpb 6/2/2020 07:45:52'!
+!SlangSystemServiceTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/20/2020 22:37:08'!
 testFindSlangDescriptionForClass
 	| service |
 	service _ usedClass new.
 	
-	self assert: 'SlangSystemAdapter Slang-Kernel'
+	self assert: 'SlangSystemAdapter Slang-Tools'
 		 equals: (service findSlangDescriptionBy: usedClass)! !
 
 !SlangModule methodsFor: 'Slang syntax' stamp: 'jpb 5/16/2020 11:10:33'!
@@ -550,14 +550,14 @@ asCString
 	^ stream contents
 ! !
 
-!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'jpb 6/1/2020 14:30:52'!
+!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'jpb 6/7/2020 20:45:32'!
 asCString: selector
 
 	| method stream |
 	method _ self findCodeGenerator findMethodNamed: selector.
 	method ifNil: [^ 'No source has been generated'].
 	stream _ ReadWriteStream on: String new.
-	method emitCCodeOn: stream generator: cg.
+	method emitCCodeOn: (SlangCLanguageWriter on: stream) generator: cg.
 	^ stream contents
 ! !
 
@@ -801,15 +801,14 @@ varDefByPragma
 	<var: #bar declare: 'unsigned int * bar'>
 ! !
 
-!SlangTestSupportInterpreter class methodsFor: 'translation' stamp: 'jpb 6/1/2020 14:56:03'!
+!SlangTestSupportInterpreter class methodsFor: 'translation' stamp: 'jpb 6/7/2020 20:42:03'!
 buildCodeGeneratorInlined: doInlining
 	"Build a CCodeGenerator for this class."
 
 	 | cg |
-	cg _ SlangCCodeGenerator new.
+	cg _ SlangCCodeGenerator new initialize.
 	cg declareMethodsStatic: false.
 	cg permitMethodPruning: true.
-	cg findAllUncheckedAbstractMethods addAll: self abstractSelectors.
 	
 	^self initializeCodeGenerator: cg
 
@@ -864,14 +863,14 @@ asCString
 	^ stream contents
 ! !
 
-!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'jpb 6/1/2020 14:30:52'!
+!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'jpb 6/7/2020 20:47:48'!
 asCString: selector
 
 	| method stream |
 	method _ self findCodeGenerator findMethodNamed: selector.
 	method ifNil: [^ 'No source has been generated'].
 	stream _ ReadWriteStream on: String new.
-	method emitCCodeOn: stream generator: cg.
+	method emitCCodeOn: (SlangCLanguageWriter on: stream) generator: cg.
 	^ stream contents
 ! !
 
@@ -904,6 +903,19 @@ callMethodTwiceWithSendInLoopLimit
 methodWithIntegerResult
 	"Translates to nonsense, but use this to illustrate the point"
 	^(Random new next * 100) asInteger! !
+
+!SlangTestSupportPlugin methodsFor: 'loop limits' stamp: 'dtl 2/18/2014 20:15'!
+methodWithLoopLimitThatIsNotModified: arrayObj
+
+	0 to: 10 do: [:i | self storePointerUnchecked: i ofObject: arrayObj withValue: 0]
+! !
+
+!SlangTestSupportPlugin methodsFor: 'loop limits' stamp: 'dtl 4/4/2013 23:39'!
+methodWithLoopLimitThatMightBeModified: arrayObj
+
+	0 to: (self lengthOf: arrayObj) do:
+	[:i | self storePointerUnchecked: i ofObject: arrayObj withValue: nil]
+! !
 
 !SlangTestSupportPlugin methodsFor: 'export declaration' stamp: 'dtl 9/19/2010 12:29'!
 declareExportFalseByMethod
@@ -1050,7 +1062,7 @@ varDefByPragma
 	<var: #bar declare: 'unsigned int * bar'>
 ! !
 
-!SlangTestSupportPlugin class methodsFor: 'translation' stamp: 'jpb 6/1/2020 14:36:35'!
+!SlangTestSupportPlugin class methodsFor: 'translation' stamp: 'jpb 6/7/2020 20:42:23'!
 buildCodeGeneratorInlined: doInlining
 	"Build a CCodeGenerator for this class."
 
@@ -1058,7 +1070,6 @@ buildCodeGeneratorInlined: doInlining
 	cg _ SlangCCodeGenerator new initialize.
 	cg declareMethodsStatic: false.
 	cg permitMethodPruning: true.
-	cg findAllUncheckedAbstractMethods addAll: self abstractSelectors.
 	
 	^self initializeCodeGenerator: cg
 
@@ -3672,6 +3683,12 @@ nameOrValue
 
 	self error: 'object is neither variable nor constant'! !
 
+!SlangTParseNode methodsFor: 'printing'!
+printOn: aStream level: anInteger 
+	"Typically overridden. If control actually gets here, avoid recursion loop by sending to super."
+
+	super printOn: aStream.! !
+
 !SlangTParseNode methodsFor: 'testing' stamp: 'eem 2/11/2009 15:24'!
 endsWithReturn
 
@@ -3749,12 +3766,6 @@ structTargetKindIn: aCodeGen
 	 and hence can be dereferenced using . or ->.  Answer any of
 	 #struct #pointer or nil"
 	^nil! !
-
-!SlangTParseNode methodsFor: 'printing'!
-printOn: aStream level: anInteger 
-	"Typically overridden. If control actually gets here, avoid recursion loop by sending to super."
-
-	super printOn: aStream.! !
 
 !SlangTParseNode methodsFor: 'utilities' stamp: 'eem 12/12/2012 12:15'!
 allCalls
