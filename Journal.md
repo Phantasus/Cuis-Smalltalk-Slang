@@ -14,6 +14,23 @@ authors at the end of the file.
 Yesterday at 14:00 UTC was a Cuis Meetup using Jitsi. There I showed
 a little bit the work I currently did.
 
+After that I looked again at `sq.h` of opensmalltalk-vm and what is
+really needed for a plugin to interface with the vm. Basically just
+a minimal implementation of the `interpreterProxy` interface struct.
+For which I build a `SlangOSVMHeaderBuilder` generator class, which
+generates from the introspection of the running image a header,
+which could in turn be used for building plugins together.
+
+The interpreter proxy got over the years a couple of extensions and
+luckily the VM returns back the major and minor versions of the
+revisions which in turn are used for building the interpreter proxy
+`struct` in the opensmalltalk-vm repository. So in theory, if the
+opensmalltalk-vm maintainers don't massively mess that scheme up,
+you can generate a `plugin.h` based on the return values of
+`Smalltalk vmParameterAt: 70` (major version) or
+`Smalltalk vmParameterAt: 71` (minor version).
+
+
 ## 3rd June 2020 (jpb)
 
 Today I removed the `vm_exports` and `builtinfo` outputs, which
