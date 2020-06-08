@@ -1,4 +1,4 @@
-'From Cuis 5.0 [latest update: #4112] on 1 June 2020 at 12:45:37 pm'!
+'From Cuis 5.0 [latest update: #4191] on 8 June 2020 at 8:55:33 pm'!
 'Description Contains the tests for the Slang kernel, which provides the base for the Slang transpilation system and Smalltalk dialect.
 
 License: MIT'!
@@ -139,14 +139,14 @@ asCString
 	^ stream contents
 ! !
 
-!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'jpb 5/26/2020 21:01:22'!
+!SlangTestSupportInterpreter methodsFor: 'translation' stamp: 'jpb 6/7/2020 20:45:32'!
 asCString: selector
 
 	| method stream |
-	method _ self findCodeGenerator methodNamed: selector.
+	method _ self findCodeGenerator findMethodNamed: selector.
 	method ifNil: [^ 'No source has been generated'].
 	stream _ ReadWriteStream on: String new.
-	method emitCCodeOn: stream generator: cg.
+	method emitCCodeOn: (SlangCLanguageWriter on: stream) generator: cg.
 	^ stream contents
 ! !
 
@@ -390,15 +390,14 @@ varDefByPragma
 	<var: #bar declare: 'unsigned int * bar'>
 ! !
 
-!SlangTestSupportInterpreter class methodsFor: 'translation' stamp: 'jpb 5/16/2020 20:56:14'!
+!SlangTestSupportInterpreter class methodsFor: 'translation' stamp: 'jpb 6/7/2020 20:42:03'!
 buildCodeGeneratorInlined: doInlining
 	"Build a CCodeGenerator for this class."
 
 	 | cg |
-	cg _ SlangCCodeGeneratorGlobalStructure new initialize.
+	cg _ SlangCCodeGenerator new initialize.
 	cg declareMethodsStatic: false.
 	cg permitMethodPruning: true.
-	cg uncheckedAbstractMethods addAll: self abstractSelectors.
 	
 	^self initializeCodeGenerator: cg
 
@@ -453,14 +452,14 @@ asCString
 	^ stream contents
 ! !
 
-!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'jpb 5/26/2020 21:10:07'!
+!SlangTestSupportPlugin methodsFor: 'translation' stamp: 'jpb 6/7/2020 20:47:48'!
 asCString: selector
 
 	| method stream |
-	method _ self findCodeGenerator methodNamed: selector.
+	method _ self findCodeGenerator findMethodNamed: selector.
 	method ifNil: [^ 'No source has been generated'].
 	stream _ ReadWriteStream on: String new.
-	method emitCCodeOn: stream generator: cg.
+	method emitCCodeOn: (SlangCLanguageWriter on: stream) generator: cg.
 	^ stream contents
 ! !
 
@@ -652,7 +651,7 @@ varDefByPragma
 	<var: #bar declare: 'unsigned int * bar'>
 ! !
 
-!SlangTestSupportPlugin class methodsFor: 'translation' stamp: 'jpb 5/26/2020 20:59:58'!
+!SlangTestSupportPlugin class methodsFor: 'translation' stamp: 'jpb 6/7/2020 20:42:23'!
 buildCodeGeneratorInlined: doInlining
 	"Build a CCodeGenerator for this class."
 
@@ -660,7 +659,6 @@ buildCodeGeneratorInlined: doInlining
 	cg _ SlangCCodeGenerator new initialize.
 	cg declareMethodsStatic: false.
 	cg permitMethodPruning: true.
-	cg uncheckedAbstractMethods addAll: self abstractSelectors.
 	
 	^self initializeCodeGenerator: cg
 

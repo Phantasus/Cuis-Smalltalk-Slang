@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4112] on 6 June 2020 at 11:24:54 pm'!
+'From Cuis 5.0 [latest update: #4191] on 8 June 2020 at 8:50:37 pm'!
 'Description Converting Slang to JavaScript is achieved by this package.
 
 License: MIT'!
-!provides: 'Slang-Javascript' 1 24!
+!provides: 'Slang-Javascript' 1 25!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-JavaScript'!
 
@@ -194,8 +194,8 @@ storeCodeOnFile: fileName doInlining: inlineFlag doAssertions: assertionFlag
 		self emitJSCodeOn: stream doInlining: inlineFlag doAssertions: assertionFlag.
 	] ensure: [stream close]! !
 
-!SlangJSCodeGenerator methodsFor: 'public' stamp: 'eem 7/16/2009 14:07'!
-var: varName declareC: declarationString
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 6/8/2020 20:24:10'!
+var: varName declare: declarationString
 	"Record the given C declaration for a global variable."
 
 	(declarationString includesSubString: varName) ifFalse:
@@ -207,14 +207,14 @@ var: varName type: type
 "Use this in preference to #var:declareC: whenver possible since it avoids typing the varname twice and thus avoids the potential for a typo. See also #var:type:array:"
 	self var: varName declare: type , ' ' , varName! !
 
-!SlangJSCodeGenerator methodsFor: 'public' stamp: 'bf 10/5/2014 15:30'!
+!SlangJSCodeGenerator methodsFor: 'public' stamp: 'jpb 6/8/2020 20:24:10'!
 var: varName type: type array: array
 "use this in preference to #var:declareC: when possible. This produces a JS statment of the form
 var fooArray = [1,2,3]
 See also #var:type: for simple var decls" 
 	self
 		var: varName
-		declareC: (String streamContents: [:s |
+		declare: (String streamContents: [:s |
 			s nextPutAll: type.
 			s space.
 			s nextPutAll: varName.
@@ -862,12 +862,12 @@ useSymbolicConstants: aBool
 emitExportsOn: aStream
 	"Store all the exported primitives in a form to be used by the internal named prim system"! !
 
-!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 6/6/2020 18:35:34'!
+!SlangJSCodeGenerator methodsFor: 'JS code generator' stamp: 'jpb 6/8/2020 20:26:47'!
 emitJSCodeOn: aStream 
-	"Emit C code for all methods in the code base onto the given stream. All inlined method calls should already have been expanded."
+	"Emit JavaScript code for all methods in the code base onto the given stream. All inlined method calls should already have been expanded."
 	| slangWriter |
 	
-	slangWriter _ SlangWriter on: aStream.
+	slangWriter _ SlangJSLanguageWriter on: aStream.
 
 	self emitJSHeaderOn: slangWriter.
 	self emitJSTypesOn: slangWriter.
@@ -1399,20 +1399,21 @@ generateGreaterThanOrEqual: msgNode on: aStream indent: level
 	aStream nextPutAll: ' >= '.
 	self emitJSExpression: msgNode args first on: aStream.! !
 
-!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 5/21/2020 11:38:46'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 6/8/2020 20:30:21'!
 generateIfFalse: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
 	self flag: #fixme. "Fix to the correct emit calls"
 	(self nilOrBooleanConstantReceiverOf: msgNode)
-		ifNil:
-			[aStream nextPutAll: 'if ('.
+		ifNil: [
+			aStream nextPutAll: 'if ('.
 			self generateNot: (SlangTSendNode new
 					setSelector: #not receiver: msgNode receiver arguments: #())
 				on: aStream indent: level + 1.
-			aStream nextPutAll: ') {'; cr.
+			aStream nextPutAll: ') {'; newLine.
+			
 			"FIXME: msgNode args last emitJSCodeOn: aStream level: level + 1 generator: self."
-			level timesRepeat: [aStream tab].
+			aStream indent: level.
 			aStream nextPut: $}]
 		ifNotNil:
 			[:const |
@@ -1473,17 +1474,19 @@ generateIfFalseIfTrueAsArgument: msgNode on: aStream indent: level
 				ifFalse: [msgNode args first])
 					emitJSCodeAsArgumentOn: aStream level: level generator: self]! !
 
-!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'bf 10/1/2014 14:29'!
+!SlangJSCodeGenerator methodsFor: 'JS translation' stamp: 'jpb 6/8/2020 20:29:47'!
 generateIfTrue: msgNode on: aStream indent: level
 	"Generate the JS code for this message onto the given stream."
 
 	(self nilOrBooleanConstantReceiverOf: msgNode)
-		ifNil:
-			[aStream nextPutAll: 'if ('.
+		ifNil: [
+			aStream nextPutAll: 'if ('.
 			msgNode receiver emitJSCodeAsExpressionOn: aStream level: level generator: self.
-			aStream nextPutAll: ') {'; cr.
+			aStream nextPutAll: ') {'; newLine.
+			
 			msgNode args first emitJSCodeOn: aStream level: level + 1 generator: self.
-			level timesRepeat: [ aStream tab ].
+			aStream indent: level.
+			
 			aStream nextPut: $}]
 		ifNotNil:
 			[:const |
@@ -2406,6 +2409,20 @@ initialize
 		"If UseRightShiftForDivide is true, the translator will generate a right-shift when it encounters a division by a constant that is a small power of two. For example, 'x / 8' will generate '((int) x >> 3)'. The coercion to int is done to make it clear that the C compiler should generate a signed shift."
 		"Note: The Kernighan and Ritchie 2nd Edition C manual, p. 49, leaves the semantics of right-shifting a negative number open to the discretion of the compiler implementor. However, it strongly suggests that most compilers should generate an arithmetic right shift (i.e., shifting in the sign bit), which is the same as dividing by a power of two. If your compiler does not generate or simulate an arithmetic shift, then make this class variable false and re-translate."
 ! !
+
+!SlangJSLanguageWriter methodsFor: 'writing comments' stamp: 'jpb 6/8/2020 20:28:02'!
+nextPutComment: aString 
+	self nextPutCommentStart.
+	self nextPutAll: aString.
+	self nextPutCommentEnd.! !
+
+!SlangJSLanguageWriter methodsFor: 'writing comments' stamp: 'jpb 6/8/2020 20:42:41'!
+nextPutCommentEnd
+	self nextPutAll: ' */'! !
+
+!SlangJSLanguageWriter methodsFor: 'writing comments' stamp: 'jpb 6/8/2020 20:42:35'!
+nextPutCommentStart
+	self nextPutAll: '/* '.! !
 
 !SlangJSMethod methodsFor: 'accessing'!
 args
@@ -3887,18 +3904,16 @@ emitJSCodeOn: aStream generator: aCodeGen
 			
 		aStream nextPutAll: '}'; newLine]! !
 
-!SlangJSMethod methodsFor: 'JS code generation' stamp: 'hg 8/14/2000 16:09'!
+!SlangJSMethod methodsFor: 'JS code generation' stamp: 'jpb 6/8/2020 20:25:16'!
 emitJSCommentOn: aStream
 	"Emit the transferred Smalltalk comments as C comments."
 
 	comment ifNotNil: [
-		aStream cr;cr.
+		aStream newLine; newLine.
+		
 		1 to: comment size do: [:index | 
-			aStream 
-				nextPutAll: '/*'; tab;
-				nextPutAll: (comment at: index);
-				nextPutAll: ' */';
-				cr]]! !
+			aStream
+				nextPutComment: (comment at: index) ; newLine ]]! !
 
 !SlangJSMethod methodsFor: 'JS code generation' stamp: 'jpb 5/31/2020 20:59:04'!
 emitJSFunctionHeader: aStream generator: aCodeGen
@@ -4133,21 +4148,19 @@ emitJSCodeAsExpressionOn: aStream level: level generator: aCodeGen
 emitJSCodeOn: aStream level: lev generator: gen
 	self subclassResponsibility.! !
 
-!SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:10:12'!
+!SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 6/8/2020 20:41:20'!
 emitJSCommentOn: aStream level: level
 	"Emit the transferred Smalltalk comments as C comments."
 
 	comment ifNotNil: [
 		comment isString ifTrue: [^self].	"safety catch"
-		aStream cr.
+		aStream newLine.
+		
 		1 to: comment size do: [:index | 
-			aStream 
-				tab: level;
-				nextPutAll: '/* ';
-				nextPutAll: (comment at: index);
-				nextPutAll: ' */';
-				cr].
-		aStream cr]! !
+			aStream indent: level.
+			aStream nextPutComment: (comment at: index) ; newLine ].
+
+		aStream newLine]! !
 
 !SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:10:20'!
 isBitBltPtr
@@ -4467,16 +4480,23 @@ isBitBltPtr
 isConstantNull
 	^ name = 'nil'! !
 
-!SlangTVariableNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 6/6/2020 14:26:30'!
+!SlangTVariableNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 6/8/2020 20:39:44'!
 isFloatIn: aCodeGen
 	| type |
-	type := aCodeGen typeOfVariable: name.
+	type _ aCodeGen typeOfVariable: name.
 	type isNil ifTrue: [^false].
 	(type includes: $*) ifTrue: [^false].
 	
-	(type beginsWithAnyOf: #('register ' 'static ')) ifTrue: [type := type copyAfter: $ ].
-	(type beginsWithAnyOf: #('double ' 'float ')) ifTrue: [^true].
-	(type beginsWithAnyOf: #('int ' 'unsigned ' 'sqInt ' 'usqInt ' 'var ')) ifTrue: [^false].
+	self flag: #fixme.
+	"FIXME: these were originally tested with beginsWithAnyOf:"
+	(type beginsWith: 'register ') ifTrue: [type _ type copyAfter: $ ].
+	(type beginsWith: 'static ') ifTrue: [type _ type copyAfter: $ ].
+	
+	(type beginsWith: 'double ') ifTrue: [^true].
+	(type beginsWith: 'float ') ifTrue: [^true].
+	
+	#('int ' 'unsigned ' 'sqInt ' 'usqInt ' 'var ') do: [:typeValue |
+		(type beginsWith: typeValue) ifTrue: [^false]].
 	
 	self halt: 'need to handle ', type! !
 SlangJSCodeGenerator initialize!

@@ -4,6 +4,24 @@ This file lists the history of changes made to the repository
 in a more wordy fashion of what this was about as an addition
 to descriptive commit messages.
 
+## Update 0.001k1
+
+Affected versions:
+  - Slang-C 1.17
+  - Slang-Examples 1.1
+  - Slang-JavaScript 1.25
+  - Slang-Kernel-Tests 1.0
+  
+Adds `Slang-Examples` packages which contains examples of howto
+use Slang as this is all a highly experimental work-in-progress,
+this is too is unfinished. The first addition is the Squeak VMMaker
+`Matrix2x3Plugin`. Adapts the `Slang-C` so that the complexer matrix
+plugin can be generated with the `SlangCCodeGenerator`. Also adds
+to the `Slang-JavaScript` package the code needed to generate a
+javascript version of the matrix plugin. Also fixes the testcases
+with the changed code. Adds also a first version of a "Howto" guide
+of howto port an existing vmmaker plugin to Cuis Slang.
+
 ## Update 0.001j2
 
 Affected versions

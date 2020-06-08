@@ -27,8 +27,11 @@ to `SlangPlugin`.
 Change VMMaker specific method selectors to the Cuis Slang versions of these selectors
 or when no mapping is present, then just delete or re-organize the code.
 
-`cCoerce:to:` to `coerce:to`
-`declareCVarsIn:` to `declareVarsIn:`
+|VMMaker Slang         | Cuis Slang       |
+| -------------------- | ---------------: |
+|`cCoerce:to:`         | `coerce:to`      |
+|`declareCVarsIn:`     | `declareVarsIn:` |
+| `cCode:inSmalltalk`  |  This is removed |
 
 
 # Authors

@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4191] on 8 June 2020 at 5:05:55 pm'!
+'From Cuis 5.0 [latest update: #4191] on 8 June 2020 at 8:48:12 pm'!
 'Description Package for the Slang code generation to C. 
 
 License: MIT'!
-!provides: 'Slang-C' 1 16!
+!provides: 'Slang-C' 1 17!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-C-Tests'!
 SystemOrganization addCategory: #'Slang-C'!
@@ -1163,21 +1163,19 @@ emitCExpression: aParseNode on: aStream
 			 aParseNode emitCCodeAsExpressionOn: aStream level: 0 generator: self.
 			 aStream nextPut: $)]! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/30/2020 16:24:32'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 6/8/2020 20:18:28'!
 emitCFunctionPrototypes: methodList on: aStream 
 	"Store prototype declarations for all non-inlined methods on the given stream."
 	
 	methodList size > 0 ifTrue: [
-		self emitCFunctionPrototypesSectionHeaderOn: aStream.
+		aStream nextPutSectionComment: 'Function Prototypes'; newLine.
 	].
 
 	methodList do: [:m | 				
 		m emitCFunctionPrototype: aStream generator: self.
-		aStream nextPutAll: ';'; newLine ].! !
-
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/30/2020 16:23:35'!
-emitCFunctionPrototypesSectionHeaderOn: aStream
-	aStream nextPutAll: '/*** Function Prototypes ***/'; newLine.! !
+		aStream nextPutAll: ';'; newLine ].
+	
+	methodList isEmpty ifFalse: [ aStream newLine ]! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 6/2/2020 21:26:05'!
 emitCHeaderOn: languageWriter
@@ -1206,11 +1204,13 @@ emitCTestBlock: aBlockNode on: aStream
 emitCTypesOn: aStream 
 	"Store local type declarations on the given stream."! !
 
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/30/2020 16:35:13'!
+!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 6/8/2020 20:18:07'!
 emitCVariablesOn: aStream 
 	"Store the global variable declarations on the given stream."
 	| varString |
-	variables size > 0 ifTrue: [ self emitCVariablesSectionHeaderOn: aStream ].
+	variables size > 0 ifTrue: [
+		aStream nextPutSectionComment: 'Variables'; newLine
+	].
 	
 	variables asSortedCollection
 		do: [:var | 
@@ -1220,13 +1220,7 @@ emitCVariablesOn: aStream
 				ifFalse: ["default variable declaration"
 					aStream nextPutAll: typeRepository findDefaultVariableDeclarationString , varString , ';'; newLine]].
 			
-	aStream newLine! !
-
-!SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 5/30/2020 16:25:42'!
-emitCVariablesSectionHeaderOn: aStream 
-	"Emit the header comment for the variables section of a generated file"
-	aStream nextPutAll: '/*** Variables ***/'; newLine.
-	! !
+	variables isEmpty ifFalse: [ aStream newLine ].! !
 
 !SlangCCodeGenerator methodsFor: 'C code generator' stamp: 'jpb 6/3/2020 16:13:00'!
 emitExportsOn: aStream
@@ -1561,11 +1555,11 @@ inlineDispatchesInMethodNamed: selector localizingVars: varsList
 	].
 ! !
 
-!SlangCCodeGenerator methodsFor: 'inlining' stamp: 'asf 9/30/2014 20:18'!
+!SlangCCodeGenerator methodsFor: 'inlining' stamp: 'jpb 6/8/2020 19:57:37'!
 inlineReturnType: selector
 	"gets the return type of a given inline selector"
 
-	^inlineReturnTypes at: selector ifAbsent: nil! !
+	^inlineReturnTypes ifNotNil: [ :types | types at: selector ifAbsent: nil ]! !
 
 !SlangCCodeGenerator methodsFor: 'inlining' stamp: 'eem 7/30/2013 16:26'!
 isAssertSelector: selector
@@ -3245,21 +3239,20 @@ emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen
 emitCCodeOn: aStream level: lev generator: gen
 	self subclassResponsibility.! !
 
-!SlangTParseNode methodsFor: '*Slang-C' stamp: 'hg 8/14/2000 16:13'!
+!SlangTParseNode methodsFor: '*Slang-C' stamp: 'jpb 6/8/2020 19:59:07'!
 emitCCommentOn: aStream level: level
 	"Emit the transferred Smalltalk comments as C comments."
 
 	comment ifNotNil: [
 		comment isString ifTrue: [^self].	"safety catch"
-		aStream cr.
+		aStream newLine.
+		
 		1 to: comment size do: [:index | 
+			aStream indent: level.
 			aStream 
-				tab: level;
-				nextPutAll: '/* ';
-				nextPutAll: (comment at: index);
-				nextPutAll: ' */';
-				cr].
-		aStream cr]! !
+				nextPutComment: (comment at: index) ;
+				newLine ].
+		aStream newLine]! !
 
 !SlangTAssignmentNode methodsFor: '*Slang-C' stamp: 'eem 6/28/2011 10:57'!
 emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen

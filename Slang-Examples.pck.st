@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4191] on 8 June 2020 at 5:08:27 pm'!
+'From Cuis 5.0 [latest update: #4191] on 8 June 2020 at 8:51:41 pm'!
 'Description Package which contains examples of the usage of Cuis-Slang. Here can be found FFI Package Plugins, small programs or OpenSmalltalkVM External Plugins, etc.
 
 License: MIT'!
-!provides: 'Slang-Examples' 1 0!
+!provides: 'Slang-Examples' 1 1!
 SystemOrganization addCategory: #'Slang-Examples'!
 
 
@@ -16,6 +16,9 @@ SlangPlugin subclass: #Matrix2x3Plugin
 Matrix2x3Plugin class
 	instanceVariableNames: ''!
 
+
+!Matrix2x3Plugin commentStamp: '<historical>' prior: 0!
+This is an example of an external OpensmalltalkVM Plugin. It's based on the exact Matrix2x3Plugin source from the VMMaker (dtl.415).!
 
 !Matrix2x3Plugin methodsFor: 'private' stamp: 'jpb 6/8/2020 16:52:02'!
 loadArgumentMatrix: matrix
@@ -161,7 +164,7 @@ matrix2x3TransformPoint: m
 	m23ResultX := (m23ArgX * (m at: 0)) + (m23ArgY * (m at: 1)) + (m at: 2).
 	m23ResultY := (m23ArgX * (m at: 3)) + (m23ArgY * (m at: 4)) + (m at: 5).! !
 
-!Matrix2x3Plugin methodsFor: 'primitives' stamp: 'dtl 10/14/2010 23:23'!
+!Matrix2x3Plugin methodsFor: 'primitives' stamp: 'jpb 6/8/2020 19:42:42'!
 primitiveComposeMatrix
 	| m1 m2 m3 result |
 	<export: true>
@@ -169,12 +172,12 @@ primitiveComposeMatrix
 	<var: #m1 type: #'float *'>
 	<var: #m2 type: #'float *'>
 	<var: #m3 type: #'float *'>
-	self cCode: ''  "Make this fail in simulation"
-		inSmalltalk: [interpreterProxy success: false. ^ nil].
+
 	m3 := self loadArgumentMatrix: (result := interpreterProxy stackObjectValue: 0).
 	m2 := self loadArgumentMatrix: (interpreterProxy stackObjectValue: 1).
 	m1 := self loadArgumentMatrix: (interpreterProxy stackObjectValue: 2).
 	interpreterProxy failed ifTrue:[^nil].
+	
 	self matrix2x3ComposeMatrix: m1 with: m2 into: m3.
 	interpreterProxy pop: 3 thenPush: result! !
 
@@ -294,12 +297,13 @@ primitiveIsPureTranslation
 		((matrix at: 3) = (self coerce: 0.0 to: 'float')) &
 		((matrix at: 4) = (self coerce: 1.0 to: 'float'))).! !
 
-!Matrix2x3Plugin methodsFor: 'primitives' stamp: 'jpb 6/8/2020 16:47:41'!
+!Matrix2x3Plugin methodsFor: 'primitives' stamp: 'jpb 6/8/2020 19:43:03'!
 primitiveTransformPoint
 	| matrix |
 	<export: true>
 	<inline: false>
 	<var: #matrix type: 'float *'>
+	
 	self loadArgumentPoint: (interpreterProxy stackObjectValue: 0).
 	matrix := self loadArgumentMatrix: (interpreterProxy stackObjectValue: 1).
 	interpreterProxy failed ifTrue:[^nil].
