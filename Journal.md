@@ -11,7 +11,7 @@ authors at the end of the file.
 
 ## 8th June 2020 (jpb)
 
-I added the `Matrix2x3Plugin` to the repository as (Juan on the mailinglist)(https://lists.cuis.st/mailman/archives/cuis-dev/2020-June/001878.html) so that I can later look at it and get its C code
+I added the `Matrix2x3Plugin` to the repository as [Juan on the mailinglist](https://lists.cuis.st/mailman/archives/cuis-dev/2020-June/001878.html) so that I can later look at it and get its C code
 generated as a first try to get the external plugin generation running.
 
 
