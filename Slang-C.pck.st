@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4191] on 7 June 2020 at 8:48:45 pm'!
+'From Cuis 5.0 [latest update: #4191] on 8 June 2020 at 5:05:55 pm'!
 'Description Package for the Slang code generation to C. 
 
 License: MIT'!
-!provides: 'Slang-C' 1 15!
+!provides: 'Slang-C' 1 16!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-C-Tests'!
 SystemOrganization addCategory: #'Slang-C'!
@@ -2022,7 +2022,7 @@ generateGreaterThanOrEqual: msgNode on: aStream indent: level
 	aStream nextPutAll: ' >= '.
 	self emitCExpression: msgNode args first on: aStream.! !
 
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: ' 2/7/08 14:57'!
+!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 6/8/2020 17:02:19'!
 generateIfFalse: msgNode on: aStream indent: level
 	"Generate the C code for this message onto the given stream."
 
@@ -2030,7 +2030,7 @@ generateIfFalse: msgNode on: aStream indent: level
 		ifNil:
 			[aStream nextPutAll: 'if (!!('.
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level + 1 generator: self.
-			aStream nextPutAll: ')) {'; cr.
+			aStream nextPutAll: ')) {'; newLine.
 			msgNode args last emitCCodeOn: aStream level: level + 1 generator: self.
 			level timesRepeat: [aStream tab].
 			aStream nextPut: $}]
@@ -2093,7 +2093,7 @@ generateIfFalseIfTrueAsArgument: msgNode on: aStream indent: level
 				ifFalse: [msgNode args first])
 					emitCCodeAsArgumentOn: aStream level: level generator: self]! !
 
-!SlangCCodeGenerator methodsFor: 'C translation' stamp: ' 2/7/08 14:57'!
+!SlangCCodeGenerator methodsFor: 'C translation' stamp: 'jpb 6/8/2020 17:02:08'!
 generateIfTrue: msgNode on: aStream indent: level
 	"Generate the C code for this message onto the given stream."
 
@@ -2101,7 +2101,7 @@ generateIfTrue: msgNode on: aStream indent: level
 		ifNil:
 			[aStream nextPutAll: 'if ('.
 			msgNode receiver emitCCodeAsExpressionOn: aStream level: level generator: self.
-			aStream nextPutAll: ') {'; cr.
+			aStream nextPutAll: ') {'; newLine.
 			msgNode args first emitCCodeOn: aStream level: level + 1 generator: self.
 			level timesRepeat: [ aStream tab ].
 			aStream nextPut: $}]
@@ -3273,7 +3273,7 @@ emitCCodeAsExpressionOn: aStream level: level generator: aCodeGen
 	self emitCCodeOn: aStream level: level generator: aCodeGen.
 	aStream nextPut: $)! !
 
-!SlangTAssignmentNode methodsFor: '*Slang-C' stamp: 'jpb 6/1/2020 14:30:52'!
+!SlangTAssignmentNode methodsFor: '*Slang-C' stamp: 'jpb 6/8/2020 17:04:43'!
 emitCCodeOn: aStream level: level generator: aCodeGen
 	expression isSwitch ifTrue:
 		[^expression emitCCodeOn: aStream addToEndOfCases: self level: level generator: aCodeGen].
@@ -3302,6 +3302,7 @@ emitCCodeOn: aStream level: level generator: aCodeGen
 					 expselector _ expression selector.
 					 fntype _ (aCodeGen findMethodNamed: expselector).
 					 fntype notNil ifTrue: [ fntype _ fntype returnType ].
+					
 					 "The expression may have been inlined"
 					 fntype isNil ifTrue: [ fntype _ aCodeGen inlineReturnType: expselector ].
 					 (fntype notNil and: [ fntype ~= vartype ] and: [ vartype ~= #void ]) ifTrue:
