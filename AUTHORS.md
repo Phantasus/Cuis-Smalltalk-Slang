@@ -143,8 +143,6 @@ over them, so that they can be imported into a running Cuis Image.
 > 25c54b3643f2f1955754178b08692870831ba967b1457cd1fe5a47ac83f258bb  References/SmartSyntaxPluginTMethod.st
 > cf84c89577c39079364ab93830cfbd14ad0c75389541b8c2ba169c75332a1dba  References/Unsigned.st
 
-
-
 Contributors of these files are:
 
     - Andrew C. Greenberg (acg)
@@ -160,3 +158,21 @@ Contributors of these files are:
     - Stephan Rudlof (sr)
     - Tim Rowledge (tpr / TPR)
     - Yoshiki Ohshima (yo)
+
+## Authors of Matrix2x3Plugin (8th June 2020)
+
+The Matrix2x3plugin was exported from the `VMMaker (dtl.415)`
+as a base minimal plugin for testing the plugin generation capabilities
+of Slang. The line endings were changed from CR to linefeeds before
+adding it to the repository.
+
+The sha256 sum is:
+> 4dff486af12ace8572be24be04a676b16eac83d412bdb63d09bcfe2fbcfda1e3  References/Matrix2x3Plugin.st
+
+The original contributors of this plugin are:
+
+    - Andreas Raab (ar)
+    - Dave Lewis (dtl)
+    - Eliot Emilio Miranda (eem
+    - Stefan Matthias Aust (sma)
+    - Tim Rowledge (tpr)
