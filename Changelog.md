@@ -4,6 +4,22 @@ This file lists the history of changes made to the repository
 in a more wordy fashion of what this was about as an addition
 to descriptive commit messages.
 
+## Update 0.001k2
+
+Affected versions:
+  - Slang-C 1.17
+  - Slang-Examples 1.1
+  - Slang-JavaScript 1.25
+  - Slang-Kernel 1.11
+  - Slang-Tools 1.25
+  
+Removed the explicit `-Test.pck.st` packages as the package
+tool didn't correctly detect that `Slang-Kernel` and `Slang-Kernel-Tests`
+are two separate packages, so classes which were defined for `Slang-Kernel-Tests`
+were visible in `Slang-Kernel`. So just deleting them until I find a better
+naming scheme for the packages.
+
+
 ## Update 0.001k1
 
 Affected versions:
