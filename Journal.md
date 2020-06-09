@@ -9,6 +9,25 @@ authors at the end of the file.
 
 # Entries
 
+## 9th June 2020 (jpb)
+
+Today I looked more at the C source of "cached" `Matrix2x3Pluign`, which
+originally came from the opensmalltalk-vm repository. And I noticed that
+the string returned for `getModuleName` also attaches a strange macro called
+`INT_EXT` this turned out to add `(e)` for "external plugin" or `(i)` for
+"internal plugin". I played around with the header again, added the stuff
+which was needed from the `sqVirtualmachine.h` for the `Matrix2x3Plugin`
+got it compiled and also loaded. And then I removed the cruft again
+and my first handcoded simplistic external plugin got loaded as well.
+
+I'm still puzzled why that now worked. Maybe because the working
+directory was now the place where the `*.so` resides? But on my
+first tries I actually considered that and copied the `TestPlugin.so`
+to all the directories where I expected that the VM would look for it.
+
+![An inspector showing the loaded TestPlugin](Assets/slang_testplugin_20200609.png "The TestPlugin loaded")
+
+
 ## 8th June 2020 (jpb)
 
 I added the `Matrix2x3Plugin` to the repository as [Juan on the mailinglist](https://lists.cuis.st/mailman/archives/cuis-dev/2020-June/001878.html) so that I can later look at it and get its C code
