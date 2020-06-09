@@ -27,6 +27,9 @@ to all the directories where I expected that the VM would look for it.
 
 ![An inspector showing the loaded TestPlugin](Assets/slang_testplugin_20200609.png "The TestPlugin loaded")
 
+`primitive:module` calls for loading the module the function `ioLoadExternalFunctionOfLengthFromModuleOfLength`
+in `sqNamedPrims.c`. Intereting.
+
 
 ## 8th June 2020 (jpb)
 
