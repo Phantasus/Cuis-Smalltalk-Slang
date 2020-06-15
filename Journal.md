@@ -9,6 +9,23 @@ authors at the end of the file.
 
 # Entries
 
+## 15th June 2020 (jpb)
+
+One interesting possibility  about implementing an interface to the plugin
+interface of the opensmalltalk-vm is the ability to re-implement
+the FFI interface with own means. This begs in turn the question:
+
+    What is better a general FFI interface or a fast stable efficient
+    interface for plugin to VM communication?
+    
+And what really is an `interpreter proxy`? I mean in the obvious sense
+it's a pointer to a struct (on the C side) which contains pointers to
+functions which provide the implementation of methods, which are then
+represented on the Smalltalk side as Objects which can be sent messages
+to. How do I model these things without hardcoding the behaviour of
+message sends in the generators? As this was what people did in the past.
+
+
 ## 9th June 2020 (jpb)
 
 Today I looked more at the C source of "cached" `Matrix2x3Pluign`, which
@@ -28,7 +45,7 @@ to all the directories where I expected that the VM would look for it.
 ![An inspector showing the loaded TestPlugin](Assets/slang_testplugin_20200609.png "The TestPlugin loaded")
 
 `primitive:module` calls for loading the module the function `ioLoadExternalFunctionOfLengthFromModuleOfLength`
-in `sqNamedPrims.c`. Intereting.
+in `sqNamedPrims.c`. Interesting.
 
 
 ## 8th June 2020 (jpb)
