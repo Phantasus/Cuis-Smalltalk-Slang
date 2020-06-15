@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4191] on 8 June 2020 at 8:48:12 pm'!
+'From Cuis 5.0 [latest update: #4191] on 15 June 2020 at 8:41:01 pm'!
 'Description Package for the Slang code generation to C. 
 
 License: MIT'!
-!provides: 'Slang-C' 1 17!
+!provides: 'Slang-C' 1 18!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-C-Tests'!
 SystemOrganization addCategory: #'Slang-C'!
@@ -3183,49 +3183,6 @@ findOoPointerSize
 findWordSize
 	"Returns the word size within the VM"
 	^ Smalltalk wordSize! !
-
-!SlangBrowser methodsFor: '*Slang-C' stamp: 'jpb 5/30/2020 21:57:41'!
-showCSource: aBoolean
-	aBoolean
-		ifTrue: [ self contentsSymbol: #slangCSource ]
-		ifFalse: [ self contentsSymbol: #source ]! !
-
-!SlangBrowser methodsFor: '*Slang-C' stamp: 'jpb 5/30/2020 21:55:07'!
-showingCSource
-	^self contentsSymbol == #slangCSource! !
-
-!SlangBrowser methodsFor: '*Slang-C' stamp: 'jpb 5/30/2020 21:53:52'!
-showingCSourceString
-	^ (self showingCSource 
-		ifTrue:
-			['<yes>']
-		ifFalse:
-			['<no>']), 'C source'! !
-
-!SlangBrowser methodsFor: '*Slang-C' stamp: 'jpb 5/30/2020 21:53:07'!
-toggleShowCSource
-	self showCSource: self showingCSource not! !
-
-!SlangBrowser methodsFor: '*Slang-C' stamp: 'jpb 6/1/2020 14:30:52'!
-translatedCSource
-	"Returns the C source of the selected class using Slang as generating"
-	 | selectedClass selector codeGenerator translatedSource methodNode |
-	selectedClass _ self selectedClassOrMetaClass.
-	
-	(selectedClass isNil or: [(selector _ self selectedMessageName) isNil]) ifTrue: [^ ''].
-	selectedClass compiledMethodAt: selector ifAbsent: [^ ''].
-
-	codeGenerator _ SlangCCodeGenerator new initialize.
-	codeGenerator declareMethodsStatic: false.
-	codeGenerator permitMethodPruning: true.
-	codeGenerator prepareMethodsInlined: false doAssertions: true.
-	
-	codeGenerator addClass: selectedClass.
-	methodNode _ codeGenerator findMethodNamed: selector.
-	translatedSource _ ReadWriteStream on: String new.
-	methodNode emitCCodeOn: translatedSource generator: codeGenerator.
-	
-	^translatedSource contents! !
 
 !SlangTParseNode methodsFor: '*Slang-C' stamp: ' 2/7/08 14:57'!
 emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen

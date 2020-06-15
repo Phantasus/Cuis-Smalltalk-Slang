@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4191] on 8 June 2020 at 8:50:37 pm'!
+'From Cuis 5.0 [latest update: #4191] on 15 June 2020 at 8:41:03 pm'!
 'Description Converting Slang to JavaScript is achieved by this package.
 
 License: MIT'!
-!provides: 'Slang-Javascript' 1 25!
+!provides: 'Slang-Javascript' 1 26!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-JavaScript'!
 
@@ -4092,49 +4092,6 @@ initialize
 	"JSMethod initialize"	
 	CaseStatements _ IdentitySet new: 10.
 	CaseStatements addAll: #(dispatchOn:in: dispatchOn:in:with: dispatchOn:in:with:with:).! !
-
-!SlangBrowser methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/31/2020 20:40:59'!
-showJSSource: aBoolean
-	aBoolean
-		ifTrue: [ self contentsSymbol: #slangJSource ]
-		ifFalse: [ self contentsSymbol: #source ]! !
-
-!SlangBrowser methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/31/2020 20:40:30'!
-showingJSSource
-	^self contentsSymbol == #slangJSource! !
-
-!SlangBrowser methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/31/2020 20:50:59'!
-showingJSSourceString
-	^ (self showingJSSource 
-		ifTrue:
-			['<yes>']
-		ifFalse:
-			['<no>']), 'JavaScript source'! !
-
-!SlangBrowser methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/31/2020 20:40:52'!
-toggleShowJSSource
-	self showJSSource: self showingJSSource not! !
-
-!SlangBrowser methodsFor: '*Slang-JavaScript' stamp: 'jpb 6/1/2020 14:30:52'!
-translatedJSSource
-	"Returns the C source of the selected class using Slang as generating"
-	 | selectedClass selector codeGenerator translatedSource methodNode |
-	selectedClass _ self selectedClassOrMetaClass.
-	
-	(selectedClass isNil or: [(selector _ self selectedMessageName) isNil]) ifTrue: [^ ''].
-	selectedClass compiledMethodAt: selector ifAbsent: [^ ''].
-	
-	codeGenerator _ SlangJSCodeGenerator new initialize.
-	codeGenerator declareMethodsStatic: false.
-	codeGenerator permitMethodPruning: true.
-	codeGenerator prepareMethodsInlined: false doAssertions: true.
-
-	codeGenerator addClass: selectedClass.
-	methodNode _ codeGenerator findMethodNamed: selector.
-	translatedSource _ ReadWriteStream on: String new.
-	methodNode emitJSCodeOn: translatedSource generator: codeGenerator.
-	
-	^translatedSource contents! !
 
 !SlangTParseNode methodsFor: '*Slang-JavaScript' stamp: 'jpb 5/30/2020 12:09:42'!
 emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen

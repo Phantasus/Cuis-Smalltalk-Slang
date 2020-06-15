@@ -4,6 +4,20 @@ This file lists the history of changes made to the repository
 in a more wordy fashion of what this was about as an addition
 to descriptive commit messages.
 
+## Update 0.001i1
+
+Affected versions:
+  - Slang-C 1.18
+  - Slang-JavaScript 1.26
+  - Slang-Kernel 1.11
+  - Slang-Tools 1.26
+  
+Moves the Slang Browser code content generation quints into the `Slang-Tools`
+package and adds adding the translate to X selectors only when the generator
+classes are loaded. In the past the extension category caused an error
+on loadtime of the package as Slang-C or the js version weren't present.
+
+  
 ## Update 0.001k2
 
 Affected versions:
