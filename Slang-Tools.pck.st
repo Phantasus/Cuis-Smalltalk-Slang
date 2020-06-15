@@ -1,9 +1,9 @@
-'From Cuis 5.0 [latest update: #4191] on 15 June 2020 at 8:41:04 pm'!
+'From Cuis 5.0 [latest update: #4191] on 15 June 2020 at 9:48:09 pm'!
 'Description Contains tools for dealing with Slang, for example specialized browsers.
 
 License: MIT
 Author: Josef Philip Bernhart'!
-!provides: 'Slang-Tools' 1 26!
+!provides: 'Slang-Tools' 1 27!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-Tools'!
 
@@ -80,7 +80,7 @@ showingCSourceString
 toggleShowCSource
 	self showCSource: self showingCSource not! !
 
-!SlangBrowser methodsFor: 'Translation to C' stamp: 'jpb 6/1/2020 14:30:52'!
+!SlangBrowser methodsFor: 'Translation to C' stamp: 'jpb 6/15/2020 21:47:07'!
 translatedCSource
 	"Returns the C source of the selected class using Slang as generating"
 	 | selectedClass selector codeGenerator translatedSource methodNode |
@@ -97,7 +97,7 @@ translatedCSource
 	codeGenerator addClass: selectedClass.
 	methodNode _ codeGenerator findMethodNamed: selector.
 	translatedSource _ ReadWriteStream on: String new.
-	methodNode emitCCodeOn: translatedSource generator: codeGenerator.
+	methodNode emitCCodeOn: (SlangCLanguageWriter on: translatedSource) generator: codeGenerator.
 	
 	^translatedSource contents! !
 
@@ -123,7 +123,7 @@ showingJSSourceString
 toggleShowJSSource
 	self showJSSource: self showingJSSource not! !
 
-!SlangBrowser methodsFor: 'Translation to JavaScript' stamp: 'jpb 6/1/2020 14:30:52'!
+!SlangBrowser methodsFor: 'Translation to JavaScript' stamp: 'jpb 6/15/2020 21:47:56'!
 translatedJSSource
 	"Returns the C source of the selected class using Slang as generating"
 	 | selectedClass selector codeGenerator translatedSource methodNode |
@@ -140,6 +140,6 @@ translatedJSSource
 	codeGenerator addClass: selectedClass.
 	methodNode _ codeGenerator findMethodNamed: selector.
 	translatedSource _ ReadWriteStream on: String new.
-	methodNode emitJSCodeOn: translatedSource generator: codeGenerator.
+	methodNode emitJSCodeOn: (SlangJSLanguageWriter on: translatedSource) generator: codeGenerator.
 	
 	^translatedSource contents! !

@@ -17,8 +17,17 @@ package and adds adding the translate to X selectors only when the generator
 classes are loaded. In the past the extension category caused an error
 on loadtime of the package as Slang-C or the js version weren't present.
 
-  
 ## Update 0.001k2
+
+Affected versions:
+  - Slang-Tools 1.27
+  
+Fixes an issue which was caused by a recent refactoring of the language
+writers. So only streams are supported which support language specific
+serialization extensions.
+
+  
+## Update 0.001k1
 
 Affected versions:
   - Slang-C 1.17
