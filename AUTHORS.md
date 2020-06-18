@@ -173,6 +173,30 @@ The original contributors of this plugin are:
 
     - Andreas Raab (ar)
     - Dave Lewis (dtl)
-    - Eliot Emilio Miranda (eem
+    - Eliot Emilio Miranda (eem)
     - Stefan Matthias Aust (sma)
     - Tim Rowledge (tpr)
+
+## Authors of InterpreterProxy (18th June 2020)
+
+The interpreter proxy class was exported for maybe later building
+an opensmalltalk-vm plugin simulation. It was extracted from
+`VMMaker.oscog-eem.2744`. The `VMBasicConstants` class is a shared
+pool and is inicluded in the interpreter proxy. The carriage returns
+were replaced by newlines before applying sha256sum to it.
+
+The sha256 sums are:
+> cd5f7b7f6fc882db7eef68fa492069e84ecb48e55642a1407bfc07cde964b1b0  References/InterpreterProxy.st
+> 66d5d910dc13b344e3b9e76cc4fdee739e4773bfd04f4591abc00e5761e17575  References/VMBasicConstants.st
+
+The original contributors of these classes were:
+
+    - Andrew C. Greenberg (acg)
+    - Andreas Raab (ar)
+    - Dave Lewis (dtl)
+    - Eliot Emilio Miranda (eem)
+    - Nicolas Cellier (nice)
+    - Tim Felgentreff (tfel)
+    - Tim Rowledge (tpr)
+    - Levente Uzonyi (ul)
+
