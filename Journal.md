@@ -9,6 +9,57 @@ authors at the end of the file.
 
 # Entries
 
+## 19th June 2020 (jpb)
+
+Well.. I had a little bit of a hype around the project. But it
+seems that the interest is going down again. Or maybe I'm
+misinterpreting Juan Vuletichs last [response](https://lists.cuis.st/mailman/archives/cuis-dev/2020-June/001999.html):
+
+> On 6/16/2020 3:42 PM, Philip Bernhart via Cuis-dev wrote:
+>> Hi Juan,
+>>
+>> Juan Vuletich via Cuis-dev<cuis-dev at lists.cuis.st>  writes:
+>>
+>>> I learnt that the task scheduling and kernel
+>>> startup overhead for OpenCL can be rather high, and only payed off if
+>>> the OpenCL kernel has enough work to do to compensate for that.
+>>> Given that I will need
+>>> to rewrite that part in C with SIMD intrinsics, these new algorithms I
+>>> spent months on, are useless.
+>> So I supposed that would be ideally written in some kind of
+>> Slang dialect. I'm sadly still not there yet where you would need the
+>> Cuis Slang stuff to be. The current state is to generate a basic header,
+>> the rough module representation and have some UI integration. What
+>> you would need better support for newer interpreter proxy versions
+>> and also representing them in the VM.
+>>
+>> I'm not sure. I think that plain c is also ok. It is pretty simple code.
+>>
+>> How would SIMD written in Slang look like? Maybe even going the
+>> way of re-implementing Nile?
+>>
+>>
+>> Cheers,
+>> Philip
+>
+> Maybe, but building a many kLOC tool just to automatically generate 
+> maybe a hundred LOC of c is not something I lose my sleep for, either. 
+> We'll see.
+>
+> Thanks,
+> Juan Vuletich
+
+maybe I should just write simple C plugin scaffolder for such usecases?
+As there is some convenience in just writing in the language directly.
+Maybe all the fuss about that people who wanted to have Slang code generation
+initially ported was more about that they wanted to have an interface to the
+VM in C? Anyway I still like the idea to port Slang and clean it up.
+
+Still frustrating, but what I'm expecting that people are cheering
+all the time? When I wouldn't get so easily frustrated by such cues,
+it would be easier.
+
+
 ## 18th June 2020 (jpb)
 
 Was the `sqVirtualMachine.h` generated or was it hardcoded by hand?
