@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4191] on 20 June 2020 at 10:17:19 am'!
+'From Cuis 5.0 [latest update: #4191] on 20 June 2020 at 6:56:21 pm'!
 'Description Package for the Slang code generation to C. 
 
 License: MIT'!
-!provides: 'Slang-C' 1 21!
+!provides: 'Slang-C' 1 22!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-C-Tests'!
 SystemOrganization addCategory: #'Slang-C'!
@@ -2743,9 +2743,9 @@ nextPutCommentEnd
 nextPutCommentStart
 	self nextPutAll: '/* '.! !
 
-!SlangCLanguageWriter methodsFor: 'writing comments' stamp: 'jpb 6/2/2020 21:50:24'!
+!SlangCLanguageWriter methodsFor: 'writing comments' stamp: 'jpb 6/20/2020 17:19:15'!
 nextPutSectionComment: header
-	stream nextPutAll: '/*** ' , header , ' ***/'; newLine.! !
+	self nextPutAll:  '/*** ' , header , ' ***/'; newLine.! !
 
 !SlangCLanguageWriter methodsFor: 'writing strings' stamp: 'jpb 6/3/2020 15:54:42'!
 emitEscapedChar: char on: stringStream

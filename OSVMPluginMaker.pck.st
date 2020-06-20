@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4191] on 20 June 2020 at 10:57:17 am'!
+'From Cuis 5.0 [latest update: #4191] on 20 June 2020 at 6:56:19 pm'!
 'Description Slang based plugin maker for the OpenSmalltalk-VM (OSVM) on which Squeak, Pharo, Cuis, Newspeak implementations are currently running. 
 
 License: MIT'!
-!provides: 'OSVMPluginMaker' 1 7!
+!provides: 'OSVMPluginMaker' 1 8!
 !requires: 'Slang-C' 1 19 nil!
 SystemOrganization addCategory: #OSVMPluginMaker!
 
@@ -96,20 +96,99 @@ setInterpreter: anInterpreter
 
 	^true! !
 
-!OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/19/2020 22:07:42'!
+!OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/20/2020 17:41:00'!
+emit64BitAccessorsOn: writer
+	
+	writer nextPutComment: '64-Bit Integer Accessor functions'.
+	writer nextPutLine: '#if VM_PROXY_MINOR > 4'.
+	writer nextPutLine: 'sqInt  (*positive64BitIntegerFor)(usqLong integerValue);'.
+	writer nextPutLine: 'usqLong(*positive64BitValueOf)(sqInt oop);'.
+	writer nextPutLine: 'sqInt  (*signed64BitIntegerFor)(sqLong integerValue);'.
+	writer nextPutLine: 'sqLong (*signed64BitValueOf)(sqInt oop);'.
+	writer nextPutLine: '#endif'.
+	writer newLine.! !
+
+!OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/20/2020 17:27:45'!
+emitBitBlitSupportOn: writer
+	| lines | 
+	lines _ #(
+		'#if VM_PROXY_MINOR > 1'
+		'/* InterpreterProxy methodsFor: ''BitBlt support'' */'
+		'sqInt (*loadBitBltFrom)(sqInt bbOop);'
+		'sqInt (*copyBits)(void);'
+		'sqInt (*copyBitsFromtoat)(sqInt leftX, sqInt rightX, sqInt yValue);'
+		'#endif'
+	).
+	
+	lines do: [:line | writer nextPutLine: line ].
+	writer newLine.! !
+
+!OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/20/2020 17:27:10'!
+emitCompilerHelpersOn: writer
+	| lines |
+	
+	lines _ #(
+		'# if VM_PROXY_MINOR > 13'
+		'/* Reuse these now that Cog provides a production JIT. */'
+		'sqInt (*statNumGCs)(void);'
+		'sqInt (*stringForCString)(char *nullTerminatedCString);'
+		'# else'
+		'/* InterpreterProxy methodsFor: ''compiler'' */'
+		'CompilerHook *(*compilerHookVector)(void);'
+		'sqInt         (*setCompilerInitialized)(sqInt initFlag);'
+		'# endif'
+	).
+	
+	lines do: [ :line| writer nextPutLine: line ].
+	writer newLine.
+! !
+
+!OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/20/2020 16:30:41'!
 emitConstantsOn: writer
 	"Writes certain constant constructs used by primitives"
 	writer nextPutLine: '#define VM_PROXY_MAJOR ' , self findProxyMajorVersion asString.
 	writer nextPutLine: '#define VM_PROXY_MINOR ' , self findProxyMinorVersion asString.
 	writer nextPutLine: '#define VM_WORD_SIZE ' , self findWordSize asString.
+	
 	writer nextPutLine: '#define VM_PLATFORM_NAME "' , self findPlatformName , '"'.
-	writer nextPutLine: '#define VM_PLATFORM_SUBTYPE "' , self findPlatformSubtype , '"'.
+	writer nextPutLine: '#define VM_PLATFORM_PROCESSOR "' , self findPlatformSubtype , '"'.
 
 	writer nextPutLine: '#define VM_OS_VERSION "' , self findOSVersion , '"'.
 	writer nextPutLine: '#define VM_VERSION "' , self findVMVersion , '"'.
 	
 	writer newLine.
 	self emitPrimitiveConstantsOn: writer.! !
+
+!OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/20/2020 17:26:59'!
+emitFFISupportOn: writer
+
+	|lines |
+	lines _ #(
+		'#if VM_PROXY_MINOR > 2'
+	     'sqInt (*classLargeNegativeInteger)(void);'
+		'sqInt (*signed32BitIntegerFor)(sqInt integerValue);'
+		'int   (*signed32BitValueOf)(sqInt oop);'
+		'sqInt (*includesBehaviorThatOf)(sqInt aClass, sqInt aSuperClass);'
+		'sqInt (*primitiveMethod)(void);'
+	).
+	lines do: [:line | writer nextPutLine: line ].
+	writer newLine.
+		
+	lines _ #(
+		'/* InterpreterProxy methodsFor: ''FFI support'' */'
+		'sqInt (*classExternalAddress)(void);'
+		'sqInt (*classExternalData)(void);'
+		'sqInt (*classExternalFunction)(void);'
+		'sqInt (*classExternalLibrary)(void);'
+		'sqInt (*classExternalStructure)(void);'
+		'void *(*ioLoadModuleOfLength)(sqInt modIndex, sqInt modLength);'
+		'void *(*ioLoadSymbolOfLengthFromModule)(sqInt fnIndex, sqInt fnLength, sqInt handle);'
+		'sqInt (*isInMemory)(sqInt address);'
+		'#endif'
+	).
+	
+	lines do: [:line | writer nextPutLine: line ].
+	writer newLine! !
 
 !OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/19/2020 21:37:25'!
 emitHeaderOn: writer
@@ -143,7 +222,7 @@ emitInstanceCreatersOn: writer
 	lines do: [:line | writer nextPutLine: line ].
 	writer newLine.! !
 
-!OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 23:28:55'!
+!OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/20/2020 17:38:24'!
 emitInterpreterProxyStructOn: writer
 	writer nextPutLine: 'typedef struct VirtualMachine {'.
 	writer autoIndentBy: 2.
@@ -157,6 +236,11 @@ emitInterpreterProxyStructOn: writer
 	self emitSpecialClassesOn: writer.
 	self emitInstanceCreatersOn: writer.
 	self emitOtherHelpersOn: writer.
+	
+	self emitCompilerHelpersOn: writer.
+	self emitBitBlitSupportOn: writer.
+	self emitFFISupportOn: writer.
+	self emit64BitAccessorsOn: writer.
 
 	writer autoIndentBy: 1.
 	writer nextPutLine: '} VirtualMachine;'.! !
@@ -350,6 +434,24 @@ emitSqIntTypedefsOn: writer
 	writer nextPutLine: 'typedef unsigned long long usqInt;'.
 	writer nextPutLine: '#endif'! !
 
+!OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/20/2020 17:36:54'!
+emitSqLongTypedefsOn: writer
+	| lines |
+	lines _ #(
+		'#  if !!defined(sqLong)'
+		'#   if _MSC_VER'
+		'#     define sqLong __int64'
+		'#     define usqLong unsigned __int64'
+		'#   else'
+		'#     define sqLong long long'
+		'#     define usqLong unsigned long long'
+		'#   endif'
+		'#  endif'
+	).
+	
+	lines do: [:line | writer nextPutLine: line ].
+	writer newLine! !
+
 !OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:39:45'!
 emitStackAccessorsOn: writer
 	| lines |
@@ -369,11 +471,13 @@ emitStackAccessorsOn: writer
 	lines do: [:line | writer nextPutLine: line ].
 	writer newLine! !
 
-!OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/19/2020 21:32:29'!
+!OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/20/2020 17:37:11'!
 emitTypedefsOn: writer
 	writer nextPutSectionComment: 'OpenSmalltalk Types'.
+	
 	self emitSqIntTypedefsOn: writer.
-	writer newLine.
+	self emitSqLongTypedefsOn: writer.
+	
 	writer nextPutLine: 'typedef sqInt (*CompilerHook)(void);'.
 	writer newLine.
 ! !

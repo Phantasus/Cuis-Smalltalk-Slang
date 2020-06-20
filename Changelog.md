@@ -4,6 +4,23 @@ This file lists the history of changes made to the repository
 in a more wordy fashion of what this was about as an addition
 to descriptive commit messages.
 
+
+## Update 0.001j2
+
+Affected versions:
+- Slang-C 1.22
+- OSVMPluginMaker 1.8
+- Slang-Examples 1.4
+- Slang-Kernel 1.12
+
+Adds further definitions copied from `sqVirtualMachine.h` to the
+`OSVMPluginHeaderBuilder` still a couple of lines to go to have the
+full InterpreterProxy covered. Reformats the Matrix plugin so that
+it is readable a little bit more. Fixes an issue with C language
+code writer, so that indentation now works, I like readability
+and my own definition of it, which is currently the only truth.
+
+
 ## Update 0.001j1
 
 Affected versions:

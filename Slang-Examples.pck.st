@@ -1,13 +1,13 @@
-'From Cuis 5.0 [latest update: #4191] on 18 June 2020 at 8:45:24 pm'!
+'From Cuis 5.0 [latest update: #4191] on 20 June 2020 at 6:56:23 pm'!
 'Description Package which contains examples of the usage of Cuis-Slang. Here can be found FFI Package Plugins, small programs or OpenSmalltalkVM External Plugins, etc.
 
 License: MIT'!
-!provides: 'Slang-Examples' 1 3!
+!provides: 'Slang-Examples' 1 4!
 SystemOrganization addCategory: #'Slang-Examples'!
 
 
 !classDefinition: #Matrix2x3Plugin category: #'Slang-Examples'!
-SlangOSVMPlugin subclass: #Matrix2x3Plugin
+OSVMPlugin subclass: #Matrix2x3Plugin
 	instanceVariableNames: 'm23ResultX m23ResultY m23ArgX m23ArgY'
 	classVariableNames: ''
 	poolDictionaries: ''
@@ -20,24 +20,27 @@ Matrix2x3Plugin class
 !Matrix2x3Plugin commentStamp: '<historical>' prior: 0!
 This is an example of an external OpensmalltalkVM Plugin. It's based on the exact Matrix2x3Plugin source from the VMMaker (dtl.415).!
 
-!Matrix2x3Plugin methodsFor: 'private' stamp: 'jpb 6/18/2020 20:02:40'!
+!Matrix2x3Plugin methodsFor: 'private' stamp: 'jpb 6/20/2020 16:08:09'!
 loadArgumentMatrix: matrix
 	"Load the argument matrix"
 	<returnType: 'float *'>
+	
 	interpreterProxy failed ifTrue:[^nil].
 	((interpreterProxy isWords: matrix) and:[(interpreterProxy slotSizeOf: matrix) = 6]) 
 		ifFalse:[interpreterProxy primitiveFail.
 				^nil].
 	^self coerce: (interpreterProxy firstIndexableField: matrix) to:'float *'.! !
 
-!Matrix2x3Plugin methodsFor: 'private' stamp: 'ar 11/9/1998 16:17'!
+!Matrix2x3Plugin methodsFor: 'private' stamp: 'jpb 6/20/2020 16:08:29'!
 loadArgumentPoint: point
 	"Load the argument point into m23ArgX and m23ArgY"
 	| oop isInt |
 	interpreterProxy failed ifTrue:[^nil].
+	
 	"Check class of point"
 	(interpreterProxy fetchClassOf: point) = (interpreterProxy classPoint) 
 		ifFalse:[^interpreterProxy primitiveFail].
+		
 	"Load X value"
 	oop := interpreterProxy fetchPointer: 0 ofObject: point.
 	isInt := interpreterProxy isIntegerObject: oop.
@@ -157,10 +160,11 @@ matrix2x3InvertPoint: m
 	m23ResultX := detX * det.
 	m23ResultY := detY * det.! !
 
-!Matrix2x3Plugin methodsFor: 'transforming' stamp: 'tpr (auto pragmas dtl 2010-09-28) 12/29/2005 17:03'!
+!Matrix2x3Plugin methodsFor: 'transforming' stamp: 'jpb 6/20/2020 16:08:40'!
 matrix2x3TransformPoint: m
 	"Transform the pre-loaded argument point by the given matrix"
 	<var: #m type: 'float *'>
+	
 	m23ResultX := (m23ArgX * (m at: 0)) + (m23ArgY * (m at: 1)) + (m at: 2).
 	m23ResultY := (m23ArgX * (m at: 3)) + (m23ArgY * (m at: 4)) + (m at: 5).! !
 
@@ -181,12 +185,13 @@ primitiveComposeMatrix
 	self matrix2x3ComposeMatrix: m1 with: m2 into: m3.
 	interpreterProxy pop: 3 thenPush: result! !
 
-!Matrix2x3Plugin methodsFor: 'primitives' stamp: 'tpr (auto pragmas dtl 2010-09-28) 12/29/2005 17:03'!
+!Matrix2x3Plugin methodsFor: 'primitives' stamp: 'jpb 6/20/2020 16:07:45'!
 primitiveInvertPoint
 	| matrix |
 	<export: true>
 	<inline: false>
 	<var: #matrix type: 'float *'>
+	
 	self loadArgumentPoint: (interpreterProxy stackObjectValue: 0).
 	matrix := self loadArgumentMatrix: (interpreterProxy stackObjectValue: 1).
 	interpreterProxy failed ifTrue:[^nil].
@@ -265,12 +270,13 @@ primitiveInvertRectInto
 	]
 ! !
 
-!Matrix2x3Plugin methodsFor: 'primitives' stamp: 'jpb 6/8/2020 16:52:22'!
+!Matrix2x3Plugin methodsFor: 'primitives' stamp: 'jpb 6/20/2020 16:07:51'!
 primitiveIsIdentity
 	| matrix |
 	<export: true>
 	<inline: false>
 	<var: #matrix type: 'float *'>
+	
 	matrix := self loadArgumentMatrix: (interpreterProxy stackObjectValue: 0).
 	interpreterProxy failed ifTrue:[^nil].
 	interpreterProxy pop: 1.
@@ -282,12 +288,13 @@ primitiveIsIdentity
 		((matrix at: 4) = (self coerce: 1.0 to: 'float')) &
 		((matrix at: 5) = (self coerce: 0.0 to: 'float'))).! !
 
-!Matrix2x3Plugin methodsFor: 'primitives' stamp: 'jpb 6/8/2020 16:43:33'!
+!Matrix2x3Plugin methodsFor: 'primitives' stamp: 'jpb 6/20/2020 16:07:55'!
 primitiveIsPureTranslation
 	| matrix |
 	<export: true>
 	<inline: false>
 	<var: #matrix type: 'float *'>
+	
 	matrix := self loadArgumentMatrix: (interpreterProxy stackObjectValue: 0).
 	interpreterProxy failed ifTrue:[^nil].
 	interpreterProxy pop: 1.

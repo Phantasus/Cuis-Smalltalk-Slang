@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4191] on 8 June 2020 at 9:18:50 pm'!
+'From Cuis 5.0 [latest update: #4191] on 20 June 2020 at 6:56:25 pm'!
 'Description Contains the fundamental basic infrastructure for Slang, without any tools or language specific translation mechanisms. With just the Kernel you can''t build a plugin, you need the specific translation packages.
 
 License: MIT'!
-!provides: 'Slang-Kernel' 1 11!
+!provides: 'Slang-Kernel' 1 12!
 !requires: 'Cuis-Base' 50 4112 nil!
 SystemOrganization addCategory: #'Slang-Kernel-Tests'!
 SystemOrganization addCategory: #'Slang-Kernel'!
@@ -452,6 +452,10 @@ returnType: aSymbol
 !SlangModule methodsFor: 'as yet unclassified' stamp: 'jpb 5/24/2020 17:13:45'!
 code: expression
 	"Pass in the given code to the target language"! !
+
+!SlangModule methodsFor: 'as yet unclassified' stamp: 'jpb 6/20/2020 16:07:15'!
+coerce: value to: newType
+	^value! !
 
 !SlangModule class methodsFor: 'Slang translation' stamp: 'jpb 5/15/2020 23:26:12'!
 abstractSelectors
