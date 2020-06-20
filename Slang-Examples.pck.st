@@ -1,14 +1,14 @@
-'From Cuis 5.0 [latest update: #4191] on 8 June 2020 at 8:51:41 pm'!
+'From Cuis 5.0 [latest update: #4191] on 18 June 2020 at 8:45:24 pm'!
 'Description Package which contains examples of the usage of Cuis-Slang. Here can be found FFI Package Plugins, small programs or OpenSmalltalkVM External Plugins, etc.
 
 License: MIT'!
-!provides: 'Slang-Examples' 1 1!
+!provides: 'Slang-Examples' 1 3!
 SystemOrganization addCategory: #'Slang-Examples'!
 
 
 !classDefinition: #Matrix2x3Plugin category: #'Slang-Examples'!
-SlangPlugin subclass: #Matrix2x3Plugin
-	instanceVariableNames: 'm23ResultX m23ResultY m23ArgX m23ArgY interpreterProxy'
+SlangOSVMPlugin subclass: #Matrix2x3Plugin
+	instanceVariableNames: 'm23ResultX m23ResultY m23ArgX m23ArgY'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Slang-Examples'!
@@ -20,10 +20,10 @@ Matrix2x3Plugin class
 !Matrix2x3Plugin commentStamp: '<historical>' prior: 0!
 This is an example of an external OpensmalltalkVM Plugin. It's based on the exact Matrix2x3Plugin source from the VMMaker (dtl.415).!
 
-!Matrix2x3Plugin methodsFor: 'private' stamp: 'jpb 6/8/2020 16:52:02'!
+!Matrix2x3Plugin methodsFor: 'private' stamp: 'jpb 6/18/2020 20:02:40'!
 loadArgumentMatrix: matrix
 	"Load the argument matrix"
-	<returnTypeC: 'float *'>
+	<returnType: 'float *'>
 	interpreterProxy failed ifTrue:[^nil].
 	((interpreterProxy isWords: matrix) and:[(interpreterProxy slotSizeOf: matrix) = 6]) 
 		ifFalse:[interpreterProxy primitiveFail.

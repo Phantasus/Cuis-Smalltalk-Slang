@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4191] on 15 June 2020 at 8:41:01 pm'!
+'From Cuis 5.0 [latest update: #4191] on 20 June 2020 at 10:17:19 am'!
 'Description Package for the Slang code generation to C. 
 
 License: MIT'!
-!provides: 'Slang-C' 1 18!
+!provides: 'Slang-C' 1 21!
 !requires: 'Slang-Kernel' 1 0 nil!
 SystemOrganization addCategory: #'Slang-C-Tests'!
 SystemOrganization addCategory: #'Slang-C'!
@@ -68,6 +68,36 @@ SlangWriter subclass: #SlangCLanguageWriter
 SlangCLanguageWriter class
 	instanceVariableNames: ''!
 
+!classDefinition: #SlangCArrayAccessor category: #'Slang-C'!
+SlangObject subclass: #SlangCArrayAccessor
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-C'!
+!classDefinition: 'SlangCArrayAccessor class' category: #'Slang-C'!
+SlangCArrayAccessor class
+	instanceVariableNames: ''!
+
+!classDefinition: #SlangCObjectAccessor category: #'Slang-C'!
+SlangObject subclass: #SlangCObjectAccessor
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-C'!
+!classDefinition: 'SlangCObjectAccessor class' category: #'Slang-C'!
+SlangCObjectAccessor class
+	instanceVariableNames: ''!
+
+!classDefinition: #SlangCStructBuilder category: #'Slang-C'!
+SlangObject subclass: #SlangCStructBuilder
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Slang-C'!
+!classDefinition: 'SlangCStructBuilder class' category: #'Slang-C'!
+SlangCStructBuilder class
+	instanceVariableNames: ''!
+
 !classDefinition: #SlangCTypeRepository category: #'Slang-C'!
 SlangObject subclass: #SlangCTypeRepository
 	instanceVariableNames: 'structTypes'
@@ -76,16 +106,6 @@ SlangObject subclass: #SlangCTypeRepository
 	category: 'Slang-C'!
 !classDefinition: 'SlangCTypeRepository class' category: #'Slang-C'!
 SlangCTypeRepository class
-	instanceVariableNames: ''!
-
-!classDefinition: #SlangOSVMHeaderBuilder category: #'Slang-C'!
-SlangObject subclass: #SlangOSVMHeaderBuilder
-	instanceVariableNames: ''
-	classVariableNames: ''
-	poolDictionaries: ''
-	category: 'Slang-C'!
-!classDefinition: 'SlangOSVMHeaderBuilder class' category: #'Slang-C'!
-SlangOSVMHeaderBuilder class
 	instanceVariableNames: ''!
 
 
@@ -103,11 +123,11 @@ See VMMaker for more useful info!
 !SlangCLanguageWriter commentStamp: '<historical>' prior: 0!
 This class represents a specialized writer for writing to a stream C constructs.!
 
+!SlangCStructBuilder commentStamp: '<historical>' prior: 0!
+Presents an internal Smalltalk object as a C struct!
+
 !SlangCTypeRepository commentStamp: '<historical>' prior: 0!
 Contains information of stored types in a C module, can be used globally or locally. Used in the SlangCCodeGenerator subclasses.!
-
-!SlangOSVMHeaderBuilder commentStamp: '<historical>' prior: 0!
-This class is a builder for Opensmalltalk-VM plugin header files.!
 
 !SlangCCodeGeneratorTest methodsFor: 'as yet unclassified' stamp: 'jpb 5/19/2020 16:01:41'!
 setUp
@@ -2937,252 +2957,6 @@ isTypeStruct: typeName
 isTypedPointerToStruct: typeName
 	"Returns true if the given typeName represents a type which is a pointer to a struct"
 	^false! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 23:01:45'!
-emitHeaderOn: writer
-	writer nextPutLine: '#ifndef OSVM_PLUGIN_H'.
-	writer nextPutLine: '#define OSVM_PLUGIN_H'.
-	writer enableAutoIndent.
-	
-	self emitTypedefsOn: writer.
-	writer newLine.
-	self emitInterpreterProxyStructOn: writer.
-	
-	writer disableAutoIndent.
-	writer nextPutLine: '#endif'! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:37:17'!
-emitInstanceCreatersOn: writer 
-	| lines |
-	writer nextPutComment: 'InterpreterProxy methodsFor: ''instance creation'''.
-
-	lines _ #(
-		'sqInt (*clone)(sqInt oop);'
-		'sqInt (*instantiateClassindexableSize)(sqInt classPointer, sqInt size);'
-		'sqInt (*makePointwithxValueyValue)(sqInt xValue, sqInt yValue);'
-		'sqInt (*popRemappableOop)(void);'
-		'sqInt (*pushRemappableOop)(sqInt oop);'
-	).
-	
-	lines do: [:line | writer nextPutLine: line ].
-	writer newLine.! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 23:28:55'!
-emitInterpreterProxyStructOn: writer
-	writer nextPutLine: 'typedef struct VirtualMachine {'.
-	writer autoIndentBy: 2.
-
-	self emitVersionGettersOn: writer.
-	self emitStackAccessorsOn: writer.
-	self emitObjectAccessorsOn: writer.
-	self emitObjectTestersOn: writer.
-	self emitObjectConvertersOn: writer.
-	self emitSpecialObjectsOn: writer.
-	self emitSpecialClassesOn: writer.
-	self emitInstanceCreatersOn: writer.
-	self emitOtherHelpersOn: writer.
-
-	writer autoIndentBy: 1.
-	writer nextPutLine: '} VirtualMachine;'.! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:37:41'!
-emitObjectAccessorsOn: writer
-	| lines |
-	writer nextPutComment: 'InterpreterProxy methodsFor: ''object access'''.
-	lines _ #(
-		'sqInt  (*argumentCountOf)(sqInt methodPointer);'
-		'void  *(*arrayValueOf)(sqInt oop);'
-		'sqInt  (*byteSizeOf)(sqInt oop);'
-		'void  *(*fetchArrayofObject)(sqInt fieldIndex, sqInt objectPointer);'
-		'sqInt  (*fetchClassOf)(sqInt oop);'
-		'double (*fetchFloatofObject)(sqInt fieldIndex, sqInt objectPointer);'
-		'sqInt  (*fetchIntegerofObject)(sqInt fieldIndex, sqInt objectPointer);'
-		'sqInt  (*fetchPointerofObject)(sqInt fieldIndex, sqInt oop);'
-		'sqInt  (*obsoleteDontUseThisFetchWordofObject)(sqInt fieldFieldIndex, sqInt oop);'
-		'void  *(*firstFixedField)(sqInt oop);'
-		'void  *(*firstIndexableField)(sqInt oop);'
-		'sqInt  (*literalofMethod)(sqInt offset, sqInt methodPointer);'
-		'sqInt  (*literalCountOf)(sqInt methodPointer);'
-		'sqInt  (*methodArgumentCount)(void);'
-		'sqInt  (*methodPrimitiveIndex)(void);'
-		'sqInt  (*primitiveIndexOf)(sqInt methodPointer);'
-		'sqInt  (*sizeOfSTArrayFromCPrimitive)(void *cPtr);'
-		'sqInt  (*slotSizeOf)(sqInt oop);'
-		'sqInt  (*stObjectat)(sqInt array, sqInt fieldIndex);'
-		'sqInt  (*stObjectatput)(sqInt array, sqInt fieldIndex, sqInt value);'
-		'sqInt  (*stSizeOf)(sqInt oop);'
-		'sqInt  (*storeIntegerofObjectwithValue)(sqInt fieldIndex, sqInt oop, sqInt integer);'
-		'sqInt  (*storePointerofObjectwithValue)(sqInt fieldIndex, sqInt oop, sqInt valuePointer);'
-	).
-	lines do: [:line | writer nextPutLine: line ].
-	writer newLine.! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:38:01'!
-emitObjectConvertersOn: writer
-	| lines |
-	
-	writer nextPutComment: 'InterpreterProxy methodsFor: ''converting'''.
-
-	lines _ #(
-		'sqInt  (*booleanValueOf)(sqInt obj);'
-		'sqInt  (*checkedIntegerValueOf)(sqInt intOop);'
-		'sqInt  (*floatObjectOf)(double aFloat);'
-		'double (*floatValueOf)(sqInt oop);'
-		'sqInt  (*integerObjectOf)(sqInt value);'
-		'sqInt  (*integerValueOf)(sqInt oop);'
-		'sqInt  (*positive32BitIntegerFor)(unsigned int integerValue);'
-		'usqInt (*positive32BitValueOf)(sqInt oop);'
-	).
-	
-	lines do: [:line | writer nextPutLine: line ].
-	writer newLine.! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:40:14'!
-emitObjectTestersOn: writer
-	| lines |
-	writer nextPutComment: 'InterpreterProxy methodsFor: ''testing'''.
-	
-	lines _ #(
-		'sqInt (*isKindOf)(sqInt oop, char *aString);'
-		'sqInt (*isMemberOf)(sqInt oop, char *aString);'
-		'sqInt (*isBytes)(sqInt oop);'
-		'sqInt (*isFloatObject)(sqInt oop);'
-		'sqInt (*isIndexable)(sqInt oop);'
-		'sqInt (*isIntegerObject)(sqInt oop);'
-		'sqInt (*isIntegerValue)(sqInt intValue);'
-		'sqInt (*isPointers)(sqInt oop);'
-		'sqInt (*isWeak)(sqInt oop);'
-		'sqInt (*isWords)(sqInt oop);'
-		'sqInt (*isWordsOrBytes)(sqInt oop);'
-	).
-	lines do: [:line | writer nextPutLine: line ].
-	writer newLine.! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:38:14'!
-emitOtherHelpersOn: writer
-	| lines |
-	writer nextPutComment: 'InterpreterProxy methodsFor: ''other'''.
-
-	lines _ #(
-		'sqInt (*becomewith)(sqInt array1, sqInt array2);'
-		'sqInt (*byteSwapped)(sqInt w);'
-		'sqInt (*failed)(void);'
-		'sqInt (*fullDisplayUpdate)(void);'
-		'void (*fullGC)(void);'
-		'void (*incrementalGC)(void);'
-		'sqInt (*primitiveFail)(void);'
-		'sqInt (*showDisplayBitsLeftTopRightBottom)(sqInt aForm, sqInt l, sqInt t, sqInt r, sqInt b);'
-		'sqInt (*signalSemaphoreWithIndex)(sqInt semaIndex);'
-		'sqInt (*success)(sqInt aBoolean);'
-		'sqInt (*superclassOf)(sqInt classPointer);'
-	).
-	lines do: [:line| writer nextPutLine: line].
-	writer newLine.! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:28:13'!
-emitSpecialClassesOn: writer
-	| lines |
-	writer nextPutComment: 'InterpreterProxy methodsFor: ''special classes'''.
-
-	lines _ #(
-		'sqInt (*classArray)(void);'
-		'sqInt (*classBitmap)(void);'
-		'sqInt (*classByteArray)(void);'
-		'sqInt (*classCharacter)(void);'
-		'sqInt (*classFloat)(void);'
-		'sqInt (*classLargePositiveInteger)(void);'
-		'sqInt (*classPoint)(void);'
-		'sqInt (*classSemaphore)(void);'
-		'sqInt (*classSmallInteger)(void);'
-		'sqInt (*classString)(void);'
-	).
-	lines do: [:line | writer nextPutLine: line ].
-	writer newLine! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:26:02'!
-emitSpecialObjectsOn: writer
-	| lines |
-	writer nextPutComment: 'InterpreterProxy methodsFor: ''special objects'''. 
-
-	lines _ #(
-		'sqInt (*characterTable)(void);'
-		'sqInt (*displayObject)(void);'
-		'sqInt (*falseObject)(void);'
-		'sqInt (*nilObject)(void);'
-		'sqInt (*trueObject)(void);'
-	).
-	lines do: [:line | writer nextPutLine: line ].
-	writer newLine.! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/7/2020 17:56:47'!
-emitSqIntTypedefsOn: writer
-	| wordSize |
-	wordSize _ self findWordSize..
-
-	"Here we use GCC macros for generating the types https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html#Common-Predefined-Macros"
-
-	"for 32bit images"
-	writer nextPutLine: '#if (__SIZEOF_INT__ == ' , wordSize asString , ')'.
-	writer nextPutLine: 'typedef int sqInt;'.
-	writer nextPutLine: 'typedef unsigned int usqInt;'.
-	
-	"for 64bit"
-	writer nextPutLine: '#elif (__SIZEOF_LONG__ == ', wordSize asString , ')'.
-	writer nextPutLine: 'typedef long sqInt;'.
-	writer nextPutLine: 'typedef unsigned long usqInt;'.
-	
-	writer nextPutLine: '#elif (__SIZEOF_LONG_LONG__ == ' , wordSize asString , ')'.
-	writer nextPutLine: 'typedef long long sqInt;'.
-	writer nextPutLine: 'typedef unsigned long long usqInt;'.
-	writer nextPutLine: '#endif'! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 22:39:45'!
-emitStackAccessorsOn: writer
-	| lines |
-	writer nextPutComment: 'InterpreterProxy methodsFor: ''stack access'''.
-	lines _ #(
-		'sqInt  (*pop)(sqInt nItems);'
-		'sqInt  (*popthenPush)(sqInt nItems, sqInt oop);'
-		'sqInt  (*push)(sqInt object);'
-	 	'sqInt  (*pushBool)(sqInt trueOrFalse);'
-	 	'sqInt  (*pushFloat)(double f);'
-	 	'sqInt  (*pushInteger)(sqInt integerValue);'
-	 	'double (*stackFloatValue)(sqInt offset);'
-	 	'sqInt  (*stackIntegerValue)(sqInt offset);'
-	 	'sqInt  (*stackObjectValue)(sqInt offset);'
-	 	'sqInt  (*stackValue)(sqInt offset);'
-	).
-	lines do: [:line | writer nextPutLine: line ].
-	writer newLine! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 23:46:32'!
-emitTypedefsOn: writer
-	self emitSqIntTypedefsOn: writer.
-	writer newLine.
-	writer nextPutLine: 'typedef sqInt (*CompilerHook)(void);'.
-	writer newLine.
-! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/6/2020 21:40:23'!
-emitVersionGettersOn: writer
-	writer nextPutAll: 'sqInt (*minorVersion)(void);'; newLine.
-	writer nextPutAll: 'sqInt (*majorVersion)(void);'; newLine.
-! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'as yet unclassified' stamp: 'jpb 6/6/2020 20:11:23'!
-findInterpreterProxyVersion
-	"Only implemented for VMs which can generate 1:1 the interpreterProxy interface, which is only possible of a VM which inherits from the opensmalltalk-vm"
-	^{Smalltalk vmParameterAt: 70. Smalltalk vmParameterAt: 71}! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'as yet unclassified' stamp: 'jpb 6/7/2020 18:49:04'!
-findOoPointerSize
-	"Returns the size in bytes of the commonly used object oriented pointer (OOP) size used in the VM"
-	^Smalltalk vmParameterAt: 40! !
-
-!SlangOSVMHeaderBuilder methodsFor: 'as yet unclassified' stamp: 'jpb 6/7/2020 18:49:24'!
-findWordSize
-	"Returns the word size within the VM"
-	^ Smalltalk wordSize! !
 
 !SlangTParseNode methodsFor: '*Slang-C' stamp: ' 2/7/08 14:57'!
 emitCCodeAsArgumentOn: aStream level: level generator: aCodeGen

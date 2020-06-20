@@ -4,6 +4,23 @@ This file lists the history of changes made to the repository
 in a more wordy fashion of what this was about as an addition
 to descriptive commit messages.
 
+## Update 0.001j1
+
+Affected versions:
+- Slang-C 1.21
+- OSVMPluginMaker 1.7
+- Slang-Examples 1.3
+
+Adds the OpenSmalltalk-VM (OSVM) PluginMaker, which is not
+to be confused with the `Slang-PluginMaker.pck.st` package,
+which currently only holds old stuff yet-to-be-refactored or
+thrown away. Adds some minor cleanups here to other packages.
+Besides that the `InterpreterProxy` from VMMaker is added so that
+in theory plugins could be "simulated". Adds also the `OSVMPluginHeaderBuilder`
+which builds plugin headers from the current image to VM introspection
+settings.
+
+
 ## Update 0.001i1
 
 Affected versions:
