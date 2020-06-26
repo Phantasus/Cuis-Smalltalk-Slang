@@ -1,4 +1,4 @@
-'From Cuis 5.0 [latest update: #4191] on 20 June 2020 at 6:56:25 pm'!
+'From Cuis 5.0 [latest update: #4191] on 26 June 2020 at 8:57:13 pm'!
 'Description Contains the fundamental basic infrastructure for Slang, without any tools or language specific translation mechanisms. With just the Kernel you can''t build a plugin, you need the specific translation packages.
 
 License: MIT'!
@@ -1891,6 +1891,11 @@ findSourceDescriptionBy: sourceClass
 	^[self findClassDescriptionByClass: sourceClass]
 		on: MessageNotUnderstood
 		do: [:ex| self findSlangDescriptionBy: sourceClass]! !
+
+!SlangSystemAdapter methodsFor: 'queries' stamp: 'jpb 6/26/2020 20:42:20'!
+findVMEndianess
+	"Returns #little or #big depending on the endianess of the running VM"
+	^Smalltalk endianness = #big ifTrue: [1] ifFalse: [0]! !
 
 !SlangSystemAdapter methodsFor: 'queries' stamp: 'jpb 5/20/2020 23:24:17'!
 isStructType: typeName

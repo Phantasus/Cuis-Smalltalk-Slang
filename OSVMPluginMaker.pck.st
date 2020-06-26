@@ -1,8 +1,8 @@
-'From Cuis 5.0 [latest update: #4191] on 20 June 2020 at 6:56:19 pm'!
+'From Cuis 5.0 [latest update: #4191] on 26 June 2020 at 9:03:56 pm'!
 'Description Slang based plugin maker for the OpenSmalltalk-VM (OSVM) on which Squeak, Pharo, Cuis, Newspeak implementations are currently running. 
 
 License: MIT'!
-!provides: 'OSVMPluginMaker' 1 8!
+!provides: 'OSVMPluginMaker' 1 9!
 !requires: 'Slang-C' 1 19 nil!
 SystemOrganization addCategory: #OSVMPluginMaker!
 
@@ -39,7 +39,7 @@ OSVMPluginHeaderBuilder class
 
 !classDefinition: #OSVMInterpreterProxy category: #OSVMPluginMaker!
 Object subclass: #OSVMInterpreterProxy
-	instanceVariableNames: 'primFailCode remapBuffer stack method argumentCount bb thisSessionID osErrorCode exceptionPC'
+	instanceVariableNames: 'primFailCode remapBuffer stack method argumentCount bb thisSessionID osErrorCode exceptionPC systemAdapter'
 	classVariableNames: ''
 	poolDictionaries: 'OSVMBasicConstants'
 	category: 'OSVMPluginMaker'!
@@ -96,17 +96,17 @@ setInterpreter: anInterpreter
 
 	^true! !
 
-!OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/20/2020 17:41:00'!
+!OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/26/2020 21:02:39'!
 emit64BitAccessorsOn: writer
-	
-	writer nextPutComment: '64-Bit Integer Accessor functions'.
-	writer nextPutLine: '#if VM_PROXY_MINOR > 4'.
-	writer nextPutLine: 'sqInt  (*positive64BitIntegerFor)(usqLong integerValue);'.
-	writer nextPutLine: 'usqLong(*positive64BitValueOf)(sqInt oop);'.
-	writer nextPutLine: 'sqInt  (*signed64BitIntegerFor)(sqLong integerValue);'.
-	writer nextPutLine: 'sqLong (*signed64BitValueOf)(sqInt oop);'.
-	writer nextPutLine: '#endif'.
-	writer newLine.! !
+     
+       writer nextPutComment: '64-Bit Integer Accessor functions'.
+       writer nextPutLine: '#if VM_PROXY_MINOR > 4'.
+       writer nextPutLine: 'sqInt  (*positive64BitIntegerFor)(usqLong integerValue);'.
+       writer nextPutLine: 'usqLong(*positive64BitValueOf)(sqInt oop);'.
+       writer nextPutLine: 'sqInt  (*signed64BitIntegerFor)(sqLong integerValue);'.
+       writer nextPutLine: 'sqLong (*signed64BitValueOf)(sqInt oop);'.
+       writer nextPutLine: '#endif'.
+       writer newLine.! !
 
 !OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/20/2020 17:27:45'!
 emitBitBlitSupportOn: writer
@@ -222,7 +222,7 @@ emitInstanceCreatersOn: writer
 	lines do: [:line | writer nextPutLine: line ].
 	writer newLine.! !
 
-!OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/20/2020 17:38:24'!
+!OSVMPluginHeaderBuilder methodsFor: 'C Header generation' stamp: 'jpb 6/26/2020 21:02:14'!
 emitInterpreterProxyStructOn: writer
 	writer nextPutLine: 'typedef struct VirtualMachine {'.
 	writer autoIndentBy: 2.
@@ -557,10 +557,13 @@ byteSizeOf: oop
 		ifTrue: [oop basicSize * oop class elementSize]
 		ifFalse: [(self slotSizeOf: oop) * Smalltalk wordSize]! !
 
-!OSVMInterpreterProxy methodsFor: 'object access' stamp: 'eem 6/8/2016 10:56'!
+!OSVMInterpreterProxy methodsFor: 'object access' stamp: 'jpb 6/26/2020 20:27:11'!
 characterObjectOf: characterCode
 	<option: #(atLeastVMProxyMajor:minor: 1 13)>
-	^StackInterpreter objectMemoryClass characterObjectOf: characterCode! !
+	
+	"StackInterpreter objectMemoryClass characterObjectOf: characterCode"
+	
+	^Character asciiValue: characterCode! !
 
 !OSVMInterpreterProxy methodsFor: 'object access' stamp: 'eem 10/31/2013 00:27'!
 characterValueOf: aCharacter
@@ -624,10 +627,13 @@ firstIndexableField: oop
 instanceSizeOf: classObj
 	^classObj instSize! !
 
-!OSVMInterpreterProxy methodsFor: 'object access' stamp: 'eem 1/20/2016 19:03'!
+!OSVMInterpreterProxy methodsFor: 'object access' stamp: 'jpb 6/26/2020 20:28:45'!
 isOopImmutable: oop
 	<option: #IMMUTABILITY>
-	^StackInterpreter objectMemoryClass isOopImmutable: oop! !
+	
+	self flag: #fixme.
+	"Original code: ^StackInterpreter objectMemoryClass isOopImmutable: oop"
+	^false! !
 
 !OSVMInterpreterProxy methodsFor: 'object access' stamp: 'eem 5/23/2011 17:14'!
 literal: offset ofMethod: methodPointer
@@ -792,7 +798,7 @@ primitiveFailFor: reasonCode
 	<primitive: 255>
 	^ primFailCode := reasonCode! !
 
-!OSVMInterpreterProxy methodsFor: 'other' stamp: 'eem 12/18/2018 17:42'!
+!OSVMInterpreterProxy methodsFor: 'other' stamp: 'jpb 6/26/2020 20:27:39'!
 primitiveFailForFFIException: exceptionCode at: pc
 	<var: 'exceptionCode' type: #usqLong>
 	<var: 'pc' type: #usqInt>
@@ -800,6 +806,7 @@ primitiveFailForFFIException: exceptionCode at: pc
 	"Set PrimErrFFIException primitive failure and associated exceptionCode (a.k.a. 
 	 osErrorCode) and exceptionPC."
 	<primitive: 255>
+	
 	osErrorCode := exceptionCode.
 	exceptionPC := pc.
 	^primFailCode := PrimErrFFIException! !
@@ -858,10 +865,10 @@ tenuringIncrementalGC
 	
 	Smalltalk forceTenuring; garbageCollectMost! !
 
-!OSVMInterpreterProxy methodsFor: 'other' stamp: 'tpr 12/22/2005 17:48'!
+!OSVMInterpreterProxy methodsFor: 'other' stamp: 'jpb 6/26/2020 20:42:38'!
 vmEndianness
 	"return 0 for little endian, 1 for big endian"
-	^SmalltalkImage current endianness =#big ifTrue:[1] ifFalse:[0]! !
+	^systemAdapter findVMEndianess! !
 
 !OSVMInterpreterProxy methodsFor: 'converting' stamp: 'ar 10/10/1998 21:27'!
 booleanValueOf: obj
@@ -1104,10 +1111,10 @@ isBooleanObject: oop
 isBytes: oop
 	^oop class isBytes! !
 
-!OSVMInterpreterProxy methodsFor: 'testing' stamp: 'eem 10/31/2013 00:27'!
+!OSVMInterpreterProxy methodsFor: 'testing' stamp: 'jpb 6/26/2020 20:27:30'!
 isCharacterObject: oop
 	<option: #(atLeastVMProxyMajor:minor: 1 13)>
-	^oop isCharacter! !
+	^oop is: #Character! !
 
 !OSVMInterpreterProxy methodsFor: 'testing' stamp: 'eem 10/31/2013 00:27'!
 isCharacterValue: anInteger
@@ -1118,10 +1125,10 @@ isCharacterValue: anInteger
 isFloatObject: oop
 	^oop isFloat! !
 
-!OSVMInterpreterProxy methodsFor: 'testing' stamp: 'eem 10/31/2013 00:27'!
+!OSVMInterpreterProxy methodsFor: 'testing' stamp: 'jpb 6/26/2020 20:22:14'!
 isImmediate: anObject
 	<option: #(atLeastVMProxyMajor:minor: 1 13)>
-	^StackInterpreter objectMemoryClass isImmediate: anObject! !
+	^anObject class isImmediateClass! !
 
 !OSVMInterpreterProxy methodsFor: 'testing' stamp: 'acg 9/19/1999 13:11'!
 isIndexable: oop
@@ -1367,28 +1374,32 @@ classByteArray
 classCharacter
 	^Character! !
 
-!OSVMInterpreterProxy methodsFor: 'special classes' stamp: 'eem 1/16/2020 20:10'!
+!OSVMInterpreterProxy methodsFor: 'special classes' stamp: 'jpb 6/26/2020 19:43:23'!
 classDoubleByteArray
 	<option: #(atLeastVMProxyMajor:minor: 1 16)>
+	
 	^Smalltalk at: #DoubleByteArray ifAbsent: [nil]! !
 
-!OSVMInterpreterProxy methodsFor: 'special classes' stamp: 'eem 1/16/2020 20:10'!
+!OSVMInterpreterProxy methodsFor: 'special classes' stamp: 'jpb 6/26/2020 19:43:20'!
 classDoubleWordArray
 	<option: #(atLeastVMProxyMajor:minor: 1 16)>
+	
 	^Smalltalk at: #DoubleWordArray ifAbsent: [nil]! !
 
 !OSVMInterpreterProxy methodsFor: 'special classes' stamp: 'ar 9/16/1998 20:43'!
 classFloat
 	^Float! !
 
-!OSVMInterpreterProxy methodsFor: 'special classes' stamp: 'eem 1/16/2020 20:15'!
+!OSVMInterpreterProxy methodsFor: 'special classes' stamp: 'jpb 6/26/2020 19:43:28'!
 classFloat32Array
 	<option: #(atLeastVMProxyMajor:minor: 1 16)>
+	
 	^Smalltalk at: #FloatArray ifAbsent: [nil]! !
 
-!OSVMInterpreterProxy methodsFor: 'special classes' stamp: 'eem 1/16/2020 20:15'!
+!OSVMInterpreterProxy methodsFor: 'special classes' stamp: 'jpb 6/26/2020 19:43:32'!
 classFloat64Array
 	<option: #(atLeastVMProxyMajor:minor: 1 16)>
+	
 	^Smalltalk at: #Float64Array ifAbsent: [nil]! !
 
 !OSVMInterpreterProxy methodsFor: 'special classes' stamp: 'ar 11/19/1999 14:29'!
@@ -1411,13 +1422,14 @@ classSemaphore
 classSmallInteger
 	^SmallInteger! !
 
-!OSVMInterpreterProxy methodsFor: 'special classes' stamp: 'eem 10/7/2010 12:26'!
+!OSVMInterpreterProxy methodsFor: 'special classes' stamp: 'jpb 6/26/2020 19:43:46'!
 classString
-	^ByteString! !
+	^String! !
 
-!OSVMInterpreterProxy methodsFor: 'special classes' stamp: 'eem 1/16/2020 20:10'!
+!OSVMInterpreterProxy methodsFor: 'special classes' stamp: 'jpb 6/26/2020 19:43:50'!
 classWordArray
 	<option: #(atLeastVMProxyMajor:minor: 1 16)>
+	
 	^Smalltalk at: #WordArray ifAbsent: [nil]! !
 
 !OSVMInterpreterProxy methodsFor: 'instance creation' stamp: 'dtl 2/14/2014 19:32'!
@@ -1477,21 +1489,23 @@ floatArg: offset
 	(self isFloatObject: oop) ifFalse: [self primitiveFail. ^0.0].
 	^oop! !
 
-!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'eem 3/16/2018 15:32'!
+!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'jpb 6/26/2020 19:41:49'!
 integerArg: offset
 	"Like #stackIntegerValue: but access method arguments left-to-right"
 	"Obsolete; was never used; replaced with methodReturnInteger: in the VirtualMachine struct."
 	| oop |
-	self deprecated.
+	self deprecatedMethod.
+	
 	oop := self methodArg: offset.
 	(self isIntegerObject: oop) ifFalse: [self primitiveFail. ^0].
 	^oop! !
 
-!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'eem 3/16/2018 15:35'!
+!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'jpb 6/26/2020 19:41:59'!
 methodArg: offset
 	"Like #stackValue: but access method arguments left-to-right"
 	"Obsolete; was never used; replaced with methodReturnBool: in the VirtualMachine struct."
-	self deprecated.
+	self deprecatedMethod.
+	
 	offset > argumentCount + 1 ifTrue:[^self primitiveFail].
 	^self stackValue: argumentCount - offset! !
 
@@ -1501,10 +1515,11 @@ methodReturnBool: boolean
 	self pop: argumentCount+1 thenPushBool: boolean.
 	^0! !
 
-!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'eem 3/16/2018 15:22'!
+!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'jpb 6/26/2020 19:42:08'!
 methodReturnFloat: aFloat
 	"Sets the return value for a method"
 	<var: 'aFloat' type: #double>
+	
 	self pop: argumentCount+1 thenPushFloat: aFloat.
 	^0! !
 
@@ -1514,16 +1529,18 @@ methodReturnInteger: integer
 	self pop: argumentCount+1 thenPushInteger: integer.
 	^0! !
 
-!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'ul 4/17/2018 16:02'!
+!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'jpb 6/26/2020 19:42:16'!
 methodReturnReceiver
 	"Sets the return value for a method"
 	self pop: argumentCount.
+	
 	^0! !
 
-!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'eem 7/24/2019 12:28'!
+!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'jpb 6/26/2020 19:42:21'!
 methodReturnString: aCString
 	"Attempt to answer a ByteString for a given C string as the result of a primitive."
 	<var: 'aCString' type: #'char *'>
+	
 	aCString
 		ifNil: [primFailCode := PrimErrOperationFailed]
 		ifNotNil:
@@ -1538,24 +1555,27 @@ methodReturnValue: oop
 	self pop: argumentCount+1 thenPush: oop.
 	^0! !
 
-!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'eem 3/16/2018 15:34'!
+!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'jpb 6/26/2020 19:42:32'!
 objectArg: offset
 	"Like #stackObjectValue: but access method arguments left-to-right"
 	"Obsolete; was never used; replaced with methodReturnFloat: in the VirtualMachine struct."
 	| oop |
-	self deprecated.
+	self deprecatedMethod.
+	
 	oop := self methodArg: offset.
 	(self isImmediate: oop) ifTrue: [self primitiveFail. ^ nil].
 	^oop! !
 
-!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'jpb 6/18/2020 20:07:07'!
+!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'jpb 6/26/2020 19:42:39'!
 pop: nItems
 	<returnType: #sqInt>
+	
 	1 to: nItems do:[:i| stack removeLast].! !
 
-!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'jpb 6/18/2020 20:07:11'!
+!OSVMInterpreterProxy methodsFor: 'stack access' stamp: 'jpb 6/26/2020 19:42:44'!
 pop: nItems thenPush: oop
 	<returnType: #sqInt>
+	
 	self pop: nItems.
 	self push: oop! !
 
@@ -1625,11 +1645,13 @@ stackSignedMachineIntegerValue: offset
 stackValue: offset
 	^stack at: stack size - offset.! !
 
-!OSVMInterpreterProxy methodsFor: 'initialize' stamp: 'eem 11/1/2007 16:05'!
+!OSVMInterpreterProxy methodsFor: 'initialize' stamp: 'jpb 6/26/2020 20:38:46'!
 initialize
 	primFailCode := 0.
 	remapBuffer := OrderedCollection new.
-	stack := OrderedCollection new.! !
+	stack := OrderedCollection new.
+	
+	systemAdapter _ SlangSystemAdapter new! !
 
 !OSVMInterpreterProxy methodsFor: 'initialize' stamp: 'ar 10/3/1998 18:50'!
 loadStackFrom: aContext

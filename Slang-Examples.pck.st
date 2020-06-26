@@ -1,4 +1,4 @@
-'From Cuis 5.0 [latest update: #4191] on 20 June 2020 at 6:56:23 pm'!
+'From Cuis 5.0 [latest update: #4191] on 26 June 2020 at 8:56:58 pm'!
 'Description Package which contains examples of the usage of Cuis-Slang. Here can be found FFI Package Plugins, small programs or OpenSmalltalkVM External Plugins, etc.
 
 License: MIT'!
@@ -31,7 +31,7 @@ loadArgumentMatrix: matrix
 				^nil].
 	^self coerce: (interpreterProxy firstIndexableField: matrix) to:'float *'.! !
 
-!Matrix2x3Plugin methodsFor: 'private' stamp: 'jpb 6/20/2020 16:08:29'!
+!Matrix2x3Plugin methodsFor: 'private' stamp: 'jpb 6/26/2020 20:33:20'!
 loadArgumentPoint: point
 	"Load the argument point into m23ArgX and m23ArgY"
 	| oop isInt |
@@ -44,6 +44,7 @@ loadArgumentPoint: point
 	"Load X value"
 	oop := interpreterProxy fetchPointer: 0 ofObject: point.
 	isInt := interpreterProxy isIntegerObject: oop.
+	
 	(isInt or:[interpreterProxy isFloatObject: oop])
 		ifFalse:[^interpreterProxy primitiveFail].
 	isInt
@@ -66,14 +67,16 @@ okayIntValue: value
 	^(value >= -1073741824 asFloat and:[value <= 1073741823 asFloat]) 
 ! !
 
-!Matrix2x3Plugin methodsFor: 'private' stamp: 'eem 7/10/2010 21:38'!
+!Matrix2x3Plugin methodsFor: 'private' stamp: 'jpb 6/26/2020 20:29:07'!
 roundAndStoreResultPoint: nItemsToPop
 	"Store the result of a previous operation.
 	Fail if we cannot represent the result as SmallInteger"
 	m23ResultX := m23ResultX + 0.5.
 	m23ResultY := m23ResultY + 0.5.
+	
 	(self okayIntValue: m23ResultX) ifFalse:[^interpreterProxy primitiveFail].
 	(self okayIntValue: m23ResultY) ifFalse:[^interpreterProxy primitiveFail].
+	
 	interpreterProxy pop: nItemsToPop thenPush:
 		(interpreterProxy makePointwithxValue: m23ResultX asInteger
 							yValue: m23ResultY asInteger)! !
