@@ -4179,7 +4179,7 @@ emitJSCodeOn: aStream level: level generator: aCodeGen
 					expression args first emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen]]
 		ifFalse:
 			[ | coerceToInt |
-			coerceToInt := (variable isFloatIn: aCodeGen) not and: [expression isFloatIn: aCodeGen].
+			coerceToInt _ (variable isFloatIn: aCodeGen) not and: [expression isFloatIn: aCodeGen].
 			variable emitJSCodeOn: aStream level: level generator: aCodeGen.
 			aStream nextPutAll: ' = '.
 			expression emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen.
@@ -4193,7 +4193,7 @@ isFloatIn: aCodeGen
 emitJSCodeOn: aStream level: level generator: aCodeGen
 
 	| indent |
-	indent := (String new: level) collect: [ :ch | Character tab ].
+	indent _ (String new: level) collect: [ :ch | Character tab ].
 	aStream nextPutAll: 'switch ('.
 	expression asExpression emitJSCodeOn: aStream level: level generator: aCodeGen.
 	aStream nextPutAll: ') {'; cr.
@@ -4348,7 +4348,7 @@ emitJSPointerArithmetic: type on: aStream level: level generator: aGenerator typ
 	(selector = #+) ifFalse: [self halt].
 	receiver isVariable
 		ifTrue: [ | func |
-			func := ({'int' -> 'PTR_ADD'. 'float' -> 'FPTR_ADD'} as: Dictionary)
+			func _ ({'int' -> 'PTR_ADD'. 'float' -> 'FPTR_ADD'} as: Dictionary)
 				at: ((cType copyUpTo: $*) copyWithout: $ ).
 			aStream nextPutAll: func, '(',  receiver name, ', ']
 		ifFalse: [receiver emitJSPointerArithmetic: type on: aStream level: level generator: aGenerator type: cType top: false.
@@ -4390,13 +4390,13 @@ isTimesFour
 emitJSCodeAsArgumentOn: aStream level: level generator: aCodeGen
 
 	| statementWasComment |
-	statementWasComment := false.
+	statementWasComment _ false.
 	statements
 		do:
 			[:s |
 			s emitJSCommentOn: aStream level: level.
 			s emitJSCodeAsArgumentOn: aStream level: 0 generator: aCodeGen.
-			statementWasComment := s is: #Comment]
+			statementWasComment _ s is: #Comment]
 		separatedBy:
 			[((self endsWithCloseBracket: aStream)
 			  or: [statementWasComment]) ifFalse: [aStream nextPut: $,]]! !

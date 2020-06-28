@@ -139,19 +139,19 @@ testSSIPDeclareExport
 	traditional method send declarations"
 
 	| stss m p |
-	stss := SlangTestSupportSSIP inline: false.
-	m := (stss asCString: #declareExportTrueByMethod)
+	stss _ SlangTestSupportSSIP inline: false.
+	m _ (stss asCString: #declareExportTrueByMethod)
 			copyReplaceAll: 'declareExportTrueByMethod'
 			with: 'methodName'.
-	p := (stss asCString: #declareExportTrueByPragma)
+	p _ (stss asCString: #declareExportTrueByPragma)
 			copyReplaceAll: 'declareExportTrueByPragma'
 			with: 'methodName'.
 	self assert: m = p.
 
-	m := (stss asCString: #declareExportFalseByMethod)
+	m _ (stss asCString: #declareExportFalseByMethod)
 			copyReplaceAll: 'declareExportFalseByMethod'
 			with: 'methodName'.
-	p := (stss asCString: #declareExportFalseByPragma)
+	p _ (stss asCString: #declareExportFalseByPragma)
 			copyReplaceAll: 'declareExportFalseByPragma'
 			with: 'methodName'.
 	self assert: m = p.! !
@@ -162,13 +162,13 @@ testSSIPDeclareInline
 	traditional method send declarations"
 
 	| stss m p |
-	stss := SlangTestSupportSSIP inline: true.
-	m := ((stss asCString: #inlineByMethod)
+	stss _ SlangTestSupportSSIP inline: true.
+	m _ ((stss asCString: #inlineByMethod)
 			copyReplaceAll: 'inlineByMethod'
 			with: 'methodName')
 				copyReplaceAll: 'methodThatShouldNotBeInlinedByMethod'
 				with: 'calledMethodName'.
-	p := ((stss asCString: #inlineByPragma)
+	p _ ((stss asCString: #inlineByPragma)
 			copyReplaceAll: 'inlineByPragma'
 			with: 'methodName')
 				copyReplaceAll: 'methodThatShouldNotBeInlinedByPragma'
@@ -180,19 +180,19 @@ testSSIPDeclareStatic
 	"A static directive should cause the generated function to be declared static."
 
 	| stss m1 p1 m2 p2 |
-	stss := SlangTestSupportSSIP inline: false.
-	m1 := (stss asCString: #declareStaticTrueByMethod)
+	stss _ SlangTestSupportSSIP inline: false.
+	m1 _ (stss asCString: #declareStaticTrueByMethod)
 			copyReplaceAll: 'declareStaticTrueByMethod'
 			with: 'methodName'.
-	p1 := (stss asCString: #declareStaticTrueByPragma)
+	p1 _ (stss asCString: #declareStaticTrueByPragma)
 			copyReplaceAll: 'declareStaticTrueByPragma'
 			with: 'methodName'.
 	self assert: m1 = p1.
 
-	m2 := (stss asCString: #declareStaticFalseByMethod)
+	m2 _ (stss asCString: #declareStaticFalseByMethod)
 			copyReplaceAll: 'declareStaticFalseByMethod'
 			with: 'methodName'.
-	p2 := (stss asCString: #declareStaticFalseByPragma)
+	p2 _ (stss asCString: #declareStaticFalseByPragma)
 			copyReplaceAll: 'declareStaticFalseByPragma'
 			with: 'methodName'.
 	self assert: m2 = p2.
@@ -209,9 +209,9 @@ testSSIPDoNotGenerateByMethod
 	"A doNotdoNotGenerate statement should prevent code generation"
 
 	| stss m |
-	stss := SlangTestSupportSSIP inline: false.
+	stss _ SlangTestSupportSSIP inline: false.
 	self assert: (SlangTestSupportSSIP canUnderstand: #doNotGenerateByMethod).
-	m := stss asCString: #doNotGenerateByMethod.
+	m _ stss asCString: #doNotGenerateByMethod.
 	self assert: (m includesSubString: 'No source has been generated').
 	self deny: (stss asCString includesSubString: 'doNotGenerateByMethod').
 	self assert: (stss doNotGenerateByMethod = 4)! !
@@ -221,9 +221,9 @@ testSSIPDoNotGenerateByPragma
 	"A <doNotdoNotGenerate> declaration should prevent code generation"
 
 	| stss m |
-	stss := SlangTestSupportSSIP inline: false.
+	stss _ SlangTestSupportSSIP inline: false.
 	self assert: (SlangTestSupportSSIP canUnderstand: #doNotGenerateByPragma).
-	m := stss asCString: #doNotGenerateByPragma.
+	m _ stss asCString: #doNotGenerateByPragma.
 	self assert: (m includesSubString: 'No source has been generated').
 	self deny: (stss asCString includesSubString: 'doNotGenerateByPragma').
 	self assert: (stss doNotGenerateByPragma = 4)
@@ -234,9 +234,9 @@ testSSIPDoNotGenerateSubclassResponsibility
 	"If a method contains self subclassResponsibility, assume it is not meant for translation."
 
 	| stss m |
-	stss := SlangTestSupportSSIP inline: false.
+	stss _ SlangTestSupportSSIP inline: false.
 	self assert: (SlangTestSupportSSIP canUnderstand: #anAbstractMethod).
-	m := stss asCString: #anAbstractMethod.
+	m _ stss asCString: #anAbstractMethod.
 	self assert: (m includesSubString: 'No source has been generated').
 	self deny: (stss asCString includesSubString: 'anAbstractMethod').
 	self should: [stss anAbstractMethod]
@@ -248,8 +248,8 @@ testSSIPMixedMethodAndPragmaDeclarations
 	"Pragmas and method declarations should coexist"
 
 	| stss s |
-	stss := SlangTestSupportSSIP inline: false.
-	s := (stss asCString: #varDefByMethodAndPragma)
+	stss _ SlangTestSupportSSIP inline: false.
+	s _ (stss asCString: #varDefByMethodAndPragma)
 			copyReplaceAll: 'varDefByMethod'
 			with: 'methodName'.
 	self assert: (s includesSubString: 'unsigned int * bar').
@@ -264,11 +264,11 @@ testSSIPReturnTypeC
 	traditional method send declarations"
 
 	| stss m p |
-	stss := SlangTestSupportSSIP inline: false.
-	m := (stss asCString: #returnTypeByMethod)
+	stss _ SlangTestSupportSSIP inline: false.
+	m _ (stss asCString: #returnTypeByMethod)
 			copyReplaceAll: 'returnTypeByMethod'
 			with: 'methodName'.
-	p := (stss asCString: #returnTypeByPragma)
+	p _ (stss asCString: #returnTypeByPragma)
 			copyReplaceAll: 'returnTypeByPragma'
 			with: 'methodName'.
 	self assert: m = p! !
@@ -279,11 +279,11 @@ testSSIPTypeDeclarations
 	traditional method send declarations"
 
 	| stss m p |
-	stss := SlangTestSupportSSIP inline: false.
-	m := (stss asCString: #varDefByMethod)
+	stss _ SlangTestSupportSSIP inline: false.
+	m _ (stss asCString: #varDefByMethod)
 			copyReplaceAll: 'varDefByMethod'
 			with: 'methodName'.
-	p := (stss asCString: #varDefByPragma)
+	p _ (stss asCString: #varDefByPragma)
 			copyReplaceAll: 'varDefByPragma'
 			with: 'methodName'.
 	self assert: m = p! !
@@ -312,10 +312,10 @@ setInterpreter: anInterpreter
 	| ok |
 	<export: true>
 	<var: #anInterpreter type: #'struct VirtualMachine*'>
-	interpreterProxy := anInterpreter.
-	ok := self code: 'interpreterProxy->majorVersion() == VM_PROXY_MAJOR'.
+	interpreterProxy _ anInterpreter.
+	ok _ self code: 'interpreterProxy->majorVersion() == VM_PROXY_MAJOR'.
 	ok == false ifTrue: [^ false].
-	ok := self code: 'interpreterProxy->minorVersion() >= VM_PROXY_MINOR'.
+	ok _ self code: 'interpreterProxy->minorVersion() >= VM_PROXY_MINOR'.
 	^ ok! !
 
 !SlangInterpreterPlugin methodsFor: 'debugging' stamp: 'yo 1/1/2004 11:09'!
@@ -358,7 +358,7 @@ moduleNameAndVersion
 buildCodeGenerator
 	"Build a CCodeGenerator for the plugin"
 	 | cg |
-	cg := self codeGeneratorClass new initialize.
+	cg _ self codeGeneratorClass new initialize.
 	cg pluginName: self moduleName.
 	"Add an extra declaration for module name"
 	cg declareModuleName: self moduleNameAndVersion.
@@ -454,9 +454,9 @@ codeGeneratorClass
 !SlangInterpreterPlugin class methodsFor: 'instance creation' stamp: 'jpb 5/23/2020 22:06:09'!
 doPrimitive: primitiveName 
 	| proxy plugin |
-	proxy := SlangInterpreterProxy new.
+	proxy _ SlangInterpreterProxy new.
 	proxy loadStackFrom: thisContext sender.
-	plugin := self simulatorClass new.
+	plugin _ self simulatorClass new.
 	plugin setInterpreter: proxy.
 	(plugin respondsTo: #initialiseModule) ifTrue:[plugin initialiseModule].
 	plugin perform: primitiveName asSymbol.
@@ -489,7 +489,7 @@ simulator
 !SlangSmartSyntaxInterpreterPlugin methodsFor: 'accessing' stamp: 'eem 10/2/2010 10:02'!
 simulator: aSmartSyntaxPluginSimulator
 	<doNotGenerate>
-	simulator := aSmartSyntaxPluginSimulator! !
+	simulator _ aSmartSyntaxPluginSimulator! !
 
 !SlangSmartSyntaxInterpreterPlugin methodsFor: 'debugging' stamp: 'sr 12/24/2001 00:29'!
 sqAssert: aBool 
@@ -507,9 +507,9 @@ codeGeneratorClass
 !SlangSmartSyntaxInterpreterPlugin class methodsFor: 'instance creation' stamp: 'jpb 5/23/2020 22:06:15'!
 doPrimitive: primitiveName withArguments: argArray
 	| proxy plugin |
-	proxy := SlangInterpreterProxy new.
+	proxy _ SlangInterpreterProxy new.
 	proxy loadStackFrom: thisContext sender.
-	plugin := (self simulatorClass ifNil: [self]) new.
+	plugin _ (self simulatorClass ifNil: [self]) new.
 	plugin setInterpreter: proxy.
 	^plugin perform: primitiveName asSymbol withArguments: argArray! !
 
@@ -553,7 +553,7 @@ doNotGenerateByPragma
 asCString
 
 	| stream |
-	stream := ReadWriteStream on: String new.
+	stream _ ReadWriteStream on: String new.
 	self cg emitCCodeOn: stream doAssertions: true.
 	^ stream contents
 ! !
@@ -562,9 +562,9 @@ asCString
 asCString: selector
 
 	| method stream |
-	method := self cg methodNamed: selector.
+	method _ self cg methodNamed: selector.
 	method ifNil: [^ 'No source has been generated'].
-	stream := ReadWriteStream on: String new.
+	stream _ ReadWriteStream on: String new.
 	method emitCCodeOn: stream generator: cg.
 	^ stream contents
 ! !
@@ -574,7 +574,7 @@ cg
 	"Lazy initialize, once per test"
 
 	cg ifNil: [
-		cg := self class buildCodeGeneratorInlined: inlineFlag = true.
+		cg _ self class buildCodeGeneratorInlined: inlineFlag = true.
 		cg prepareMethodsInlined: inlineFlag = true doAssertions: true].
 	^ cg! !
 
@@ -591,7 +591,7 @@ callMethodTwiceWithLoopLimitThatMightBeModified
 
 	<export: true>
 	| aVar |
-	aVar := 'foo'.
+	aVar _ 'foo'.
 	self methodWithLoopLimitThatMightBeModified: aVar.
 	self methodWithLoopLimitThatMightBeModified: aVar.
 ! !
@@ -609,7 +609,7 @@ callMethodWithLoopLimitThatIsNotModified
 
 	<export: true>
 	| aVar |
-	aVar := 'foo'.
+	aVar _ 'foo'.
 	self methodWithLoopLimitThatIsNotModified: aVar.
 ! !
 
@@ -618,7 +618,7 @@ callMethodWithLoopLimitThatMightBeModified
 
 	<export: true>
 	| aVar |
-	aVar := 'foo'.
+	aVar _ 'foo'.
 	self methodWithLoopLimitThatMightBeModified: aVar.
 ! !
 
@@ -726,7 +726,7 @@ declareStaticTrueByPragma
 
 !SlangTestSupportSSIP methodsFor: 'initialize' stamp: 'dtl 3/18/2013 14:54'!
 inline: flag
-	inlineFlag := flag! !
+	inlineFlag _ flag! !
 
 !SlangTestSupportSSIP methodsFor: 'inlining' stamp: 'dtl 9/19/2010 11:50'!
 inlineByMethod
@@ -734,8 +734,8 @@ inlineByMethod
 	"SlangTestSupportSSIP asInlinedCString: #inlineByMethod"
 
 	| bar foo |
-	foo := self methodThatShouldBeInlinedByMethod.
-	bar := self methodThatShouldNotBeInlinedByMethod! !
+	foo _ self methodThatShouldBeInlinedByMethod.
+	bar _ self methodThatShouldNotBeInlinedByMethod! !
 
 !SlangTestSupportSSIP methodsFor: 'inlining' stamp: 'dtl 9/19/2010 11:50'!
 inlineByPragma
@@ -743,8 +743,8 @@ inlineByPragma
 	"SlangTestSupportSSIP asInlinedCString: #inlineByPragma"
 
 	| bar foo |
-	foo := self methodThatShouldBeInlinedByPragma.
-	bar := self methodThatShouldNotBeInlinedByPragma! !
+	foo _ self methodThatShouldBeInlinedByPragma.
+	bar _ self methodThatShouldNotBeInlinedByPragma! !
 
 !SlangTestSupportSSIP methodsFor: 'inlining' stamp: 'dtl 9/18/2010 17:59'!
 methodThatShouldBeInlinedByMethod
@@ -818,7 +818,7 @@ buildCodeGeneratorInlined: doInlining
 	"Build a CCodeGenerator for this class."
 
 	 | cg |
-	cg := SlangSmartSyntaxPluginCodeGenerator new initialize.
+	cg _ SlangSmartSyntaxPluginCodeGenerator new initialize.
 	cg declareMethodsStatic: false.
 	cg permitMethodPruning: true.
 	cg uncheckedAbstractMethods addAll: self abstractSelectors.
@@ -1393,7 +1393,7 @@ ccgLoad: aBlock expr: aString asWBIntPtrFrom: anInteger
 !SlangSmartSyntaxPluginCodeGenerator methodsFor: 'coercing' stamp: 'ar 4/4/2006 21:10'!
 ccgSetBlock: aString
 
-	^[:expr | aString, ' := ', expr]! !
+	^[:expr | aString, ' _ ', expr]! !
 
 !SlangSmartSyntaxPluginCodeGenerator methodsFor: 'coercing' stamp: 'acg 9/19/1999 13:05'!
 ccgTVarBlock: anInteger
@@ -1578,15 +1578,15 @@ generateAsFloatObj: aNode on: aStream indent: anInteger
 generateAsIfVar: aNode on: aStream indent: anInteger
 
 	| cName fName class index |
-	cName := String streamContents: 
+	cName _ String streamContents: 
 		[:scStr | self emitCExpression: aNode args first on: scStr].
-	class := Smalltalk 
+	class _ Smalltalk 
 		at: (cName asSymbol) 
 		ifAbsent: [nil].
 	(class isNil not and: [class isBehavior]) ifFalse: 
 		[^self error: 'first arg must identify class'].
-	fName := aNode args second value.
-	index := class allInstVarNames
+	fName _ aNode args second value.
+	index _ class allInstVarNames
 		indexOf: fName
 		ifAbsent: [^self error: 'second arg must be instVar'].
 	aStream 
@@ -1600,25 +1600,25 @@ generateAsIfVar: aNode on: aStream indent: anInteger
 generateAsIfVarAsValue: aNode on: aStream indent: anInteger
 
 	| cName fName class index fetchNode |
-	cName := String streamContents: 
+	cName _ String streamContents: 
 		[:scStr | self emitCExpression: aNode args first on: scStr].
-	class := Smalltalk 
+	class _ Smalltalk 
 		at: (cName asSymbol) 
 		ifAbsent: [nil].
 	(class isNil not and: [class isBehavior]) ifFalse: 
 		[^self error: 'first arg must identify class'].
-	fName := aNode args second value.
-	index := class allInstVarNames
+	fName _ aNode args second value.
+	index _ class allInstVarNames
 		indexOf: fName
 		ifAbsent: [^self error: 'second arg must be instVar'].
-	fetchNode := SlangTSendNode new
+	fetchNode _ SlangTSendNode new
 		setSelector: #fetchPointer:ofObject:
 		receiver: (SlangTVariableNode new setName: 'interpreterProxy')
 		arguments: (Array
 			with: (SlangTConstantNode new setValue: index - 1)
 			with: aNode receiver).
-	cName := aNode args third nameOrValue.
-	class := Smalltalk 
+	cName _ aNode args third nameOrValue.
+	class _ Smalltalk 
 		at: (cName asSymbol) 
 		ifAbsent: [nil].
 	(class isNil not and: [class isBehavior]) ifFalse: 
@@ -1630,15 +1630,15 @@ generateAsIfVarAsValue: aNode on: aStream indent: anInteger
 generateAsIfVarPut: aNode on: aStream indent: anInteger
 
 	| cName fName class index |
-	cName := String streamContents: 
+	cName _ String streamContents: 
 		[:scStr | self emitCExpression: aNode args first on: scStr].
-	class := Smalltalk 
+	class _ Smalltalk 
 		at: (cName asSymbol) 
 		ifAbsent: [nil].
 	(class isNil not and: [class isBehavior]) ifFalse: 
 		[^self error: 'first arg must identify class'].
-	fName := aNode args second value.
-	index := class allInstVarNames
+	fName _ aNode args second value.
+	index _ class allInstVarNames
 		indexOf: fName
 		ifAbsent: [^self error: 'second arg must be instVar'].
 	aStream 
@@ -1661,8 +1661,8 @@ generateAsIntPtr: aNode on: aStream indent: anInteger
 generateAsOop: aNode on: aStream indent: anInteger
 
 	| cName class |
-	cName := aNode args first nameOrValue.
-	class := Smalltalk 
+	cName _ aNode args first nameOrValue.
+	class _ Smalltalk 
 		at: (cName asSymbol) 
 		ifAbsent: [nil].
 	(class isNil not and: [class isBehavior]) ifFalse: 
@@ -1687,8 +1687,8 @@ generateAsSmallIntegerObj: aNode on: aStream indent: anInteger
 generateAsValue: aNode on: aStream indent: anInteger
 
 	| cName class |
-	cName := aNode args first nameOrValue.
-	class := Smalltalk 
+	cName _ aNode args first nameOrValue.
+	class _ Smalltalk 
 		at: (cName asSymbol) 
 		ifAbsent: [nil].
 	(class isNil not and: [class isBehavior]) ifFalse: 
@@ -1751,7 +1751,7 @@ generateFromStack: aNode on: aStream indent: anInteger
 
 	| idList |
 	aNode args first isConstant ifFalse: [^self error: 'arg must be constant'].
-	idList := aNode args first value.
+	idList _ aNode args first value.
 	(1 to: idList size)
 		do: [:i | 
 			aStream 
@@ -1848,7 +1848,7 @@ generateNext: msgNode on: aStream indent: level
 	"Generate the C code for this message onto the given stream."
 
 	| varNode |
-	varNode := msgNode receiver.
+	varNode _ msgNode receiver.
 	varNode isVariable
 		ifFalse: [ self error: 'next can only be applied to variables' ].
 	aStream nextPutAll: '*'.
@@ -1861,8 +1861,8 @@ generateRemapOopIn: aNode on: aStream indent: level
 	"Generate the C code for this message onto the given stream."
 
 	| idList |
-	idList := aNode args first nameOrValue.
-	idList class == Array ifFalse: [idList := Array with: idList].
+	idList _ aNode args first nameOrValue.
+	idList class == Array ifFalse: [idList _ Array with: idList].
 	idList do:
 		[:each | 
 		 aStream 
@@ -1915,7 +1915,7 @@ initializeCTranslationDictionary
 
 	| pairs |
 	super initializeCTranslationDictionary.
-	pairs := #(
+	pairs _ #(
 		#asCInt						#generateAsCInt:on:indent:
 		#asCUnsigned				#generateAsCUnsigned:on:indent:
 		#asCBoolean					#generateAsCBoolean:on:indent:
@@ -2052,12 +2052,12 @@ generateDebugCode
 
 !SlangSmartSyntaxPluginCodeGenerator methodsFor: 'debug code' stamp: 'sr 4/8/2000 00:52'!
 generateDebugCode: aBool 
-	debugFlag := aBool! !
+	debugFlag _ aBool! !
 
 !SlangSmartSyntaxPluginCodeGenerator methodsFor: 'initialize' stamp: 'sr 4/8/2000 00:53'!
 initialize
 	super initialize.
-	debugFlag := false! !
+	debugFlag _ false! !
 
 !SlangSmartSyntaxPluginCodeGenerator methodsFor: 'initialize' stamp: 'jpb 5/23/2020 20:32:23'!
 translationMethodClass
@@ -2073,7 +2073,7 @@ var: varName as: aClass
 !SlangSmartSyntaxPluginTMethod methodsFor: 'accessing' stamp: 'acg 9/19/1999 11:19'!
 args: anInteger
 
-	^args := anInteger! !
+	^args _ anInteger! !
 
 !SlangSmartSyntaxPluginTMethod methodsFor: 'accessing' stamp: 'acg 9/19/1999 11:18'!
 parmSpecs
@@ -2103,7 +2103,7 @@ selectorOverride: preferredSelectorName
 	"A primitive directive allows the selector to be overridden in order to specify
 	a preferred name for the generated primitive."
 
-	selectorOverride := preferredSelectorName! !
+	selectorOverride _ preferredSelectorName! !
 
 !SlangSmartSyntaxPluginTMethod methodsFor: 'private' stamp: 'jpb 5/23/2020 22:08:36'!
 assign: variable expression: expression
@@ -2117,7 +2117,7 @@ checkSuccessExpr
 	"Return the parse tree for an expression that aborts the primitive if primFailCode is set."
 
 	| expr |
-	expr := 'interpreterProxy failed ifTrue: [^nil]'.
+	expr _ 'interpreterProxy failed ifTrue: [^nil]'.
 	^ self statementsFor: expr varName: ''
 ! !
 
@@ -2140,7 +2140,7 @@ oldReplaceSizeMessages
 	| argExpr |
 	parseTree nodesDo: [:n |
 		(n isSend and: [n selector = #size]) ifTrue: [
-			argExpr := SlangTSendNode new
+			argExpr _ SlangTSendNode new
 				setSelector: #+
 				receiver: n receiver
 				arguments: (Array with: (SlangTConstantNode new setValue: 1)).
@@ -2239,7 +2239,7 @@ or an assignment of that expression to a local, and manipulate the state and par
 					ifFalse: [sStream nextPut: stmt]]]).
 	isPrimitive 
 		ifTrue:
-			[export := true.
+			[export _ true.
 			 parseTree 
 				setStatements: self namedPrimitiveProlog, 
 								parseTree statements.
@@ -2252,10 +2252,10 @@ or an assignment of that expression to a local, and manipulate the state and par
 !SlangSmartSyntaxPluginTMethod methodsFor: 'specifying primitives' stamp: 'jpb 5/23/2020 20:31:11'!
 handlePrimitiveDirective: aStmt on: sStream
 
-	isPrimitive := true.
-	fullArgs := args.
+	isPrimitive _ true.
+	fullArgs _ args.
 	locals addAll: args.
-	args := OrderedCollection new.
+	args _ OrderedCollection new.
 	fullArgs with: parmSpecs do:
 		[:argName :spec |
 			declarations
@@ -2269,7 +2269,7 @@ handlePrimitiveDirective: aStmt on: sStream
 			statementsFor:
 				(rcvrSpec
 					ccg:		SlangSmartSyntaxPluginCodeGenerator new
-					prolog:  [:expr | aStmt variable name, ' := ', expr]
+					prolog:  [:expr | aStmt variable name, ' _ ', expr]
 					expr: 	aStmt variable name
 					index: 	(fullArgs size))
 			varName: '')].
@@ -2303,7 +2303,7 @@ isPrimitiveDirectiveSend: stmt
 namedPrimitiveProlog
 
 	| cg |
-	cg := SlangSmartSyntaxPluginCodeGenerator new.
+	cg _ SlangSmartSyntaxPluginCodeGenerator new.
 	^Array streamContents: [:sStream |
 		1 to: fullArgs size do:
 			[:i |
@@ -2312,7 +2312,7 @@ namedPrimitiveProlog
 					statementsFor: 
 						((parmSpecs at: i) 
 							ccg: 	cg
-							prolog:  [:expr | (fullArgs at: i), ' := ', expr]
+							prolog:  [:expr | (fullArgs at: i), ' _ ', expr]
 							expr: (fullArgs at: i)
 							index: (fullArgs size - i))
 					varName: '')]]! !
@@ -2323,12 +2323,12 @@ primitive: aString parameters: anArray receiver: aClassSymbol
 	self selectorOverride: aString asSymbol.
 	anArray size == args size ifFalse: 
 		[^self error: self selectorOverride, ': incorrect number of parameter specifications'].
-	parmSpecs := anArray collect:
+	parmSpecs _ anArray collect:
 		[:each | Smalltalk at: each ifAbsent:
 			[^self error: self selectorOverride, ': parameter spec must be a Behavior']].
 	parmSpecs do: [:each | each isBehavior ifFalse:
 		[^self error: self selectorOverride, ': parameter spec must be a Behavior']].
-	rcvrSpec := Smalltalk at: aClassSymbol asSymbol ifAbsent:
+	rcvrSpec _ Smalltalk at: aClassSymbol asSymbol ifAbsent:
 		[^self error: self selectorOverride, ': receiver spec must be a Behavior'].
 	rcvrSpec isBehavior ifFalse:
 		[^self error: self selectorOverride, ': receiver spec must be a Behavior'].
@@ -2354,11 +2354,11 @@ extractSuppressFailureGuardDirective
 	 and remove the directive from the method body. Answer the argument of the directive or false if there is no #supressFailureGuards: directive."
 
 	| result newStatements |
-	result := false.
-	newStatements := OrderedCollection new: parseTree statements size.
+	result _ false.
+	newStatements _ OrderedCollection new: parseTree statements size.
 	parseTree statements do: [ :stmt |
 		(stmt isSend and: [stmt selector = #suppressFailureGuards:]) ifTrue: [
-			result := stmt args first name = 'true'.
+			result _ stmt args first name = 'true'.
 		] ifFalse: [
 			newStatements add: stmt.
 		].
@@ -2428,48 +2428,48 @@ recordDeclarations
 				[self declarationAt: pragma arguments first asString put: pragma arguments last].
 			pragma keyword = #var:type: ifTrue:
 				[| varName varType |
-				varName := pragma arguments first asString.
-				varType := pragma arguments last.
-				varType last = $* ifFalse: [varType := varType, ' '].
+				varName _ pragma arguments first asString.
+				varType _ pragma arguments last.
+				varType last = $* ifFalse: [varType _ varType, ' '].
 				self declarationAt: varName put: varType, varName].
 			 pragma keyword = #var:as: ifTrue:
 				[| theClass |
-				 theClass := Smalltalk at: pragma arguments last name asSymbol ifAbsent: [nil].
+				 theClass _ Smalltalk at: pragma arguments last name asSymbol ifAbsent: [nil].
 				 (theClass isKindOf: Behavior) ifFalse:
 					[^self error: 'declarator must be a Behavior'].
 				 self declarationAt: pragma arguments first value asString 
 					put: (theClass ccgDeclareCForVar: pragma arguments first asString)].
 			pragma keyword = #returnTypeC: ifTrue:
-				[returnType := pragma arguments last].
+				[returnType _ pragma arguments last].
 			pragma keyword = #doNotGenerate: ifTrue:
 				[locals removeKey: pragma arguments last]]].
-	newStatements := OrderedCollection new: parseTree statements size.
+	newStatements _ OrderedCollection new: parseTree statements size.
 	parseTree statements do: 
 		[:stmt | | isDeclaration |
-		 isDeclaration := false.
+		 isDeclaration _ false.
 		 stmt isSend ifTrue: 
 			[stmt selector = #var:declareC: ifTrue:
-				[isDeclaration := true.
+				[isDeclaration _ true.
 				self declarationAt: stmt args first value asString put: stmt args last value].
 			stmt selector = #var:type: ifTrue: [
 				| varName varType |
-				isDeclaration := true.
-				varName := stmt args first value asString.
-				varType := stmt args last value.
-				varType last = $* ifFalse: [varType := varType, ' '].
+				isDeclaration _ true.
+				varName _ stmt args first value asString.
+				varType _ stmt args last value.
+				varType last = $* ifFalse: [varType _ varType, ' '].
 				self declarationAt: varName put: varType, varName.
 			].
 			 stmt selector = #var:as: ifTrue:
 				[| theClass |
-				 isDeclaration := true.
-				 theClass := Smalltalk  at: stmt args last name asSymbol ifAbsent: [nil].
+				 isDeclaration _ true.
+				 theClass _ Smalltalk  at: stmt args last name asSymbol ifAbsent: [nil].
 				 (theClass isKindOf: Behavior) ifFalse:
 					[^self error: 'declarator must be a Behavior'].
 				 self declarationAt: stmt args first value asString 
 					put: (theClass ccgDeclareCForVar: stmt args first value asString)].
 			 stmt selector = #returnType: ifTrue: 
-				[isDeclaration := true.
-				 returnType := stmt args last value]].
+				[isDeclaration _ true.
+				 returnType _ stmt args last value]].
 		 isDeclaration ifFalse: [newStatements add: stmt]].
 	parseTree setStatements: newStatements asArray! !
 
@@ -2478,8 +2478,8 @@ removeFinalSelfReturn
 	"The Smalltalk parser automatically adds the statement '^self' to the end of methods without explicit returns. This method removes such statements, since the generated code has no notion of 'self' anyway."
 
 	| stmtList lastStmt |
-	stmtList := parseTree statements asOrderedCollection.
-	lastStmt := stmtList last.
+	stmtList _ parseTree statements asOrderedCollection.
+	lastStmt _ stmtList last.
 
 	((lastStmt isReturn) and:
 	 [(lastStmt expression isVariable) and:
@@ -2510,7 +2510,7 @@ replaceSizeMessages
 !SlangSmartSyntaxPluginTMethod methodsFor: 'initializing' stamp: 'acg 9/19/1999 11:46'!
 fromContext: aContext primitive: aString parameters: aClassList receiver: aClass
 
-	fullArgs := args := aContext tempNames
+	fullArgs _ args _ aContext tempNames
 				copyFrom: 1
 				to: aContext method numArgs.
 	self 
@@ -2522,24 +2522,24 @@ fromContext: aContext primitive: aString parameters: aClassList receiver: aClass
 setSelector: sel definingClass: class args: argList locals: localList block: aBlockNode primitive: aNumber properties: methodProperties comment: aComment
 	"Initialize this method using the given information."
 
-	selector := sel.
-	definingClass := class.
-	returnType := #sqInt. 	 "assume return type is sqInt for now"
-	args := argList asOrderedCollection collect: [:arg | arg key].
-	locals := localList asOrderedCollection collect: [:arg | arg key].
-	declarations := Dictionary new.
-	primitive := aNumber.
-	properties := methodProperties.
-	comment := aComment.
-	parseTree := aBlockNode asTranslatorNodeIn: self.
-	labels := OrderedCollection new.
-	complete := false.  "set to true when all possible inlining has been done"
-	export := self extractExportDirective.
-	static := self extractStaticDirective.
-	canAsmLabel := self extractLabelDirective.
+	selector _ sel.
+	definingClass _ class.
+	returnType _ #sqInt. 	 "assume return type is sqInt for now"
+	args _ argList asOrderedCollection collect: [:arg | arg key].
+	locals _ localList asOrderedCollection collect: [:arg | arg key].
+	declarations _ Dictionary new.
+	primitive _ aNumber.
+	properties _ methodProperties.
+	comment _ aComment.
+	parseTree _ aBlockNode asTranslatorNodeIn: self.
+	labels _ OrderedCollection new.
+	complete _ false.  "set to true when all possible inlining has been done"
+	export _ self extractExportDirective.
+	static _ self extractStaticDirective.
+	canAsmLabel _ self extractLabelDirective.
 	self extractSharedCase.
-	isPrimitive := false.  "set to true only if you find a primtive direction."
-	suppressingFailureGuards := self extractSuppressFailureGuardDirective.
+	isPrimitive _ false.  "set to true only if you find a primtive direction."
+	suppressingFailureGuards _ self extractSuppressFailureGuardDirective.
 	self recordDeclarations.
 	self extractPrimitiveDirectives.
 ! !

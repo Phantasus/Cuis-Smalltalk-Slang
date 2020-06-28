@@ -42,23 +42,23 @@ loadArgumentPoint: point
 		ifFalse:[^interpreterProxy primitiveFail].
 		
 	"Load X value"
-	oop := interpreterProxy fetchPointer: 0 ofObject: point.
-	isInt := interpreterProxy isIntegerObject: oop.
+	oop _ interpreterProxy fetchPointer: 0 ofObject: point.
+	isInt _ interpreterProxy isIntegerObject: oop.
 	
 	(isInt or:[interpreterProxy isFloatObject: oop])
 		ifFalse:[^interpreterProxy primitiveFail].
 	isInt
-		ifTrue:[m23ArgX := interpreterProxy integerValueOf: oop]
-		ifFalse:[m23ArgX := interpreterProxy floatValueOf: oop].
+		ifTrue:[m23ArgX _ interpreterProxy integerValueOf: oop]
+		ifFalse:[m23ArgX _ interpreterProxy floatValueOf: oop].
 
 	"Load Y value"
-	oop := interpreterProxy fetchPointer: 1 ofObject: point.
-	isInt := interpreterProxy isIntegerObject: oop.
+	oop _ interpreterProxy fetchPointer: 1 ofObject: point.
+	isInt _ interpreterProxy isIntegerObject: oop.
 	(isInt or:[interpreterProxy isFloatObject: oop])
 		ifFalse:[^interpreterProxy primitiveFail].
 	isInt
-		ifTrue:[m23ArgY := interpreterProxy integerValueOf: oop]
-		ifFalse:[m23ArgY := interpreterProxy floatValueOf: oop].
+		ifTrue:[m23ArgY _ interpreterProxy integerValueOf: oop]
+		ifFalse:[m23ArgY _ interpreterProxy floatValueOf: oop].
 
 ! !
 
@@ -71,8 +71,8 @@ okayIntValue: value
 roundAndStoreResultPoint: nItemsToPop
 	"Store the result of a previous operation.
 	Fail if we cannot represent the result as SmallInteger"
-	m23ResultX := m23ResultX + 0.5.
-	m23ResultY := m23ResultY + 0.5.
+	m23ResultX _ m23ResultX + 0.5.
+	m23ResultY _ m23ResultY + 0.5.
 	
 	(self okayIntValue: m23ResultX) ifFalse:[^interpreterProxy primitiveFail].
 	(self okayIntValue: m23ResultY) ifFalse:[^interpreterProxy primitiveFail].
@@ -94,21 +94,21 @@ roundAndStoreResultRect: dstOop x0: x0 y0: y0 x1: x1 y1: y1
 	<var: #minY type: 'double '>
 	<var: #maxY type: 'double '>
 
-	minX := x0 + 0.5.
+	minX _ x0 + 0.5.
 	(self okayIntValue: minX) ifFalse:[^interpreterProxy primitiveFail].
-	maxX := x1 + 0.5.
+	maxX _ x1 + 0.5.
 	(self okayIntValue: maxX) ifFalse:[^interpreterProxy primitiveFail].
-	minY := y0 + 0.5.
+	minY _ y0 + 0.5.
 	(self okayIntValue: minY) ifFalse:[^interpreterProxy primitiveFail].
-	maxY := y1 + 0.5.
+	maxY _ y1 + 0.5.
 	(self okayIntValue: maxY) ifFalse:[^interpreterProxy primitiveFail].
 
 	interpreterProxy pushRemappableOop: dstOop.
-	originOop := interpreterProxy makePointwithxValue: minX asInteger yValue: minY asInteger.
+	originOop _ interpreterProxy makePointwithxValue: minX asInteger yValue: minY asInteger.
 	interpreterProxy pushRemappableOop: originOop.
-	cornerOop := interpreterProxy makePointwithxValue: maxX asInteger yValue: maxY asInteger.
-	originOop := interpreterProxy popRemappableOop.
-	rectOop := interpreterProxy popRemappableOop.
+	cornerOop _ interpreterProxy makePointwithxValue: maxX asInteger yValue: maxY asInteger.
+	originOop _ interpreterProxy popRemappableOop.
+	rectOop _ interpreterProxy popRemappableOop.
 	interpreterProxy storePointer: 0 ofObject: rectOop withValue: originOop.
 	interpreterProxy storePointer: 1 ofObject: rectOop withValue: cornerOop.
 	^rectOop! !
@@ -127,12 +127,12 @@ matrix2x3ComposeMatrix: m1 with: m2 into: m3
 	<var: #a22 type: 'double '>
 	<var: #a23 type: 'double '>
 
-	a11 := ((m1 at: 0) * (m2 at: 0)) + ((m1 at: 1) * (m2 at: 3)).
-	a12 := ((m1 at: 0) * (m2 at: 1)) + ((m1 at: 1) * (m2 at: 4)).
-	a13 := ((m1 at: 0) * (m2 at: 2)) + ((m1 at: 1) * (m2 at: 5)) + (m1 at: 2).
-	a21 := ((m1 at: 3) * (m2 at: 0)) + ((m1 at: 4) * (m2 at: 3)).
-	a22 := ((m1 at: 3) * (m2 at: 1)) + ((m1 at: 4) * (m2 at: 4)).
-	a23 := ((m1 at: 3) * (m2 at: 2)) + ((m1 at: 4) * (m2 at: 5)) + (m1 at: 5).
+	a11 _ ((m1 at: 0) * (m2 at: 0)) + ((m1 at: 1) * (m2 at: 3)).
+	a12 _ ((m1 at: 0) * (m2 at: 1)) + ((m1 at: 1) * (m2 at: 4)).
+	a13 _ ((m1 at: 0) * (m2 at: 2)) + ((m1 at: 1) * (m2 at: 5)) + (m1 at: 2).
+	a21 _ ((m1 at: 3) * (m2 at: 0)) + ((m1 at: 4) * (m2 at: 3)).
+	a22 _ ((m1 at: 3) * (m2 at: 1)) + ((m1 at: 4) * (m2 at: 4)).
+	a23 _ ((m1 at: 3) * (m2 at: 2)) + ((m1 at: 4) * (m2 at: 5)) + (m1 at: 5).
 
 	m3 at: 0 put: (self coerce: a11 to: 'float').
 	m3 at: 1 put: (self coerce: a12 to: 'float').
@@ -153,23 +153,23 @@ matrix2x3InvertPoint: m
 	<var: #detX type: 'double '>
 	<var: #detY type: 'double '>
 
-	x := m23ArgX - (m at: 2).
-	y := m23ArgY - (m at: 5).
-	det := ((m at: 0) * (m at: 4)) - ((m at: 1) * (m at: 3)).
+	x _ m23ArgX - (m at: 2).
+	y _ m23ArgY - (m at: 5).
+	det _ ((m at: 0) * (m at: 4)) - ((m at: 1) * (m at: 3)).
 	det = 0.0 ifTrue:[^interpreterProxy primitiveFail]."Matrix is singular."
-	det := 1.0 / det.
-	detX := (x * (m at: 4)) - ((m at: 1) * y).
-	detY := ((m at: 0) * y) - (x * (m at: 3)).
-	m23ResultX := detX * det.
-	m23ResultY := detY * det.! !
+	det _ 1.0 / det.
+	detX _ (x * (m at: 4)) - ((m at: 1) * y).
+	detY _ ((m at: 0) * y) - (x * (m at: 3)).
+	m23ResultX _ detX * det.
+	m23ResultY _ detY * det.! !
 
 !Matrix2x3Plugin methodsFor: 'transforming' stamp: 'jpb 6/20/2020 16:08:40'!
 matrix2x3TransformPoint: m
 	"Transform the pre-loaded argument point by the given matrix"
 	<var: #m type: 'float *'>
 	
-	m23ResultX := (m23ArgX * (m at: 0)) + (m23ArgY * (m at: 1)) + (m at: 2).
-	m23ResultY := (m23ArgX * (m at: 3)) + (m23ArgY * (m at: 4)) + (m at: 5).! !
+	m23ResultX _ (m23ArgX * (m at: 0)) + (m23ArgY * (m at: 1)) + (m at: 2).
+	m23ResultY _ (m23ArgX * (m at: 3)) + (m23ArgY * (m at: 4)) + (m at: 5).! !
 
 !Matrix2x3Plugin methodsFor: 'primitives' stamp: 'jpb 6/8/2020 19:42:42'!
 primitiveComposeMatrix
@@ -180,9 +180,9 @@ primitiveComposeMatrix
 	<var: #m2 type: #'float *'>
 	<var: #m3 type: #'float *'>
 
-	m3 := self loadArgumentMatrix: (result := interpreterProxy stackObjectValue: 0).
-	m2 := self loadArgumentMatrix: (interpreterProxy stackObjectValue: 1).
-	m1 := self loadArgumentMatrix: (interpreterProxy stackObjectValue: 2).
+	m3 _ self loadArgumentMatrix: (result _ interpreterProxy stackObjectValue: 0).
+	m2 _ self loadArgumentMatrix: (interpreterProxy stackObjectValue: 1).
+	m1 _ self loadArgumentMatrix: (interpreterProxy stackObjectValue: 2).
 	interpreterProxy failed ifTrue:[^nil].
 	
 	self matrix2x3ComposeMatrix: m1 with: m2 into: m3.
@@ -196,7 +196,7 @@ primitiveInvertPoint
 	<var: #matrix type: 'float *'>
 	
 	self loadArgumentPoint: (interpreterProxy stackObjectValue: 0).
-	matrix := self loadArgumentMatrix: (interpreterProxy stackObjectValue: 1).
+	matrix _ self loadArgumentMatrix: (interpreterProxy stackObjectValue: 1).
 	interpreterProxy failed ifTrue:[^nil].
 	self matrix2x3InvertPoint: matrix.
 	interpreterProxy failed ifFalse:[self roundAndStoreResultPoint: 2].! !
@@ -216,9 +216,9 @@ primitiveInvertRectInto
 	<var: #minY type: 'double '>
 	<var: #maxY type: 'double '>
 
-	dstOop := interpreterProxy stackObjectValue: 0.
-	srcOop := interpreterProxy stackObjectValue: 1.
-	matrix := self loadArgumentMatrix: (interpreterProxy stackObjectValue: 2).
+	dstOop _ interpreterProxy stackObjectValue: 0.
+	srcOop _ interpreterProxy stackObjectValue: 1.
+	matrix _ self loadArgumentMatrix: (interpreterProxy stackObjectValue: 2).
 	interpreterProxy failed ifTrue:[^nil].
 
 	(interpreterProxy fetchClassOf: srcOop) = (interpreterProxy fetchClassOf: dstOop)
@@ -231,43 +231,43 @@ primitiveInvertRectInto
 	"Load top-left point"
 	self loadArgumentPoint: (interpreterProxy fetchPointer: 0 ofObject: srcOop).
 	interpreterProxy failed ifTrue:[^nil].
-	originX := m23ArgX.
-	originY := m23ArgY.
+	originX _ m23ArgX.
+	originY _ m23ArgY.
 	self matrix2x3InvertPoint: matrix.
-	minX := maxX := m23ResultX.
-	minY := maxY := m23ResultY.
+	minX _ maxX _ m23ResultX.
+	minY _ maxY _ m23ResultY.
 
 	"Load bottom-right point"
 	self loadArgumentPoint:(interpreterProxy fetchPointer: 1 ofObject: srcOop).
 	interpreterProxy failed ifTrue:[^nil].
-	cornerX := m23ArgX.
-	cornerY := m23ArgY.
+	cornerX _ m23ArgX.
+	cornerY _ m23ArgY.
 	self matrix2x3InvertPoint: matrix.
-	minX := minX min: m23ResultX.
-	maxX := maxX max: m23ResultX.
-	minY := minY min: m23ResultY.
-	maxY := maxY max: m23ResultY.
+	minX _ minX min: m23ResultX.
+	maxX _ maxX max: m23ResultX.
+	minY _ minY min: m23ResultY.
+	maxY _ maxY max: m23ResultY.
 
 	"Load top-right point"
-	m23ArgX := cornerX.
-	m23ArgY := originY.
+	m23ArgX _ cornerX.
+	m23ArgY _ originY.
 	self matrix2x3InvertPoint: matrix.
-	minX := minX min: m23ResultX.
-	maxX := maxX max: m23ResultX.
-	minY := minY min: m23ResultY.
-	maxY := maxY max: m23ResultY.
+	minX _ minX min: m23ResultX.
+	maxX _ maxX max: m23ResultX.
+	minY _ minY min: m23ResultY.
+	maxY _ maxY max: m23ResultY.
 
 	"Load bottom-left point"
-	m23ArgX := originX.
-	m23ArgY := cornerY.
+	m23ArgX _ originX.
+	m23ArgY _ cornerY.
 	self matrix2x3InvertPoint: matrix.
-	minX := minX min: m23ResultX.
-	maxX := maxX max: m23ResultX.
-	minY := minY min: m23ResultY.
-	maxY := maxY max: m23ResultY.
+	minX _ minX min: m23ResultX.
+	maxX _ maxX max: m23ResultX.
+	minY _ minY min: m23ResultY.
+	maxY _ maxY max: m23ResultY.
 
 	interpreterProxy failed ifFalse:[
-		dstOop := self roundAndStoreResultRect: dstOop x0: minX y0: minY x1: maxX y1: maxY].
+		dstOop _ self roundAndStoreResultRect: dstOop x0: minX y0: minY x1: maxX y1: maxY].
 	interpreterProxy failed ifFalse:[
 		interpreterProxy pop: 3 thenPush: dstOop
 	]
@@ -280,7 +280,7 @@ primitiveIsIdentity
 	<inline: false>
 	<var: #matrix type: 'float *'>
 	
-	matrix := self loadArgumentMatrix: (interpreterProxy stackObjectValue: 0).
+	matrix _ self loadArgumentMatrix: (interpreterProxy stackObjectValue: 0).
 	interpreterProxy failed ifTrue:[^nil].
 	interpreterProxy pop: 1.
 	interpreterProxy pushBool:(
@@ -298,7 +298,7 @@ primitiveIsPureTranslation
 	<inline: false>
 	<var: #matrix type: 'float *'>
 	
-	matrix := self loadArgumentMatrix: (interpreterProxy stackObjectValue: 0).
+	matrix _ self loadArgumentMatrix: (interpreterProxy stackObjectValue: 0).
 	interpreterProxy failed ifTrue:[^nil].
 	interpreterProxy pop: 1.
 	interpreterProxy pushBool: (
@@ -315,7 +315,7 @@ primitiveTransformPoint
 	<var: #matrix type: 'float *'>
 	
 	self loadArgumentPoint: (interpreterProxy stackObjectValue: 0).
-	matrix := self loadArgumentMatrix: (interpreterProxy stackObjectValue: 1).
+	matrix _ self loadArgumentMatrix: (interpreterProxy stackObjectValue: 1).
 	interpreterProxy failed ifTrue:[^nil].
 	self matrix2x3TransformPoint: matrix.
 	self roundAndStoreResultPoint: 2.! !
@@ -335,9 +335,9 @@ primitiveTransformRectInto
 	<var: #minY type: 'double '>
 	<var: #maxY type: 'double '>
 
-	dstOop := interpreterProxy stackObjectValue: 0.
-	srcOop := interpreterProxy stackObjectValue: 1.
-	matrix := self loadArgumentMatrix: (interpreterProxy stackObjectValue: 2).
+	dstOop _ interpreterProxy stackObjectValue: 0.
+	srcOop _ interpreterProxy stackObjectValue: 1.
+	matrix _ self loadArgumentMatrix: (interpreterProxy stackObjectValue: 2).
 	interpreterProxy failed ifTrue:[^nil].
 
 	(interpreterProxy fetchClassOf: srcOop) = (interpreterProxy fetchClassOf: dstOop)
@@ -350,42 +350,42 @@ primitiveTransformRectInto
 	"Load top-left point"
 	self loadArgumentPoint: (interpreterProxy fetchPointer: 0 ofObject: srcOop).
 	interpreterProxy failed ifTrue:[^nil].
-	originX := m23ArgX.
-	originY := m23ArgY.
+	originX _ m23ArgX.
+	originY _ m23ArgY.
 	self matrix2x3TransformPoint: matrix.
-	minX := maxX := m23ResultX.
-	minY := maxY := m23ResultY.
+	minX _ maxX _ m23ResultX.
+	minY _ maxY _ m23ResultY.
 
 	"Load bottom-right point"
 	self loadArgumentPoint:(interpreterProxy fetchPointer: 1 ofObject: srcOop).
 	interpreterProxy failed ifTrue:[^nil].
-	cornerX := m23ArgX.
-	cornerY := m23ArgY.
+	cornerX _ m23ArgX.
+	cornerY _ m23ArgY.
 	self matrix2x3TransformPoint: matrix.
-	minX := minX min: m23ResultX.
-	maxX := maxX max: m23ResultX.
-	minY := minY min: m23ResultY.
-	maxY := maxY max: m23ResultY.
+	minX _ minX min: m23ResultX.
+	maxX _ maxX max: m23ResultX.
+	minY _ minY min: m23ResultY.
+	maxY _ maxY max: m23ResultY.
 
 	"Load top-right point"
-	m23ArgX := cornerX.
-	m23ArgY := originY.
+	m23ArgX _ cornerX.
+	m23ArgY _ originY.
 	self matrix2x3TransformPoint: matrix.
-	minX := minX min: m23ResultX.
-	maxX := maxX max: m23ResultX.
-	minY := minY min: m23ResultY.
-	maxY := maxY max: m23ResultY.
+	minX _ minX min: m23ResultX.
+	maxX _ maxX max: m23ResultX.
+	minY _ minY min: m23ResultY.
+	maxY _ maxY max: m23ResultY.
 
 	"Load bottom-left point"
-	m23ArgX := originX.
-	m23ArgY := cornerY.
+	m23ArgX _ originX.
+	m23ArgY _ cornerY.
 	self matrix2x3TransformPoint: matrix.
-	minX := minX min: m23ResultX.
-	maxX := maxX max: m23ResultX.
-	minY := minY min: m23ResultY.
-	maxY := maxY max: m23ResultY.
+	minX _ minX min: m23ResultX.
+	maxX _ maxX max: m23ResultX.
+	minY _ minY min: m23ResultY.
+	maxY _ maxY max: m23ResultY.
 
-	dstOop := self roundAndStoreResultRect: dstOop x0: minX y0: minY x1: maxX y1: maxY.
+	dstOop _ self roundAndStoreResultRect: dstOop x0: minX y0: minY x1: maxX y1: maxY.
 	interpreterProxy failed ifFalse:[
 		interpreterProxy pop: 3 thenPush: dstOop
 	]
